@@ -14,14 +14,14 @@
 <meta property="og:site_name" content="Сабақтас">
 <meta property="og:locale" content="kk_KZ">
 <meta property="og:title" content="Сабақтас">
-<meta property="og:description" content="ҚМЖ мен презентация апта сайын бір жерде. Физика, 7–11-сынып. Тегін үлгіні тіркелусіз көріңіз.">
+<meta property="og:description" content="Физика, 7–11-сынып. ҚМЖ тегін, кез келген тақырып. Презентация мен жұмыс парағы жазылыммен.">
 <meta property="og:url" content="https://sabaqtas-kz.vercel.app/">
 <meta property="og:image" content="https://sabaqtas-kz.vercel.app/assets/og.jpg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="canonical" href="https://sabaqtas-kz.vercel.app/">
-<meta name="description" content="Физика пәні мұғалімдеріне: ҚМЖ мен презентация ҚТЖ бойынша апта сайын жеке кабинетте. 7–11-сынып.">
+<meta name="description" content="Физика пәні мұғалімдеріне: ҚМЖ тегін, кез келген тақырып. Презентация мен жұмыс парағы жазылыммен. 7–11-сынып.">
 <link rel="preload" href="/assets/fonts/nunito-cyrillic-400-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/assets/fonts/nunito-cyrillic-ext-800-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/assets/fonts.css">
@@ -119,7 +119,7 @@ footer .wrap > span:last-child { display: flex; flex-wrap: wrap; gap: 4px; }
   <section class="steps" aria-label="Қалай жұмыс істейді">
     <div class="step"><span class="n">1</span><b data-i="s1"></b><span data-i="s1p"></span></div>
     <div class="step"><span class="n">2</span><b data-i="s2"></b><span id="s2p"></span></div>
-    <div class="step"><span class="n">3</span><b data-i="s3"></b><span data-i="s3p"></span></div>
+    <div class="step"><span class="n">3</span><b data-i="s3"></b><span id="s3p"></span></div>
   </section>
 </main>
 
@@ -132,22 +132,22 @@ const C = window.FS_CONFIG;
 const T = {
   kk: {
     login: 'Кіру', eyebrow: 'Физика · 7–11-сынып',
-    h1: 'Әр аптаның сабағы дайын.',
-    sub: 'ҚМЖ, презентация және жұмыс парағы апта сайын бір жерде.',
-    cta: 'Тегін үлгіні көру', signup: 'Тіркелу · 7 күн тегін', free: 'Үлгіні көру үшін тіркелу қажет емес.',
+    h1: 'ҚМЖ — тегін.',
+    sub: 'Кез келген тақырыптың ҚМЖ-сын тегін жүктеңіз. Презентация мен жұмыс парағы жазылыммен.',
+    cta: 'Тегін үлгіні көру', signup: 'Тіркеліп, ҚМЖ алу', free: 'Үлгіні көру үшін тіркелу қажет емес.',
     s1: 'Үлгіні көріңіз', s1p: 'Әр сыныптың бір сабағы тегін.',
-    s2: 'Сыныпқа жазылыңыз', s2p: (m, y) => `Айына ${m} немесе жылына ${y}.`,
-    s3: 'Апта сайын жүктеңіз', s3p: 'Осы аптаның сабақтары кабинетте ашылады.',
+    s2: 'ҚМЖ-ны тегін алыңыз', s2p: () => 'Тіркеліп, керек тақырыпты таңдаңыз.',
+    s3: 'Слайд пен парақ', s3p: (m, y) => `Жазылым: айына ${m} немесе жылына ${y}.`,
     ask: 'Сұрақ болса:'
   },
   ru: {
     login: 'Войти', eyebrow: 'Физика · 7–11 классы',
-    h1: 'Урок на каждую неделю готов.',
-    sub: 'ҚМЖ, презентация и рабочий лист каждую неделю в одном месте.',
-    cta: 'Смотреть бесплатный образец', signup: 'Регистрация · 7 дней бесплатно', free: 'Для просмотра образца регистрация не нужна.',
+    h1: 'ҚМЖ — бесплатно.',
+    sub: 'ҚМЖ по любой теме скачивайте бесплатно. Презентации и рабочие листы — по подписке.',
+    cta: 'Смотреть бесплатный образец', signup: 'Зарегистрироваться и скачать ҚМЖ', free: 'Для просмотра образца регистрация не нужна.',
     s1: 'Посмотрите образец', s1p: 'Один урок каждого класса бесплатно.',
-    s2: 'Подпишитесь на класс', s2p: (m, y) => `${m} в месяц или ${y} в год.`,
-    s3: 'Скачивайте каждую неделю', s3p: 'Уроки текущей недели открываются в кабинете.',
+    s2: 'Берите ҚМЖ бесплатно', s2p: () => 'Зарегистрируйтесь и выберите тему.',
+    s3: 'Презентации и листы', s3p: (m, y) => `Подписка: ${m} в месяц или ${y} в год.`,
     ask: 'Вопросы:'
   }
 };
@@ -159,6 +159,7 @@ function render() {
   document.documentElement.lang = lang;
   document.querySelectorAll('[data-i]').forEach(el => { const v = t[el.dataset.i]; if (typeof v === 'string') el.textContent = v; });
   $('s2p').textContent = t.s2p(fmt(C.prices.month), fmt(C.prices.year));
+  $('s3p').textContent = t.s3p(fmt(C.prices.month), fmt(C.prices.year));
   document.querySelectorAll('.seg button').forEach(b => b.setAttribute('aria-pressed', b.dataset.lang === lang));
   $('wa-link').href = 'https://wa.me/' + C.whatsapp; $('tg-link').href = 'https://t.me/' + C.telegram;
 }

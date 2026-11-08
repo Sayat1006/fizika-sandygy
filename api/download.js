@@ -1,4 +1,5 @@
-// Файлды тек жазылымы бар мұғалімге және тек осы аптаның сабағы болса ғана береді.
+// ҚМЖ: кабинетке кірген кез келген мұғалімге тегін, кез келген тақырып.
+// Презентация мен жұмыс парағы: тек сол сыныпқа жазылымы бар мұғалімге.
 const fs = require('fs');
 const path = require('path');
 
@@ -58,11 +59,11 @@ module.exports = async (req, res) => {
     if (!file) return fail(res, 404, 'Бұл сабаққа мұндай файл жоқ.');
 
     const w = week(Date.now());
-    if (lesson.date < w.from || lesson.date > w.to) return fail(res, 403, 'Бұл сабақ өз аптасында ашылады: ' + lesson.date.split('-').reverse().join('.'));
-
-    const s = await sb(`/rest/v1/subscriptions?select=paid_until&user_id=eq.${user.id}&grade=eq.${grade}`, token);
-    const subs = s.ok ? await s.json() : [];
-    if (!subs.length || subs[0].paid_until < w.today) return fail(res, 402, `${grade}-сыныпқа жазылым белсенді емес.`);
+    if (kind !== 'kmzh') {
+      const s = await sb(`/rest/v1/subscriptions?select=paid_until&user_id=eq.${user.id}&grade=eq.${grade}`, token);
+      const subs = s.ok ? await s.json() : [];
+      if (!subs.length || subs[0].paid_until < w.today) return fail(res, 402, `Презентация мен жұмыс парағы жазылыммен ашылады: ${grade}-сынып.`);
+    }
 
     const c = await sb(`/rest/v1/downloads?select=id&user_id=eq.${user.id}&grade=eq.${grade}&n=eq.${n}&kind=eq.${kind}&variant=eq.${encodeURIComponent(v)}`, token);
     const prev = c.ok ? await c.json() : [];
