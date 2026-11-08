@@ -138,7 +138,8 @@ function renderTabs() {
 function render() {
   renderTabs();
   if (!cur[kind]) kind = 'kmzh';
-  $('k').textContent = `${cur.grade}-сынып · №${cur.disp} сабақ · ${cur.bolim}`;
+  const vv = window.FS_VARIANTS && cur.v && window.FS_VARIANTS.byId[cur.v];
+  $('k').textContent = `${cur.grade}-сынып${vv && vv.dir ? ' · ' + vv.short : ''} · №${cur.disp} сабақ · ${cur.bolim}`;
   $('topic').textContent = cur.topic;
   const base = `/samples/${cur.grade}/`;
   const NAMES = { kmzh: 'ҚМЖ', pres: 'Презентация', ws: 'Жұмыс парағы' };

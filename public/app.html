@@ -103,6 +103,21 @@ form.stack .pill { width: 100%; margin-top: 4px; }
 .profile { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; align-items: end; }
 @media (max-width: 720px) { .profile { grid-template-columns: 1fr; } }
 .loading { padding: 20vh 0; text-align: center; color: var(--fg-2); }
+.vtitle { font: 600 13px var(--text); color: var(--accent); text-transform: uppercase; letter-spacing: .04em; padding: 14px 0 2px; }
+.vcard { display: grid; gap: 18px; }
+.vrow { display: grid; grid-template-columns: 110px 1fr; gap: 12px; align-items: start; }
+.vrow b { font: 700 17px var(--display); padding-top: 8px; }
+.vgroups { display: grid; gap: 10px; }
+.vgroup { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.vgroup .dn { width: 46px; font-weight: 600; color: var(--fg-2); }
+.vchip { position: relative; }
+.vchip input { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: pointer; }
+.vchip span { display: inline-flex; align-items: center; gap: 6px; border: 1.5px solid var(--line); border-radius: 12px; padding: 8px 12px; font-weight: 600; font-size: 14px; transition: border-color .2s var(--ease), background .2s var(--ease); }
+.vchip input:checked + span { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 8%, transparent); color: var(--accent); }
+.vchip input:disabled + span { opacity: .45; cursor: default; }
+.vchip input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: 2px; }
+.vchip small { font-weight: 500; font-size: 11px; color: var(--fg-3); }
+@media (max-width: 560px) { .vrow { grid-template-columns: 1fr; } .vrow b { padding-top: 0; } }
 .gbtn { width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px; font: 600 15px var(--text); color: var(--fg); background: var(--bg); border: 1px solid var(--line); border-radius: 999px; min-height: 46px; cursor: pointer; transition: background .2s var(--ease); }
 .gbtn:hover { background: var(--bg-2); }
 .gbtn svg { width: 20px; height: 20px; }
@@ -193,6 +208,11 @@ form.stack .pill { width: 100%; margin-top: 4px; }
       <div id="week"></div>
     </div>
 
+    <div class="sec" id="variants">
+      <div class="sec-h"><h2>Сыныптарым және бағыттарым</h2><span class="hint">10–11-сыныпта бағыт пен аптадағы сағат санын таңдаңыз. Бірнешеуін қатар таңдауға болады.</span></div>
+      <div class="card vcard" id="vpick"></div>
+    </div>
+
     <div class="sec" id="subscribe">
       <div class="sec-h"><h2>Жазылым</h2></div>
       <div class="subgrid">
@@ -266,7 +286,13 @@ const dmy = s => s.split('-').reverse().join('.');
 const dm = s => s.split('-').reverse().slice(0, 2).join('.');
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const GRADES = [7, 8, 9, 10, 11];
-let session = null, profile = null, subs = [], reqs = [], LESSONS = [], planGrade = null;
+let session = null, profile = null, subs = [], reqs = [], LESSONS = [], planVar = null;
+const V = window.FS_VARIANTS;
+let READY = new Set();
+function myVariants(g) {
+  if (g < 10) return [String(g)];
+  return (profile.variants || []).filter(v => V.byId[v] && V.byId[v].grade === g && READY.has(v));
+}
 
 let tt;
 function toast(t) { const el = $('toast'); el.textContent = t; el.classList.add('show'); clearTimeout(tt); tt = setTimeout(() => el.classList.remove('show'), 3200); }
@@ -368,6 +394,7 @@ sb.auth.onAuthStateChange((ev, s) => {
 async function loadLessons() {
   if (LESSONS.length) return;
   const r = await fetch('/lessons.json'); LESSONS = await r.json();
+  READY = new Set(LESSONS.map(l => l.v));
 }
 async function loadAll() {
   const uid = session.user.id;
@@ -415,19 +442,24 @@ function render() {
     $('week').innerHTML = `<div class="empty"><h3>Әзірге жазылым жоқ</h3><p>Сыныпты және мерзімді таңдап, өтінім жіберіңіз. Төлем расталған соң осы аптаның ҚМЖ мен презентациялары осы жерде пайда болады.</p><div style="display:flex;gap:10px 22px;flex-wrap:wrap;align-items:center"><a class="pill" href="#subscribe">Жазылымды рәсімдеу</a><a href="/samples">Алдымен тегін үлгіні көру ›</a></div></div>`;
   } else {
     $('week').innerHTML = act.map(g => {
-      const ls = LESSONS.filter(l => l.grade === g && l.date >= w.from && l.date <= w.to);
+      const sub = subs.find(x => x.grade === g);
+      const head = `<div class="grade-title">${g}-сынып <span class="chip ${sub.trial ? 'warn' : 'ok'}">${sub.trial ? 'Сынақ, ' : ''}${dmy(sub.paid_until)} дейін</span></div>`;
+      const vs = myVariants(g);
+      if (!vs.length) return `<div class="grade-block">${head}<p class="hint" style="padding:14px 0">Бағыт пен сағат санын таңдаңыз: <a href="#variants">Сыныптарым және бағыттарым</a>.</p></div>`;
+      return `<div class="grade-block">${head}` + vs.map(v => {
+      const ls = LESSONS.filter(l => l.v === v && l.date >= w.from && l.date <= w.to);
       const rows = ls.length ? ls.map(l => `
         <div class="lesson">
           <div class="d"><b>${dm(l.date)}</b>№${esc(l.disp)}</div>
           <div class="t">${esc(l.topic)}<small>${esc(l.bolim)}</small></div>
           <div class="btns">
-            ${l.kmzh ? `<button class="pill sm" type="button" data-dl="${g}|${l.n}|kmzh">ҚМЖ</button>` : ''}
-            ${l.pres ? `<button class="pill ghost sm" type="button" data-dl="${g}|${l.n}|pres">Презентация</button>` : ''}
-            ${l.ws ? `<button class="pill ghost sm" type="button" data-dl="${g}|${l.n}|ws">Жұмыс парағы</button>` : ''}
+            ${l.kmzh ? `<button class="pill sm" type="button" data-dl="${v}|${l.n}|kmzh">ҚМЖ</button>` : ''}
+            ${l.pres ? `<button class="pill ghost sm" type="button" data-dl="${v}|${l.n}|pres">Презентация</button>` : ''}
+            ${l.ws ? `<button class="pill ghost sm" type="button" data-dl="${v}|${l.n}|ws">Жұмыс парағы</button>` : ''}
           </div>
-        </div>`).join('') : `<p class="hint" style="padding:14px 0">Бұл аптада ${g}-сыныпқа ҚТЖ бойынша сабақ жоқ (демалыс немесе мереке).</p>`;
-      const sub = subs.find(x => x.grade === g);
-      return `<div class="grade-block"><div class="grade-title">${g}-сынып <span class="chip ${sub.trial ? 'warn' : 'ok'}">${sub.trial ? 'Сынақ, ' : ''}${dmy(sub.paid_until)} дейін</span></div>${rows}</div>`;
+        </div>`).join('') : `<p class="hint" style="padding:14px 0">Бұл аптада ҚТЖ бойынша сабақ жоқ (демалыс немесе мереке).</p>`;
+      return (g >= 10 ? `<div class="vtitle">${esc(V.byId[v].short)}</div>` : '') + rows;
+      }).join('') + `</div>`;
     }).join('');
   }
 
@@ -449,7 +481,8 @@ function render() {
   calc();
 
   // plan
-  if (!planGrade) planGrade = act[0] || 8;
+  renderVariants();
+  if (!planVar) planVar = (act.length ? myVariants(act[0])[0] : null) || '8';
   renderPlan();
 
   // profile
@@ -458,9 +491,10 @@ function render() {
 
 function renderPlan() {
   const w = FS_WEEK();
-  $('ptabs').innerHTML = GRADES.map(g => `<button type="button" role="tab" aria-selected="${g === planGrade}" data-pg="${g}">${g}-сынып</button>`).join('');
+  const tabs = V.list.filter(v => READY.has(v.id));
+  $('ptabs').innerHTML = tabs.map(v => `<button type="button" role="tab" aria-selected="${v.id === planVar}" data-pg="${v.id}">${v.grade}-сынып${v.dir ? ' · ' + v.short : ''}</button>`).join('');
   let bol = '';
-  $('plan').innerHTML = LESSONS.filter(l => l.grade === planGrade).map(l => {
+  $('plan').innerHTML = LESSONS.filter(l => l.v === planVar).map(l => {
     const head = l.bolim !== bol ? `<div class="bol">${esc(bol = l.bolim)}</div>` : '';
     const now = l.date >= w.from && l.date <= w.to, past = l.date < w.from;
     const chip = now ? '<span class="chip ok">Осы апта</span>' : past ? '<span class="chip mute">Өтті</span>' : `<span class="chip mute">${dm(l.date)}</span>`;
@@ -470,6 +504,22 @@ function renderPlan() {
   if (cur) $('plan').scrollTop = Math.max(0, cur.closest('.p').offsetTop - $('plan').offsetTop - 80);
 }
 
+function renderVariants() {
+  const mine = new Set(profile.variants || []);
+  $('vpick').innerHTML = [7, 8, 9].map(g => `<div class="vrow"><b>${g}-сынып</b><div class="vgroup"><span class="chip mute">Аптасына 2 сағат</span></div></div>`).join('') +
+    [10, 11].map(g => `<div class="vrow"><b>${g}-сынып</b><div class="vgroups">` + ['zhmb', 'kgb'].map(d => `<div class="vgroup"><span class="dn">${d === 'zhmb' ? 'ЖМБ' : 'ҚГБ'}</span>` +
+      [1, 2, 3].map(h => { const id = `${g}-${d}-${h}`, ready = READY.has(id);
+        return `<label class="vchip"><input type="checkbox" data-var="${id}" ${mine.has(id) && ready ? 'checked' : ''} ${ready ? '' : 'disabled'}><span>${h} сағ.${ready ? '' : ' <small>жақында</small>'}</span></label>`; }).join('') +
+      `</div>`).join('') + `</div></div>`).join('');
+}
+document.addEventListener('change', async e => {
+  const c = e.target.closest('[data-var]'); if (!c) return;
+  const vs = [...document.querySelectorAll('[data-var]:checked')].map(x => x.dataset.var);
+  const { error } = await sb.from('profiles').update({ variants: vs }).eq('id', session.user.id);
+  if (error) { c.checked = !c.checked; return toast('Сақтау мүмкін болмады: ' + error.message); }
+  profile.variants = vs; toast('Сақталды'); render();
+});
+
 function picked() { return GRADES.filter(g => $('pick-' + g) && $('pick-' + g).checked); }
 function plan() { return $('plan-year').checked ? 'year' : 'month'; }
 function calc() { const n = picked().length; $('total').textContent = fmt(n * C.prices[plan()]); $('b-go').disabled = !n; }
@@ -478,17 +528,17 @@ function calc() { const n = picked().length; $('total').textContent = fmt(n * C.
 document.addEventListener('change', e => { if (e.target.closest('#f-buy')) calc(); });
 document.addEventListener('click', async e => {
   const pg = e.target.closest('[data-pg]');
-  if (pg) { planGrade = +pg.dataset.pg; renderPlan(); return; }
+  if (pg) { planVar = pg.dataset.pg; renderPlan(); return; }
   const dl = e.target.closest('[data-dl]');
-  if (dl) { const [g, n, kind] = dl.dataset.dl.split('|'); download(+g, +n, kind, dl); }
+  if (dl) { const [v, n, kind] = dl.dataset.dl.split('|'); download(v, +n, kind, dl); }
 });
 
-async function download(g, n, kind, btn) {
+async function download(v, n, kind, btn) {
   const { data } = await sb.auth.getSession();
   if (!data.session) return show('v-auth');
   btn.disabled = true; const label = btn.textContent; btn.textContent = 'Жүктелуде…';
   try {
-    const r = await fetch(`/api/download?grade=${g}&n=${n}&kind=${kind}`, { headers: { Authorization: 'Bearer ' + data.session.access_token } });
+    const r = await fetch(`/api/download?v=${encodeURIComponent(v)}&n=${n}&kind=${kind}`, { headers: { Authorization: 'Bearer ' + data.session.access_token } });
     if (!r.ok) { const j = await r.json().catch(() => ({})); toast(j.error || 'Жүктеу мүмкін болмады.'); return; }
     const cd = r.headers.get('Content-Disposition') || '';
     const m = cd.match(/filename\*=UTF-8''([^;]+)/);

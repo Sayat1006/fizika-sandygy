@@ -43,16 +43,17 @@ module.exports = async (req, res) => {
     if (!token) return fail(res, 401, 'Кабинетке кіріңіз.');
 
     const url = new URL(req.url, 'http://x');
-    const grade = parseInt(url.searchParams.get('grade'), 10);
+    const v = String(url.searchParams.get('v') || url.searchParams.get('grade') || '');
     const n = parseInt(url.searchParams.get('n'), 10);
     const kind = url.searchParams.get('kind');
-    if (!(grade >= 7 && grade <= 11) || !(n > 0) || !['kmzh', 'pres', 'ws'].includes(kind)) return fail(res, 400, 'Сұраныс қате.');
+    if (!/^(7|8|9|10|11)(-(zhmb|kgb)-[123])?$/.test(v) || !(n > 0) || !['kmzh', 'pres', 'ws'].includes(kind)) return fail(res, 400, 'Сұраныс қате.');
+    const grade = parseInt(v, 10);
 
     const u = await sb('/auth/v1/user', token);
     if (!u.ok) return fail(res, 401, 'Сессия аяқталды. Қайта кіріңіз.');
     const user = await u.json();
 
-    const lesson = manifest()[`${grade}-${n}`];
+    const lesson = manifest()[`${v}:${n}`] || (grade < 10 ? manifest()[`${grade}:${n}`] : null);
     const file = lesson && lesson[kind];
     if (!file) return fail(res, 404, 'Бұл сабаққа мұндай файл жоқ.');
 
@@ -63,11 +64,11 @@ module.exports = async (req, res) => {
     const subs = s.ok ? await s.json() : [];
     if (!subs.length || subs[0].paid_until < w.today) return fail(res, 402, `${grade}-сыныпқа жазылым белсенді емес.`);
 
-    const c = await sb(`/rest/v1/downloads?select=id&user_id=eq.${user.id}&grade=eq.${grade}&n=eq.${n}&kind=eq.${kind}`, token);
+    const c = await sb(`/rest/v1/downloads?select=id&user_id=eq.${user.id}&grade=eq.${grade}&n=eq.${n}&kind=eq.${kind}&variant=eq.${encodeURIComponent(v)}`, token);
     const prev = c.ok ? await c.json() : [];
     if (prev.length >= MAX_PER_FILE) return fail(res, 429, 'Бұл файлды жүктеу шегі бітті. Қажет болса, бізге жазыңыз.');
 
-    const ins = await sb('/rest/v1/downloads', token, { method: 'POST', headers: { Prefer: 'return=minimal' }, body: JSON.stringify({ user_id: user.id, grade, n, kind }) });
+    const ins = await sb('/rest/v1/downloads', token, { method: 'POST', headers: { Prefer: 'return=minimal' }, body: JSON.stringify({ user_id: user.id, grade, n, kind, variant: v }) });
     if (!ins.ok) return fail(res, 500, 'Жүктеуді тіркеу мүмкін болмады. Кейінірек қайталап көріңіз.');
 
     const data = fs.readFileSync(path.join(ROOT, file.path));
@@ -77,7 +78,7 @@ module.exports = async (req, res) => {
       pres: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
       ws: 'application/pdf',
     }[kind]);
-    res.setHeader('Content-Disposition', `attachment; filename="${kind}_${grade}_${n}${path.extname(file.path)}"; filename*=UTF-8''${encodeURIComponent(file.name)}`);
+    res.setHeader('Content-Disposition', `attachment; filename="${kind}_${v}_${n}${path.extname(file.path)}"; filename*=UTF-8''${encodeURIComponent(file.name)}`);
     res.setHeader('Cache-Control', 'private, no-store');
     res.setHeader('Content-Length', data.length);
     res.end(data);

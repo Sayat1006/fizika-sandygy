@@ -23,3 +23,13 @@ window.FS_WEEK = function (now) {
   const end = new Date(mon.getTime() + (dow >= 5 ? 13 : 6) * 86400000);
   return { today, from: mon.toISOString().slice(0, 10), to: end.toISOString().slice(0, 10) };
 };
+
+/* Курс нұсқалары. 7–9: бір нұсқа (аптасына 2 сағат). 10–11: бағыт (ЖМБ/ҚГБ) × аптасына 1/2/3 сағат.
+   Нұсқаның ҚТЖ-сы мен материалдары lessons.json ішінде болса, ол «дайын» деп есептеледі. */
+window.FS_VARIANTS = (function () {
+  const list = [7, 8, 9].map(g => ({ id: String(g), grade: g, dir: '', hours: 2 }));
+  [10, 11].forEach(g => ['zhmb', 'kgb'].forEach(d => [1, 2, 3].forEach(h => list.push({ id: `${g}-${d}-${h}`, grade: g, dir: d, hours: h }))));
+  const DIR = { zhmb: 'ЖМБ', kgb: 'ҚГБ' };
+  list.forEach(v => { v.dirName = DIR[v.dir] || ''; v.short = v.dir ? `${DIR[v.dir]} · ${v.hours} сағ.` : ''; v.label = `${v.grade}-сынып${v.dir ? ' · ' + v.short : ''}`; });
+  return { list, byId: Object.fromEntries(list.map(v => [v.id, v])) };
+})();

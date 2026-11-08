@@ -93,16 +93,22 @@ async function onWeekly() {
   const byUser = new Map<string, any[]>();
   for (const s of subs ?? []) byUser.set(s.user_id, [...(byUser.get(s.user_id) ?? []), s]);
   if (!byUser.size) return { sent: 0 };
-  const { data: people } = await db.from('profiles').select('id,full_name,tg_chat_id').in('id', [...byUser.keys()]).not('tg_chat_id', 'is', null);
+  const { data: people } = await db.from('profiles').select('id,full_name,tg_chat_id,variants').in('id', [...byUser.keys()]).not('tg_chat_id', 'is', null);
+  const DIR: Record<string, string> = { zhmb: 'ЖМБ', kgb: 'ҚГБ' };
   let sent = 0;
   for (const p of people ?? []) {
     const ss = byUser.get(p.id)!.sort((a, b) => a.grade - b.grade);
     const paid = ss.filter((s) => !s.trial);
     const use = paid.length ? paid : ss;
-    const blocks = use.map((s) => {
-      const ls = lessons.filter((l) => l.grade === s.grade && l.date >= w.from && l.date <= w.to);
-      if (!ls.length) return `<b>${s.grade}-сынып</b>\nБұл аптада сабақ жоқ.`;
-      return `<b>${s.grade}-сынып</b>\n` + ls.map((l) => `• ${dm(l.date)} — ${esc(l.topic)}`).join('\n');
+    const blocks = use.flatMap((s) => {
+      const vs: string[] = s.grade < 10 ? [String(s.grade)] : (p.variants ?? []).filter((v: string) => v.startsWith(s.grade + '-') && lessons.some((l) => l.v === v));
+      return vs.map((v) => {
+        const [, d, h] = v.split('-');
+        const title = `<b>${s.grade}-сынып${d ? ` · ${DIR[d]} · ${h} сағ.` : ''}</b>`;
+        const ls = lessons.filter((l) => l.v === v && l.date >= w.from && l.date <= w.to);
+        if (!ls.length) return `${title}\nБұл аптада сабақ жоқ.`;
+        return `${title}\n` + ls.map((l) => `• ${dm(l.date)} — ${esc(l.topic)}`).join('\n');
+      });
     }).join('\n\n');
     const head = `📚 <b>Осы аптаның сабақтары</b> (${dm(w.from)}–${dm(w.to)})\nҚМЖ, презентация мен жұмыс парағы кабинетте ашық.\n\n`;
     const tail = paid.length ? '' : '\n\nТегін сынақ мерзімі аяқталған соң сабақтар жабылады. Ұнаса, керек сыныптарға жазылыңыз.';

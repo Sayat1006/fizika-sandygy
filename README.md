@@ -19,6 +19,13 @@
 
 Дерекқор: Supabase жобасы `fizika-sandygy` (кестелер: `profiles`, `subscriptions`, `payment_requests`, `downloads`).
 
+## Курс нұсқалары
+
+- 7–9: бір нұсқа (`7`, `8`, `9`), аптасына 2 сағат.
+- 10–11: `{сынып}-{zhmb|kgb}-{1|2|3}`, мысалы `10-zhmb-2`. Қазір дайыны: `10-zhmb-2`, `11-zhmb-3`.
+- Жаңа нұсқа қосу: `public/lessons.json` ішіне `v` өрісімен сабақтар, `materials/manifest.json` ішіне `v:n` кілтімен файлдар. Нұсқа lessons.json-да пайда болса, кабинетте өзі «дайын» болады.
+- Мұғалімнің таңдауы: `profiles.variants`.
+
 ## Ережелер
 
 - Тіркелгенде 5 сыныптың бәріне 7 күн тегін сынақ ашылады (`subscriptions.trial = true`).

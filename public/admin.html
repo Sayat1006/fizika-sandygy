@@ -130,7 +130,7 @@ async function load() {
   ]);
   if (p.error) throw p.error;
   P = p.data; S = s.data || []; R = r.data || []; D = d.data || [];
-  if (l) l.forEach(x => L[x.grade + '-' + x.n] = x);
+  if (l) l.forEach(x => L[x.v + ':' + x.n] = x);
 }
 const prof = id => P.find(x => x.id === id) || {};
 
@@ -163,9 +163,9 @@ function render() {
 
   const per = {}; D.forEach(x => per[x.user_id] = (per[x.user_id] || 0) + 1);
   $('dls').innerHTML = D.length ? `<table><thead><tr><th>Уақыт</th><th>Мұғалім</th><th>Сабақ</th><th>Файл</th><th>7 күнде</th></tr></thead><tbody>` +
-    D.slice(0, 200).map(x => { const u = prof(x.user_id), l = L[x.grade + '-' + x.n] || {}; return `<tr class="${per[x.user_id] > 40 ? 'flag' : ''}">
+    D.slice(0, 200).map(x => { const u = prof(x.user_id), vk = x.variant || String(x.grade), l = L[vk + ':' + x.n] || {}, vv = window.FS_VARIANTS.byId[vk]; return `<tr class="${per[x.user_id] > 40 ? 'flag' : ''}">
       <td class="num">${tm(x.created_at)}</td><td>${esc(u.full_name) || '—'}<small>${esc(u.phone)}</small></td>
-      <td>${x.grade}-сынып, №${esc(l.disp || x.n)}<small>${esc(l.topic || '')}</small></td><td>${{ kmzh: 'ҚМЖ', pres: 'Презентация', ws: 'Жұмыс парағы' }[x.kind]}</td><td class="num">${per[x.user_id]}</td></tr>`; }).join('') + '</tbody></table>'
+      <td>${x.grade}-сынып${vv && vv.dir ? ' · ' + vv.short : ''}, №${esc(l.disp || x.n)}<small>${esc(l.topic || '')}</small></td><td>${{ kmzh: 'ҚМЖ', pres: 'Презентация', ws: 'Жұмыс парағы' }[x.kind]}</td><td class="num">${per[x.user_id]}</td></tr>`; }).join('') + '</tbody></table>'
     : '<p class="empty">Соңғы 7 күнде жүктеу болмады.</p>';
 }
 
