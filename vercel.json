@@ -1,5 +1,8 @@
 {
   "outputDirectory": "public",
+  "regions": [
+    "fra1"
+  ],
   "functions": {
     "api/download.js": {
       "includeFiles": "materials/**",
