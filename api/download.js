@@ -10,7 +10,12 @@ const SUPABASE_KEY = process.env.SUPABASE_KEY || 'sb_publishable_l7Xeu0foTUzNVh_
 const MAX_PER_FILE = 5; // бір файлды бір мұғалім ең көбі неше рет жүктей алады
 
 const ROOT = path.join(process.cwd(), 'materials');
-let MANIFEST;
+let MANIFEST, PREVIEWS;
+const FREE_PAGES = { pres: 3, ws: 1 }; // жазылымсыз қарауға болатын бет саны
+function previews() {
+  if (!PREVIEWS) { try { PREVIEWS = JSON.parse(fs.readFileSync(path.join(ROOT, 'previews.json'), 'utf8')); } catch (_) { PREVIEWS = {}; } }
+  return PREVIEWS;
+}
 function manifest() {
   if (!MANIFEST) MANIFEST = JSON.parse(fs.readFileSync(path.join(ROOT, 'manifest.json'), 'utf8'));
   return MANIFEST;
@@ -66,6 +71,23 @@ module.exports = async (req, res) => {
     const lesson = manifest()[`${v}:${n}`] || (grade < 10 ? manifest()[`${grade}:${n}`] : null);
     const file = lesson && lesson[kind];
     if (!file) return fail(res, 404, 'Бұл сабаққа мұндай файл жоқ.');
+
+    if (url.searchParams.get('view') === '1') {
+      const pv = previews()[`${v}:${n}:${kind}`] || (grade < 10 ? previews()[`${grade}:${n}:${kind}`] : null);
+      if (!pv) return fail(res, 404, 'Бұл файлдың алдын ала көрінісі әзірге жоқ.');
+      const total = pv.files.length;
+      let open = total;
+      if (kind !== 'kmzh') {
+        const s = await sb(`/rest/v1/subscriptions?select=paid_until&user_id=eq.${user.id}&grade=eq.${grade}`, token);
+        const subs = s.ok ? await s.json() : [];
+        if (!subs.length || subs[0].paid_until < week(Date.now()).today) open = Math.min(total, FREE_PAGES[kind]);
+      }
+      res.statusCode = 200;
+      res.setHeader('Content-Type', 'application/json; charset=utf-8');
+      res.setHeader('Cache-Control', 'private, no-store');
+      return res.end(JSON.stringify({ total, locked: open < total, w: pv.w, h: pv.h,
+        pages: pv.files.slice(0, open).map((f) => `/pv/${pv.dir}/${f}`) }));
+    }
 
     const w = week(Date.now());
     if (kind !== 'kmzh') {
