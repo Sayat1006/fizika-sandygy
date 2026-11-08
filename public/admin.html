@@ -29,7 +29,10 @@ td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
 .filter { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 12px; }
 .filter input { font: 15px var(--text); color: var(--fg); background: var(--bg-2); border: 1px solid transparent; border-radius: 10px; padding: 9px 12px; min-width: 0; width: 260px; max-width: 100%; }
 .filter input:focus { outline: none; border-color: var(--accent); }
-.deny { padding: 20vh 0; text-align: center; color: var(--fg-2); display: grid; gap: 14px; justify-items: center; }
+.login { max-width: 400px; margin: 10vh auto 0; display: grid; gap: 24px; }
+.login h1 { text-align: center; }
+form.stack { display: grid; gap: 14px; }
+form.stack .pill { width: 100%; margin-top: 4px; }
 .empty { color: var(--fg-2); padding: 16px 0; }
 tr.flag td { background: var(--warn-bg); }
 </style>
@@ -41,12 +44,20 @@ tr.flag td { background: var(--warn-bg); }
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><ellipse cx="12" cy="12" rx="10" ry="3.8"/><ellipse cx="12" cy="12" rx="10" ry="3.8" transform="rotate(60 12 12)"/><ellipse cx="12" cy="12" rx="10" ry="3.8" transform="rotate(120 12 12)"/><circle cx="12" cy="12" r="1.8" fill="currentColor" stroke="none"/></svg>
       Физика Сандығы
     </a>
-    <div class="right"><a class="textbtn" href="/app">Кабинет</a><button class="pill ghost sm" type="button" id="refresh">Жаңарту</button></div>
+    <div class="right"><button class="pill ghost sm" type="button" id="refresh" hidden>Жаңарту</button><button class="textbtn" type="button" id="logout" hidden>Шығу</button></div>
   </div>
 </header>
 
 <main class="wrap">
-  <div class="deny" id="deny" hidden><p id="deny-t">Бұл бет тек әкімшіге арналған.</p><a class="pill" href="/app">Кабинетке кіру</a></div>
+  <section class="login" id="login" hidden>
+    <h1>Әкімші панелі</h1>
+    <form class="stack" id="f-login">
+      <div class="field"><label for="a-user">Логин</label><input id="a-user" autocomplete="username" required autocapitalize="off" spellcheck="false"></div>
+      <div class="field"><label for="a-pass">Құпиясөз</label><input id="a-pass" type="password" autocomplete="current-password" required></div>
+      <div class="msg err" id="a-msg" hidden></div>
+      <button class="pill" type="submit" id="a-go">Кіру</button>
+    </form>
+  </section>
   <div id="adm" hidden>
     <h1>Әкімші беті</h1>
     <div class="kpis">
@@ -153,13 +164,27 @@ document.addEventListener('click', e => {
 $('q').addEventListener('input', render);
 $('refresh').onclick = refresh;
 
-(async () => {
+const ADMIN_DOMAIN = '@fizika-sandygy.kz'; // «admin» логині admin@fizika-sandygy.kz аккаунтына сәйкес келеді
+function showLogin(text) { $('adm').hidden = true; $('refresh').hidden = true; $('logout').hidden = true; $('login').hidden = false; const m = $('a-msg'); m.hidden = !text; m.textContent = text || ''; }
+async function enter() {
   const { data } = await sb.auth.getSession();
-  if (!data.session) { $('deny-t').textContent = 'Алдымен кабинетке кіріңіз.'; $('deny').hidden = false; return; }
+  if (!data.session) return showLogin();
   const { data: me } = await sb.from('profiles').select('is_admin').eq('id', data.session.user.id).single();
-  if (!me || !me.is_admin) { $('deny').hidden = false; return; }
-  $('adm').hidden = false; refresh();
-})();
+  if (!me || !me.is_admin) { await sb.auth.signOut(); return showLogin('Бұл аккаунтта әкімші құқығы жоқ.'); }
+  $('login').hidden = true; $('adm').hidden = false; $('refresh').hidden = false; $('logout').hidden = false;
+  refresh();
+}
+$('f-login').onsubmit = async e => {
+  e.preventDefault(); $('a-msg').hidden = true; $('a-go').disabled = true;
+  const u = $('a-user').value.trim().toLowerCase();
+  const email = u.includes('@') ? u : u + ADMIN_DOMAIN;
+  const { error } = await sb.auth.signInWithPassword({ email, password: $('a-pass').value });
+  $('a-go').disabled = false;
+  if (error) return showLogin(/Invalid login/i.test(error.message) ? 'Логин немесе құпиясөз қате.' : 'Қате: ' + error.message);
+  $('a-pass').value = ''; enter();
+};
+$('logout').onclick = async () => { await sb.auth.signOut(); showLogin(); };
+enter();
 </script>
 </body>
 </html>
