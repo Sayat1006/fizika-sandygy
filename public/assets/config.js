@@ -2,10 +2,10 @@
 window.FS_CONFIG = {
   supabaseUrl: 'https://rumnyvcgpswdxjheaeif.supabase.co',
   supabaseKey: 'sb_publishable_l7Xeu0foTUzNVh_-w258nw_42HAgAaw',
-  kaspi: '+7 7__ ___ __ __',          // Kaspi Gold номері
-  whatsapp: '77000000000',            // WhatsApp: тек цифрлар
-  whatsappShow: '+7 7__ ___ __ __',
-  telegram: 'username',               // Telegram логині, @ белгісіз
+  kaspi: '+7 776 870 75 00',          // Kaspi Gold номері
+  whatsapp: '77768707500',            // WhatsApp: тек цифрлар
+  whatsappShow: '+7 776 870 75 00',
+  telegram: 'ca9m_cc',               // Telegram логині, @ белгісіз
   prices: { month: 1490, year: 9990 }, // бір сынып үшін, ₸ (дерекқордағы plan_price функциясымен бірдей болуы керек)
   googleLogin: false,                 // Supabase-те Google провайдері қосылған соң true етіңіз
   telegramBot: 'impulse_edu_bot',                  // хабарлама боты, мысалы 'fizika_sandygy_bot' (@ белгісіз)
