@@ -319,7 +319,7 @@ function render() {
 
   // week
   if (!act.length) {
-    $('week').innerHTML = `<div class="empty"><h3>Әзірге жазылым жоқ</h3><p>Сыныпты және мерзімді таңдап, өтінім жіберіңіз. Төлем расталған соң осы аптаның ҚМЖ мен презентациялары осы жерде пайда болады.</p><a class="pill" href="#subscribe">Жазылымды рәсімдеу</a></div>`;
+    $('week').innerHTML = `<div class="empty"><h3>Әзірге жазылым жоқ</h3><p>Сыныпты және мерзімді таңдап, өтінім жіберіңіз. Төлем расталған соң осы аптаның ҚМЖ мен презентациялары осы жерде пайда болады.</p><div style="display:flex;gap:10px 22px;flex-wrap:wrap;align-items:center"><a class="pill" href="#subscribe">Жазылымды рәсімдеу</a><a href="/samples">Алдымен тегін үлгіні көру ›</a></div></div>`;
   } else {
     $('week').innerHTML = act.map(g => {
       const ls = LESSONS.filter(l => l.grade === g && l.date >= w.from && l.date <= w.to);
