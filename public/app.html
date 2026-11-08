@@ -300,6 +300,14 @@ dialog.sheet[open]::backdrop { animation: fade .4s var(--out); }
 .tr.open .tx { grid-template-rows: 1fr; }
 .tr.open .th .tt { color: var(--accent); }
 
+.zips { display: grid; gap: 8px; margin-top: 12px; }
+.zip { display: flex; align-items: center; gap: 10px; width: 100%; border: 0; border-radius: 16px; padding: 14px 16px; background: var(--fg); color: var(--bg); font: 700 15px var(--text); cursor: pointer; text-align: left; transition: transform .3s var(--spring), opacity .2s; }
+.zip svg { width: 20px; height: 20px; flex: none; }
+.zip small { margin-left: auto; font-weight: 700; font-size: 11.5px; opacity: .6; }
+.zip:active { transform: scale(.98); }
+.zip.busy { opacity: .7; pointer-events: none; }
+.zip.busy svg { animation: spin .8s linear infinite; }
+
 ::view-transition-group(*) { animation-duration: .5s; animation-timing-function: cubic-bezier(.2, .9, .25, 1); }
 ::view-transition-old(sheet), ::view-transition-new(sheet) { height: 100%; object-fit: cover; object-position: top; }
 
@@ -724,6 +732,7 @@ const ICO = {
   pres: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M12 16v4M8 20h8"/></svg>',
   ws: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4h6v3H9zM6 6h12v15H6z"/><path d="m9 13 2 2 4-4"/></svg>',
   lock: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>',
+  zip: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0-4.5-4.5M12 15l4.5-4.5"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>',
   busy: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 3a9 9 0 1 1-9 9"/></svg>',
   done: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5 9-10"/></svg>',
 };
@@ -771,7 +780,8 @@ function renderWeek() {
           <div class="ld"><b>${+l.date.slice(8)}</b><span>${dowOf(l.date)}</span></div>
           <div><small>№${esc(l.disp)}${selG >= 10 ? ' · ' + esc(V.byId[l.v].short) : ''}</small><h3>${esc(l.topic)}</h3><div class="lb">${dlBtns(l, selG)}</div></div>
         </article>`).join('');
-    body = `<div class="strip" role="group" aria-label="Апта күндері">${strip}</div><div class="gmeta"><span>${selDay ? dowOf(selDay) + ', ' + dm(selDay) : 'Осы апта'} · ${shown.length} сабақ</span></div><div class="lessons" id="lessons">${cards}</div>`;
+    const zips = all.length ? vs.filter(v => all.some(l => l.v === v)).map(v => `<button class="zip" type="button" data-zip="${v}">${ICO.zip}<span>${sub ? 'Аптаның бәрін жүктеу' : 'Аптаның ҚМЖ-сын жүктеу'}${vs.length > 1 ? ' · ' + esc(V.byId[v].short) : ''}</span><small>ZIP</small></button>`).join('') : '';
+    body = `<div class="strip" role="group" aria-label="Апта күндері">${strip}</div><div class="gmeta"><span>${selDay ? dowOf(selDay) + ', ' + dm(selDay) : 'Осы апта'} · ${shown.length} сабақ</span></div><div class="lessons" id="lessons">${cards}</div>${zips ? `<div class="zips">${zips}<p class="hint">ҚМЖ-ға сіздің аты-жөніңіз бен сабақ күні өзі жазылады.</p></div>` : ''}`;
   } else {
     const list = vs.map(v => {
       let bol = '';
@@ -805,6 +815,8 @@ document.addEventListener('click', e => {
     if (open) { r.classList.add('open'); th.setAttribute('aria-expanded', 'true'); } return; }
   const m = e.target.closest('[data-mode]');
   if (m && m.dataset.mode !== mode) { mode = m.dataset.mode; selDay = null; jumpNow = mode === 'all'; try { localStorage.setItem('fs-mode', mode); } catch (_) {} swapWeek(); return; }
+  const z = e.target.closest('[data-zip]');
+  if (z) { downloadWeek(z.dataset.zip, z); return; }
   const lk = e.target.closest('[data-lock]');
   if (lk) { const g = +lk.dataset.lock; GRADES.forEach(x => { const c = $('pick-' + x); if (c) c.checked = x === g; }); calc(); $('pay').hidden = true; $('f-buy').hidden = false;
     toast('Презентация мен жұмыс парағы жазылыммен ашылады'); openSheet('subscribe'); }
@@ -924,6 +936,26 @@ document.addEventListener('click', async e => {
   const dl = e.target.closest('[data-dl]');
   if (dl) { const [v, n, kind] = dl.dataset.dl.split('|'); download(v, +n, kind, dl); }
 });
+
+async function downloadWeek(v, btn) {
+  const { data } = await sb.auth.getSession();
+  if (!data.session) return show('v-auth');
+  const ico = btn.querySelector('svg'), keep = ico.outerHTML;
+  btn.classList.add('busy'); ico.outerHTML = ICO.busy;
+  try {
+    const r = await fetch(`/api/download?v=${encodeURIComponent(v)}&kind=week`, { headers: { Authorization: 'Bearer ' + data.session.access_token } });
+    if (!r.ok) { const j = await r.json().catch(() => ({})); toast(j.error || 'Жүктеу мүмкін болмады.'); return; }
+    const m = (r.headers.get('Content-Disposition') || '').match(/filename\*=UTF-8''([^;]+)/);
+    const blob = await r.blob();
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = m ? decodeURIComponent(m[1]) : `week_${v}.zip`;
+    document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+    toast(`${r.headers.get('X-Files') || ''} файл жүктелді`);
+    const w = FS_WEEK();
+    LESSONS.filter(l => l.v === v && l.date >= w.from && l.date <= w.to).forEach(l => ['kmzh', 'pres', 'ws'].forEach(k => { if (l[k] && (k === 'kmzh' || r.headers.get('X-Paid') === '1')) GOT.add(`${v}|${l.n}|${k}`); }));
+    renderWeek();
+  } catch (err) { toast('Желі қатесі. Қайталап көріңіз.'); }
+  finally { if (btn.isConnected) { btn.classList.remove('busy'); btn.querySelector('svg').outerHTML = keep; } }
+}
 
 async function download(v, n, kind, btn) {
   const { data } = await sb.auth.getSession();
