@@ -131,6 +131,43 @@ form.stack .pill { width: 100%; margin-top: 4px; }
 .banner p { font-size: 15px; }
 .tg { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 20px; }
 .tg p { color: var(--fg-2); max-width: 56ch; }
+
+/* minimal accordion layout */
+main { padding-block: 28px 72px; }
+.hello { margin-bottom: 18px; gap: 4px; }
+.hello h1 { font-size: clamp(24px, 3.4vw, 32px); }
+.hello p { font-size: 15px; }
+.banner { padding: 9px 14px; border-radius: 12px; margin-bottom: 8px; flex-wrap: nowrap; gap: 12px; }
+.banner p { font-size: 14px; flex: 1; min-width: 0; }
+.banner .textbtn { padding: 0; white-space: nowrap; font-size: 14px; }
+.accs { border-top: 1px solid var(--line); }
+.acc { border-bottom: 1px solid var(--line); }
+.acc > summary { list-style: none; cursor: pointer; display: flex; align-items: center; gap: 12px; padding: 16px 2px; }
+.acc > summary::-webkit-details-marker { display: none; }
+.acc > summary .at { font: 700 18px var(--display); letter-spacing: -0.01em; white-space: nowrap; }
+.acc > summary .as { color: var(--fg-3); font-size: 13.5px; margin-left: auto; text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.acc > summary::after { content: ""; width: 8px; height: 8px; border-right: 2px solid var(--fg-3); border-bottom: 2px solid var(--fg-3); transform: rotate(45deg); margin: -4px 4px 0 6px; transition: transform .2s var(--ease); flex: none; }
+.acc[open] > summary::after { transform: rotate(-135deg); margin-top: 4px; }
+.ab { padding: 0 2px 20px; }
+.mini-h { font: 600 13px var(--text); color: var(--fg-3); text-transform: uppercase; letter-spacing: .04em; margin-bottom: 8px; }
+.gacc { border-radius: 14px; background: var(--bg-2); margin-bottom: 8px; }
+.gacc > summary { list-style: none; cursor: pointer; display: flex; align-items: center; gap: 10px; padding: 12px 14px; }
+.gacc > summary::-webkit-details-marker { display: none; }
+.gacc > summary b { font: 700 16px var(--display); }
+.gacc > summary .cnt { color: var(--fg-2); font-size: 13.5px; }
+.gacc > summary .chip { margin-left: auto; font-size: 11.5px; padding: 2px 8px; }
+.gacc > summary::after { content: ""; width: 7px; height: 7px; border-right: 2px solid var(--fg-3); border-bottom: 2px solid var(--fg-3); transform: rotate(45deg); margin: -3px 2px 0 4px; transition: transform .2s var(--ease); flex: none; }
+.gacc[open] > summary::after { transform: rotate(-135deg); margin-top: 3px; }
+.gacc .lessons { padding: 0 14px 6px; }
+.lr { display: grid; grid-template-columns: 1fr auto; gap: 6px 14px; align-items: center; padding: 10px 0; border-top: 1px solid var(--line); }
+.lr .lt { min-width: 0; font-size: 15px; line-height: 1.35; }
+.lr .lt small { display: block; color: var(--fg-3); font-size: 12px; margin-bottom: 1px; font-variant-numeric: tabular-nums; }
+.lr .lb { display: flex; gap: 6px; }
+.dl { border: 1px solid var(--line); background: var(--bg); color: var(--fg); font: 600 12.5px var(--text); border-radius: 999px; padding: 5px 11px; cursor: pointer; white-space: nowrap; transition: border-color .2s var(--ease), color .2s var(--ease); }
+.dl:hover { border-color: var(--accent); color: var(--accent); }
+.dl:disabled { opacity: .5; }
+.vtitle { font: 600 11.5px var(--text); color: var(--accent); text-transform: uppercase; letter-spacing: .05em; padding: 10px 0 2px; }
+@media (max-width: 640px) { .lr { grid-template-columns: 1fr; } .nav .who { display: none; } .acc > summary .at { font-size: 16.5px; } .acc > summary .as { font-size: 12.5px; } }
 </style>
 <script defer src="/_vercel/insights/script.js"></script>
 </head>
@@ -200,74 +237,73 @@ form.stack .pill { width: 100%; margin-top: 4px; }
       <h1 id="hello"></h1>
       <p id="weeklabel"></p>
     </div>
-    <div class="banner info" id="trial-banner" hidden><p id="trial-text"></p><a class="pill sm" href="#subscribe">Жазылымды рәсімдеу</a></div>
-    <div class="banner" id="phone-banner" hidden><p>Төлемді растау үшін телефон нөміріңізді профильге жазыңыз.</p><a class="pill ghost sm" href="#profile">Профильді толтыру</a></div>
+    <div class="banner info" id="trial-banner" hidden><p id="trial-text"></p><a class="textbtn" href="#subscribe">Жазылу ›</a></div>
+    <div class="banner" id="phone-banner" hidden><p>Телефон нөміріңізді жазыңыз</p><a class="textbtn" href="#profile">Толтыру ›</a></div>
 
-    <div class="sec" style="margin-top:0">
-      <div class="sec-h"><h2>Осы аптаның сабақтары</h2><span class="hint" id="weekrange"></span></div>
-      <div id="week"></div>
-    </div>
+    <div class="accs">
+      <details class="acc" id="sec-week" open>
+        <summary><span class="at">Осы аптаның сабақтары</span><span class="as" id="weekrange"></span></summary>
+        <div class="ab" id="week"></div>
+      </details>
 
-    <div class="sec" id="variants">
-      <div class="sec-h"><h2>Сыныптарым және бағыттарым</h2><span class="hint">10–11-сыныпта бағыт пен аптадағы сағат санын таңдаңыз. Бірнешеуін қатар таңдауға болады.</span></div>
-      <div class="card vcard" id="vpick"></div>
-    </div>
-
-    <div class="sec" id="subscribe">
-      <div class="sec-h"><h2>Жазылым</h2></div>
-      <div class="subgrid">
-        <div class="card">
-          <h3 style="font-size:19px;margin-bottom:8px">Менің сыныптарым</h3>
-          <div class="status" id="status"></div>
-          <div class="reqs" id="reqs"></div>
-        </div>
-        <div class="card" id="buy">
-          <form class="stack" id="f-buy">
-            <h3 style="font-size:19px">Жазылымды рәсімдеу</h3>
-            <div class="field"><label>Сыныптар</label>
+      <details class="acc" id="subscribe">
+        <summary><span class="at">Жазылым</span><span class="as" id="sub-sum"></span></summary>
+        <div class="ab subgrid">
+          <div>
+            <div class="mini-h">Сыныптарым</div>
+            <div class="status" id="status"></div>
+            <div class="reqs" id="reqs"></div>
+          </div>
+          <div id="buy">
+            <form class="stack" id="f-buy">
+              <div class="mini-h">Жаңа жазылым</div>
               <div class="picks" id="picks"></div>
-            </div>
-            <div class="field"><label>Мерзімі</label>
               <div class="plans">
                 <label><input type="radio" name="plan" id="plan-month" value="month" checked><span><b>1 ай</b><small id="pm"></small></span></label>
                 <label><input type="radio" name="plan" id="plan-year" value="year"><span><b>1 жыл</b><small id="py"></small></span></label>
               </div>
+              <div class="sum"><span>Барлығы</span><b id="total">0 ₸</b></div>
+              <div class="msg err" id="b-msg" hidden></div>
+              <button class="pill" type="submit" id="b-go">Өтінім жіберу</button>
+            </form>
+            <div class="pay" id="pay" hidden>
+              <div class="mini-h">Төлем</div>
+              <p class="hint">Сомасын Kaspi Gold-қа аударып, чекті WhatsApp-қа жіберіңіз. Төлем расталған соң жазылым ашылады.</p>
+              <div class="row"><div><div class="hint">Сомасы</div><div class="num" id="pay-sum"></div></div></div>
+              <div class="row"><div><div class="hint">Kaspi Gold</div><div class="num" id="pay-kaspi"></div></div><button class="textbtn" type="button" id="copy-kaspi">Көшіру</button></div>
+              <a class="pill" id="pay-wa" target="_blank" rel="noopener">Чекті WhatsApp-қа жіберу</a>
+              <button class="textbtn" type="button" id="pay-back">Жаңа өтінім</button>
             </div>
-            <div class="sum"><span>Барлығы</span><b id="total">0 ₸</b></div>
-            <div class="msg err" id="b-msg" hidden></div>
-            <button class="pill" type="submit" id="b-go">Өтінім жіберу</button>
-          </form>
-          <div class="pay" id="pay" hidden>
-            <h3 style="font-size:19px">Төлем</h3>
-            <p>Өтінім қабылданды. Сомасын Kaspi Gold номеріне аударып, чекті WhatsApp-қа жіберіңіз. Төлем расталған соң жазылым ашылады.</p>
-            <div class="row"><div><div class="hint">Сомасы</div><div class="num" id="pay-sum"></div></div></div>
-            <div class="row"><div><div class="hint">Kaspi Gold</div><div class="num" id="pay-kaspi"></div></div><button class="textbtn" type="button" id="copy-kaspi">Көшіру</button></div>
-            <a class="pill" id="pay-wa" target="_blank" rel="noopener">Чекті WhatsApp-қа жіберу</a>
-            <button class="textbtn" type="button" id="pay-back">Жаңа өтінім</button>
           </div>
         </div>
-      </div>
-    </div>
+      </details>
 
-    <div class="sec">
-      <div class="sec-h"><h2>Жылдық жоспар</h2><span class="hint">Сабақтар ҚТЖ бойынша өз аптасында ашылады</span></div>
-      <div class="tabs" role="tablist" id="ptabs"></div>
-      <div class="plan" id="plan"></div>
-    </div>
+      <details class="acc" id="variants">
+        <summary><span class="at">Бағыт және сағат</span><span class="as" id="var-sum"></span></summary>
+        <div class="ab"><p class="hint" style="margin-bottom:12px">10–11-сыныпта бағыт пен аптадағы сағат санын таңдаңыз. Бірнешеуін қатар таңдауға болады.</p><div class="vcard" id="vpick"></div></div>
+      </details>
 
-    <div class="sec" id="tg-sec" hidden>
-      <div class="sec-h"><h2>Telegram хабарламалары</h2></div>
-      <div class="card tg"><p id="tg-text"></p><div id="tg-act"></div></div>
-    </div>
+      <details class="acc" id="plan-sec">
+        <summary><span class="at">Жылдық жоспар</span><span class="as">ҚТЖ бойынша</span></summary>
+        <div class="ab"><div class="tabs" role="tablist" id="ptabs"></div><div class="plan" id="plan"></div></div>
+      </details>
 
-    <div class="sec" id="profile">
-      <div class="sec-h"><h2>Профиль</h2></div>
-      <form class="profile" id="f-prof">
-        <div class="field"><label for="p-name">Аты-жөні</label><input id="p-name" required></div>
-        <div class="field"><label for="p-phone">Телефон</label><input id="p-phone" type="tel"></div>
-        <div class="field"><label for="p-school">Мектеп, қала</label><input id="p-school"></div>
-        <div><button class="pill ghost" type="submit">Сақтау</button></div>
-      </form>
+      <details class="acc" id="tg-sec" hidden>
+        <summary><span class="at">Telegram</span><span class="as" id="tg-sum"></span></summary>
+        <div class="ab tg"><p id="tg-text"></p><div id="tg-act"></div></div>
+      </details>
+
+      <details class="acc" id="profile">
+        <summary><span class="at">Профиль</span><span class="as" id="prof-sum"></span></summary>
+        <div class="ab">
+          <form class="profile" id="f-prof">
+            <div class="field"><label for="p-name">Аты-жөні</label><input id="p-name" required></div>
+            <div class="field"><label for="p-phone">Телефон</label><input id="p-phone" type="tel"></div>
+            <div class="field"><label for="p-school">Мектеп, қала</label><input id="p-school"></div>
+            <div><button class="pill ghost sm" type="submit">Сақтау</button></div>
+          </form>
+        </div>
+      </details>
     </div>
   </section>
 </main>
@@ -288,6 +324,7 @@ const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;'
 const GRADES = [7, 8, 9, 10, 11];
 let session = null, profile = null, subs = [], reqs = [], LESSONS = [], planVar = null;
 const V = window.FS_VARIANTS;
+const openG = new Set((() => { try { return JSON.parse(localStorage.getItem('fs-openg') || '[]'); } catch (_) { return []; } })());
 let READY = new Set();
 function myVariants(g) {
   if (g < 10) return [String(g)];
@@ -359,10 +396,10 @@ function renderTg() {
   if (!C.telegramBot) { $('tg-sec').hidden = true; return; }
   $('tg-sec').hidden = false;
   if (profile.tg_chat_id) {
-    $('tg-text').textContent = 'Қосылған. Дүйсенбі сайын осы аптаның сабақтары туралы хабарлама келеді.';
+    $('tg-text').textContent = 'Қосылған. Дүйсенбі сайын осы аптаның сабақтары туралы хабарлама келеді.'; $('tg-sum').textContent = 'Қосылған';
     $('tg-act').innerHTML = '<button class="pill ghost sm" type="button" id="tg-off">Ажырату</button>';
   } else {
-    $('tg-text').textContent = 'Telegram-ды қоссаңыз, дүйсенбі сайын осы аптаның сабақтары туралы хабарлама аласыз. Төлем расталғанда да хабар келеді.';
+    $('tg-text').textContent = 'Telegram-ды қоссаңыз, дүйсенбі сайын осы аптаның сабақтары туралы хабарлама аласыз. Төлем расталғанда да хабар келеді.'; $('tg-sum').textContent = 'Қосылмаған';
     $('tg-act').innerHTML = '<button class="pill sm" type="button" id="tg-on">Telegram-ды қосу</button>';
   }
 }
@@ -427,39 +464,38 @@ function render() {
   $('hello').textContent = first ? `Сәлеметсіз бе, ${first}!` : 'Сәлеметсіз бе!';
   const paid = subs.filter(x => !x.trial && x.paid_until >= w.today).map(x => x.grade).sort((a, b) => a - b);
   const trial = subs.filter(x => x.trial && x.paid_until >= w.today);
+  $('weeklabel').hidden = !paid.length;
   $('weeklabel').textContent = paid.length ? `Белсенді жазылым: ${paid.map(g => g + '-сынып').join(', ')}.` : trial.length ? 'Тегін сынақ кезеңі: барлық сыныптың осы аптадағы сабақтары ашық.' : 'Сабақтарды алу үшін жазылымды рәсімдеңіз.';
   if (trial.length && !paid.length) {
     const left = Math.max(0, Math.round((Date.parse(trial[0].paid_until) - Date.parse(w.today)) / 864e5));
-    $('trial-text').textContent = left > 0 ? `Тегін сынақ: тағы ${left} күн. Ұнаса, керек сыныптарға жазылыңыз.` : 'Тегін сынақ бүгін аяқталады. Ұнаса, керек сыныптарға жазылыңыз.';
+    $('trial-text').textContent = left > 0 ? `Тегін сынақ: тағы ${left} күн` : 'Тегін сынақ бүгін аяқталады';
     $('trial-banner').hidden = false;
   } else $('trial-banner').hidden = true;
   $('phone-banner').hidden = !!(profile.phone || '').trim();
   renderTg();
-  $('weekrange').textContent = `${dmy(w.from)} – ${dmy(w.to)}`;
+  $('weekrange').textContent = `${dm(w.from)}–${dm(w.to)}`;
 
   // week
   if (!act.length) {
     $('week').innerHTML = `<div class="empty"><h3>Әзірге жазылым жоқ</h3><p>Сыныпты және мерзімді таңдап, өтінім жіберіңіз. Төлем расталған соң осы аптаның ҚМЖ мен презентациялары осы жерде пайда болады.</p><div style="display:flex;gap:10px 22px;flex-wrap:wrap;align-items:center"><a class="pill" href="#subscribe">Жазылымды рәсімдеу</a><a href="/samples">Алдымен тегін үлгіні көру ›</a></div></div>`;
   } else {
-    $('week').innerHTML = act.map(g => {
+    $('week').innerHTML = act.map((g, gi) => {
       const sub = subs.find(x => x.grade === g);
-      const head = `<div class="grade-title">${g}-сынып <span class="chip ${sub.trial ? 'warn' : 'ok'}">${sub.trial ? 'Сынақ, ' : ''}${dmy(sub.paid_until)} дейін</span></div>`;
       const vs = myVariants(g);
-      if (!vs.length) return `<div class="grade-block">${head}<p class="hint" style="padding:14px 0">Бағыт пен сағат санын таңдаңыз: <a href="#variants">Сыныптарым және бағыттарым</a>.</p></div>`;
-      return `<div class="grade-block">${head}` + vs.map(v => {
-      const ls = LESSONS.filter(l => l.v === v && l.date >= w.from && l.date <= w.to);
-      const rows = ls.length ? ls.map(l => `
-        <div class="lesson">
-          <div class="d"><b>${dm(l.date)}</b>№${esc(l.disp)}</div>
-          <div class="t">${esc(l.topic)}<small>${esc(l.bolim)}</small></div>
-          <div class="btns">
-            ${l.kmzh ? `<button class="pill sm" type="button" data-dl="${v}|${l.n}|kmzh">ҚМЖ</button>` : ''}
-            ${l.pres ? `<button class="pill ghost sm" type="button" data-dl="${v}|${l.n}|pres">Презентация</button>` : ''}
-            ${l.ws ? `<button class="pill ghost sm" type="button" data-dl="${v}|${l.n}|ws">Жұмыс парағы</button>` : ''}
-          </div>
-        </div>`).join('') : `<p class="hint" style="padding:14px 0">Бұл аптада ҚТЖ бойынша сабақ жоқ (демалыс немесе мереке).</p>`;
-      return (g >= 10 ? `<div class="vtitle">${esc(V.byId[v].short)}</div>` : '') + rows;
-      }).join('') + `</div>`;
+      const items = vs.map(v => ({ v, ls: LESSONS.filter(l => l.v === v && l.date >= w.from && l.date <= w.to) }));
+      const total = items.reduce((a, x) => a + x.ls.length, 0);
+      const chip = `<span class="chip ${sub.trial ? 'warn' : 'ok'}">${sub.trial ? 'сынақ · ' : ''}${dm(sub.paid_until)} дейін</span>`;
+      const body = !vs.length ? `<p class="hint" style="padding:10px 0">Бағыт пен сағат санын таңдаңыз: <a href="#variants">Бағыт және сағат</a>.</p>`
+        : items.map(({ v, ls }) => (g >= 10 ? `<div class="vtitle">${esc(V.byId[v].short)}</div>` : '') + (ls.length ? ls.map(l => `
+          <div class="lr">
+            <div class="lt"><small>${dm(l.date)} · №${esc(l.disp)}</small>${esc(l.topic)}</div>
+            <div class="lb">
+              ${l.kmzh ? `<button class="dl" type="button" data-dl="${v}|${l.n}|kmzh">ҚМЖ</button>` : ''}
+              ${l.pres ? `<button class="dl" type="button" data-dl="${v}|${l.n}|pres">Слайд</button>` : ''}
+              ${l.ws ? `<button class="dl" type="button" data-dl="${v}|${l.n}|ws">Парақ</button>` : ''}
+            </div>
+          </div>`).join('') : `<p class="hint" style="padding:10px 0;border-top:1px solid var(--line)">Бұл аптада сабақ жоқ.</p>`)).join('');
+      return `<details class="gacc" data-g="${g}"${openG.has(g) || (openG.size === 0 && gi === 0) ? ' open' : ''}><summary><b>${g}-сынып</b><span class="cnt">${total} сабақ</span>${chip}</summary><div class="lessons">${body}</div></details>`;
     }).join('');
   }
 
@@ -484,6 +520,12 @@ function render() {
   renderVariants();
   if (!planVar) planVar = (act.length ? myVariants(act[0])[0] : null) || '8';
   renderPlan();
+
+  // summaries
+  const okS = subs.filter(x => x.paid_until >= w.today);
+  $('sub-sum').textContent = okS.length ? (okS.some(x => !x.trial) ? `${okS.filter(x => !x.trial).length} сынып белсенді` : 'Тегін сынақ') : 'Жазылым жоқ';
+  $('var-sum').textContent = (profile.variants || []).filter(v => READY.has(v)).map(v => `${V.byId[v].grade}: ${V.byId[v].short}`).join(' · ') || 'Таңдалмаған';
+  $('prof-sum').textContent = profile.full_name || '';
 
   // profile
   $('p-name').value = profile.full_name || ''; $('p-phone').value = profile.phone || ''; $('p-school').value = profile.school || '';
@@ -525,6 +567,18 @@ function plan() { return $('plan-year').checked ? 'year' : 'month'; }
 function calc() { const n = picked().length; $('total').textContent = fmt(n * C.prices[plan()]); $('b-go').disabled = !n; }
 
 /* ---------- actions ---------- */
+document.addEventListener('toggle', e => {
+  const d = e.target;
+  if (d.classList && d.classList.contains('gacc')) {
+    const g = +d.dataset.g; d.open ? openG.add(g) : openG.delete(g);
+    try { localStorage.setItem('fs-openg', JSON.stringify([...openG])); } catch (_) {}
+  }
+}, true);
+document.addEventListener('click', e => {
+  const a = e.target.closest('a[href^="#"]'); if (!a) return;
+  const t = document.getElementById(a.getAttribute('href').slice(1));
+  if (t && t.tagName === 'DETAILS') { t.open = true; }
+});
 document.addEventListener('change', e => { if (e.target.closest('#f-buy')) calc(); });
 document.addEventListener('click', async e => {
   const pg = e.target.closest('[data-pg]');
