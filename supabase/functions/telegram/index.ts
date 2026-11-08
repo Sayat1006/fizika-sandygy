@@ -101,7 +101,8 @@ async function onWeekly() {
     const paid = ss.filter((s) => !s.trial);
     const use = paid.length ? paid : ss;
     const blocks = use.flatMap((s) => {
-      const vs: string[] = s.grade < 10 ? [String(s.grade)] : (p.variants ?? []).filter((v: string) => v.startsWith(s.grade + '-') && lessons.some((l) => l.v === v));
+      const mine: string[] = p.variants ?? [];
+      const vs: string[] = mine.filter((v: string) => (v === String(s.grade) || v.startsWith(s.grade + '-')) && lessons.some((l) => l.v === v));
       return vs.map((v) => {
         const [, d, h] = v.split('-');
         const title = `<b>${s.grade}-сынып${d ? ` · ${DIR[d]} · ${h} сағ.` : ''}</b>`;
@@ -110,6 +111,7 @@ async function onWeekly() {
         return `${title}\n` + ls.map((l) => `• ${dm(l.date)} — ${esc(l.topic)}`).join('\n');
       });
     }).join('\n\n');
+    if (!blocks) continue;
     const head = `📚 <b>Осы аптаның сабақтары</b> (${dm(w.from)}–${dm(w.to)})\nҚМЖ, презентация мен жұмыс парағы кабинетте ашық.\n\n`;
     const tail = paid.length ? '' : '\n\nТегін сынақ мерзімі аяқталған соң сабақтар жабылады. Ұнаса, керек сыныптарға жазылыңыз.';
     await send(p.tg_chat_id, head + blocks + tail, { text: 'Кабинетті ашу', url: SITE + '/app' });

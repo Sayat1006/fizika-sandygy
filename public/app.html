@@ -222,13 +222,42 @@ dialog.sheet[open]::backdrop { animation: fade .4s var(--out); }
 @media (min-width: 760px) { dialog.sheet { margin: auto; border-radius: 28px; max-height: 84dvh; } }
 .sh-h { position: sticky; top: 0; z-index: 2; display: flex; align-items: center; gap: 12px; padding: 18px 20px 12px; background: var(--bg); }
 .sh-h::before { content: ""; position: absolute; top: 7px; left: 50%; width: 38px; height: 5px; margin-left: -19px; border-radius: 3px; background: var(--line); }
-.sh-h h2 { font-size: 22px; font-weight: 800; }
+.sh-h h2 { font-size: 22px; font-weight: 800; outline: none; }
 .sh-h .x { margin-left: auto; width: 32px; height: 32px; border-radius: 50%; border: 0; background: var(--bg-2); color: var(--fg-2); cursor: pointer; font-size: 18px; line-height: 1; }
 .sh-b { padding: 4px 20px calc(26px + env(safe-area-inset-bottom, 0px)); }
 .mini-h { font: 700 14px var(--text); color: var(--fg-2); margin-bottom: 8px; }
 .vtitle { font: 700 12.5px var(--text); color: var(--accent); padding: 12px 2px 4px; }
 .sh-b .subgrid { grid-template-columns: 1fr; gap: 26px; }
 .sh-b .profile { grid-template-columns: 1fr; }
+
+/* my classes */
+.cls-list { display: grid; gap: 10px; }
+.cls { border-radius: 18px; background: var(--bg-2); padding: 4px; transition: background .3s var(--out), box-shadow .3s var(--out); }
+.cls.on { background: var(--bg); box-shadow: inset 0 0 0 1.5px var(--accent); }
+.ctog { display: flex; align-items: center; gap: 12px; padding: 10px 12px; cursor: pointer; position: relative; }
+.ctog input { position: absolute; opacity: 0; pointer-events: none; }
+.ctog .cn { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; font: 800 18px var(--display); background: var(--bg); color: var(--fg-2); transition: background .3s var(--out), color .3s var(--out), transform .4s var(--spring); }
+.cls.on .ctog .cn { background: var(--accent); color: #fff; transform: rotate(-6deg) scale(1.04); }
+.ctog .ct { display: grid; line-height: 1.25; }
+.ctog .ct b { font-size: 16px; }
+.ctog .ct small { color: var(--fg-3); font-size: 13px; }
+.ctog .sw { margin-left: auto; width: 46px; height: 28px; border-radius: 14px; background: var(--line); position: relative; flex: none; transition: background .3s var(--out); }
+.ctog .sw::after { content: ""; position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.25); transition: transform .4s var(--spring); }
+.cls.on .ctog .sw { background: var(--accent); }
+.cls.on .ctog .sw::after { transform: translateX(18px); }
+.ctog input:focus-visible ~ .sw { outline: 2px solid var(--accent); outline-offset: 2px; }
+.opts { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .45s var(--out); }
+.cls.on .opts { grid-template-rows: 1fr; }
+.opts > div { overflow: hidden; }
+.opts .og { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 4px 12px 10px 64px; }
+.opts .og:first-child { padding-top: 2px; }
+.opts .vchip span { flex-direction: column; gap: 0; padding: 6px 12px; line-height: 1.2; min-width: 64px; }
+.opts .vchip small { font-size: 10.5px; }
+.opts .dn { width: 44px; font-weight: 700; font-size: 14px; color: var(--fg-2); }
+@media (max-width: 420px) { .opts .og { padding-left: 12px; } }
+.need { display: grid; gap: 10px; justify-items: start; margin-top: 18px; padding: 22px; border-radius: 22px; background: var(--bg-2); }
+.need h3 { font-size: 19px; font-weight: 800; }
+.need p { color: var(--fg-2); font-size: 14.5px; }
 
 ::view-transition-group(*) { animation-duration: .5s; animation-timing-function: cubic-bezier(.2, .9, .25, 1); }
 ::view-transition-old(sheet), ::view-transition-new(sheet) { height: 100%; object-fit: cover; object-position: top; }
@@ -313,13 +342,13 @@ dialog.sheet[open]::backdrop { animation: fade .4s var(--out); }
     <h2 class="mh">Басқару</h2>
     <div class="rows" id="rows">
       <button class="mrow" type="button" data-sheet="subscribe" id="row-subscribe"><span class="ic" style="background:#0071E3"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h18v12H3zM3 11h18"/></svg></span><span class="rt">Жазылым</span><span class="as" id="sub-sum"></span></button>
-      <button class="mrow" type="button" data-sheet="variants" id="row-variants"><span class="ic" style="background:#5E5CE6"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h10M4 18h6"/></svg></span><span class="rt">Бағыт және сағат</span><span class="as" id="var-sum"></span></button>
+      <button class="mrow" type="button" data-sheet="variants" id="row-variants"><span class="ic" style="background:#5E5CE6"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h10M4 18h6"/></svg></span><span class="rt">Менің сыныптарым</span><span class="as" id="var-sum"></span></button>
       <button class="mrow" type="button" data-sheet="plan-sec" id="row-plan-sec"><span class="ic" style="background:#30A46C"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v15H4zM4 10h16M9 3v4M15 3v4"/></svg></span><span class="rt">Жылдық жоспар</span><span class="as" id="plan-sum"></span></button>
       <button class="mrow" type="button" data-sheet="tg" id="row-tg" hidden><span class="ic" style="background:#229ED9"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 4 3 11l6 2 2 6 3-4 5 4z"/></svg></span><span class="rt">Telegram</span><span class="as" id="tg-sum"></span></button>
       <button class="mrow" type="button" data-sheet="profile" id="row-profile"><span class="ic" style="background:#8E8E93"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg></span><span class="rt">Профиль</span><span class="as" id="prof-sum"></span></button>
     </div>
   </section>
-  <dialog class="sheet" id="subscribe" aria-labelledby="subscribe-h"><div class="sh-h"><h2 id="subscribe-h">Жазылым</h2><button class="x" type="button" data-close aria-label="Жабу">×</button></div><div class="sh-b"><div class="subgrid">
+  <dialog class="sheet" id="subscribe" aria-labelledby="subscribe-h"><div class="sh-h"><h2 id="subscribe-h" tabindex="-1" autofocus>Жазылым</h2><button class="x" type="button" data-close aria-label="Жабу">×</button></div><div class="sh-b"><div class="subgrid">
           <div>
             <div class="mini-h">Сыныптарым</div>
             <div class="status" id="status"></div>
@@ -347,10 +376,10 @@ dialog.sheet[open]::backdrop { animation: fade .4s var(--out); }
             </div>
           </div>
         </div></div></dialog>
-  <dialog class="sheet" id="variants" aria-labelledby="variants-h"><div class="sh-h"><h2 id="variants-h">Бағыт және сағат</h2><button class="x" type="button" data-close aria-label="Жабу">×</button></div><div class="sh-b"><p class="hint" style="margin-bottom:14px">10–11-сыныпта бағыт пен аптадағы сағат санын таңдаңыз. Бірнешеуін қатар таңдауға болады.</p><div class="vcard" id="vpick"></div></div></dialog>
-  <dialog class="sheet" id="plan-sec" aria-labelledby="plan-sec-h"><div class="sh-h"><h2 id="plan-sec-h">Жылдық жоспар</h2><button class="x" type="button" data-close aria-label="Жабу">×</button></div><div class="sh-b"><div class="tabs" role="tablist" id="ptabs"></div><div class="plan" id="plan"></div></div></dialog>
-  <dialog class="sheet" id="tg" aria-labelledby="tg-h"><div class="sh-h"><h2 id="tg-h">Telegram</h2><button class="x" type="button" data-close aria-label="Жабу">×</button></div><div class="sh-b"><div class="tg"><p id="tg-text"></p><div id="tg-act"></div></div></div></dialog>
-  <dialog class="sheet" id="profile" aria-labelledby="profile-h"><div class="sh-h"><h2 id="profile-h">Профиль</h2><button class="x" type="button" data-close aria-label="Жабу">×</button></div><div class="sh-b"><form class="profile" id="f-prof">
+  <dialog class="sheet" id="variants" aria-labelledby="variants-h"><div class="sh-h"><h2 id="variants-h" tabindex="-1" autofocus>Менің сыныптарым</h2><button class="x" type="button" data-close aria-label="Жабу">×</button></div><div class="sh-b"><p class="hint" style="margin-bottom:14px">Сабақ беретін сыныптарыңызды белгілеп, бекітіңіз. Кабинетте тек солардың сабақтары көрсетіледі.</p><div class="cls-list" id="vpick"></div><div class="msg err" id="cls-msg" hidden></div><button class="pill" type="button" id="cls-save" style="width:100%;margin-top:18px">Бекіту</button></div></dialog>
+  <dialog class="sheet" id="plan-sec" aria-labelledby="plan-sec-h"><div class="sh-h"><h2 id="plan-sec-h" tabindex="-1" autofocus>Жылдық жоспар</h2><button class="x" type="button" data-close aria-label="Жабу">×</button></div><div class="sh-b"><div class="tabs" role="tablist" id="ptabs"></div><div class="plan" id="plan"></div></div></dialog>
+  <dialog class="sheet" id="tg" aria-labelledby="tg-h"><div class="sh-h"><h2 id="tg-h" tabindex="-1" autofocus>Telegram</h2><button class="x" type="button" data-close aria-label="Жабу">×</button></div><div class="sh-b"><div class="tg"><p id="tg-text"></p><div id="tg-act"></div></div></div></dialog>
+  <dialog class="sheet" id="profile" aria-labelledby="profile-h"><div class="sh-h"><h2 id="profile-h" tabindex="-1" autofocus>Профиль</h2><button class="x" type="button" data-close aria-label="Жабу">×</button></div><div class="sh-b"><form class="profile" id="f-prof">
       <div class="field"><label for="p-name">Аты-жөні</label><input id="p-name" required></div>
       <div class="field"><label for="p-phone">Телефон</label><input id="p-phone" type="tel"></div>
       <div class="field"><label for="p-school">Мектеп, қала</label><input id="p-school"></div>
@@ -376,8 +405,8 @@ let session = null, profile = null, subs = [], reqs = [], LESSONS = [], planVar 
 const V = window.FS_VARIANTS;
 const openG = new Set((() => { try { return JSON.parse(localStorage.getItem('fs-openg') || '[]'); } catch (_) { return []; } })());
 let READY = new Set();
+function teaches(g) { return (profile.variants || []).some(v => v === String(g) || v.startsWith(g + '-')); }
 function myVariants(g) {
-  if (g < 10) return [String(g)];
   return (profile.variants || []).filter(v => V.byId[v] && V.byId[v].grade === g && READY.has(v));
 }
 
@@ -505,6 +534,8 @@ async function boot() {
   $('who').textContent = profile.full_name || session.user.email;
   $('logout').hidden = false; $('admin-link').hidden = !profile.is_admin;
   render(); show('v-cab'); mark3d(); moveInd(true);
+  let asked = false; try { asked = !!sessionStorage.getItem('fs-cls-asked'); sessionStorage.setItem('fs-cls-asked', 1); } catch (_) {}
+  if (!profile.classes_set && !asked) setTimeout(() => openSheet('variants'), 900);
 }
 
 /* ---------- render ---------- */
@@ -539,7 +570,7 @@ function render() {
 
   // buy form
   if (!$('picks').children.length) {
-    $('picks').innerHTML = GRADES.map(g => `<label><input type="checkbox" id="pick-${g}" value="${g}"><span>${g}-сынып</span></label>`).join('');
+    $('picks').innerHTML = GRADES.map(g => `<label><input type="checkbox" id="pick-${g}" value="${g}"${profile.classes_set && teaches(g) ? ' checked' : ''}><span>${g}-сынып</span></label>`).join('');
     $('pm').textContent = `${fmt(C.prices.month)} / сынып`; $('py').textContent = `${fmt(C.prices.year)} / сынып`;
   }
   calc();
@@ -552,7 +583,7 @@ function render() {
   // summaries
   const okS = subs.filter(x => x.paid_until >= w.today);
   $('sub-sum').textContent = okS.length ? (okS.some(x => !x.trial) ? `${okS.filter(x => !x.trial).length} сынып белсенді` : 'Тегін сынақ') : 'Жазылым жоқ';
-  $('var-sum').textContent = (profile.variants || []).filter(v => READY.has(v)).map(v => `${V.byId[v].grade}: ${V.byId[v].short}`).join(' · ') || 'Таңдалмаған';
+  $('var-sum').textContent = profile.classes_set ? clsSummary() || 'Таңдалмаған' : 'Бекітілмеген';
   $('prof-sum').textContent = profile.full_name || '';
   $('plan-sum').textContent = 'ҚТЖ бойынша';
 
@@ -562,7 +593,9 @@ function render() {
 
 function renderPlan() {
   const w = FS_WEEK();
-  const tabs = V.list.filter(v => READY.has(v.id));
+  const mine = V.list.filter(v => READY.has(v.id) && (profile.variants || []).includes(v.id));
+  const tabs = mine.length ? mine : V.list.filter(v => READY.has(v.id));
+  if (!tabs.some(v => v.id === planVar) && tabs.length) planVar = tabs[0].id;
   $('ptabs').innerHTML = tabs.map(v => `<button type="button" role="tab" aria-selected="${v.id === planVar}" data-pg="${v.id}">${v.grade}-сынып${v.dir ? ' · ' + v.short : ''}</button>`).join('');
   let bol = '';
   $('plan').innerHTML = LESSONS.filter(l => l.v === planVar).map(l => {
@@ -575,21 +608,58 @@ function renderPlan() {
   if (cur) $('plan').scrollTop = Math.max(0, cur.closest('.p').offsetTop - $('plan').offsetTop - 80);
 }
 
-function renderVariants() {
-  const mine = new Set(profile.variants || []);
-  $('vpick').innerHTML = [7, 8, 9].map(g => `<div class="vrow"><b>${g}-сынып</b><div class="vgroup"><span class="chip mute">Аптасына 2 сағат</span></div></div>`).join('') +
-    [10, 11].map(g => `<div class="vrow"><b>${g}-сынып</b><div class="vgroups">` + ['zhmb', 'kgb'].map(d => `<div class="vgroup"><span class="dn">${d === 'zhmb' ? 'ЖМБ' : 'ҚГБ'}</span>` +
-      [1, 2, 3].map(h => { const id = `${g}-${d}-${h}`, ready = READY.has(id);
-        return `<label class="vchip"><input type="checkbox" data-var="${id}" ${mine.has(id) && ready ? 'checked' : ''} ${ready ? '' : 'disabled'}><span>${h} сағ.${ready ? '' : ' <small>жақында</small>'}</span></label>`; }).join('') +
-      `</div>`).join('') + `</div></div>`).join('');
+let draft = null;
+const DIRN = { zhmb: 'ЖМБ', kgb: 'ҚГБ' };
+function clsSummary() {
+  const vs = profile.variants || [];
+  const low = [7, 8, 9].filter(g => vs.includes(String(g)));
+  const hi = vs.filter(v => v.includes('-')).sort().map(v => { const [g, d, h] = v.split('-'); return `${g} ${DIRN[d]} ${h} сағ.`; });
+  return [low.length ? low.join(', ') + '-сынып' : '', ...hi].filter(Boolean).join(' · ');
 }
-document.addEventListener('change', async e => {
-  const c = e.target.closest('[data-var]'); if (!c) return;
-  const vs = [...document.querySelectorAll('[data-var]:checked')].map(x => x.dataset.var);
-  const { error } = await sb.from('profiles').update({ variants: vs }).eq('id', session.user.id);
-  if (error) { c.checked = !c.checked; return toast('Сақтау мүмкін болмады: ' + error.message); }
-  profile.variants = vs; toast('Сақталды'); render();
+function renderVariants() {
+  if (!draft) draft = new Set(profile.variants || []);
+  const on = g => [...draft].some(v => v === String(g) || v.startsWith(g + '-'));
+  $('vpick').innerHTML = GRADES.map(g => {
+    const opts = g < 10 ? '' : `<div class="opts"><div>` + ['zhmb', 'kgb'].map(d => `<div class="og"><span class="dn">${DIRN[d]}</span>` +
+      [1, 2, 3].map(h => { const id = `${g}-${d}-${h}`, ready = READY.has(id);
+        return `<label class="vchip"><input type="checkbox" data-var="${id}" ${draft.has(id) ? 'checked' : ''}><span>${h} сағ.${ready ? '' : ' <small>жақында</small>'}</span></label>`; }).join('') + `</div>`).join('') + `</div></div>`;
+    const sub = g < 10 ? 'Аптасына 2 сағат' : (() => { const x = [...draft].filter(v => v.startsWith(g + '-')).map(v => { const [, d, h] = v.split('-'); return `${DIRN[d]} ${h} сағ.`; }); return x.length ? x.join(', ') : 'Бағыт пен сағатты таңдаңыз'; })();
+    return `<div class="cls${on(g) ? ' on' : ''}" data-cg="${g}"><label class="ctog"><input type="checkbox" data-cls="${g}" ${on(g) ? 'checked' : ''}><span class="cn">${g}</span><span class="ct"><b>${g}-сынып</b><small>${sub}</small></span><i class="sw"></i></label>${opts}</div>`;
+  }).join('');
+}
+document.addEventListener('change', e => {
+  const c = e.target.closest('[data-cls]'), v = e.target.closest('[data-var]');
+  if (!c && !v) return;
+  if (c) {
+    const g = +c.dataset.cls;
+    if (g < 10) c.checked ? draft.add(String(g)) : draft.delete(String(g));
+    else if (c.checked) { const pick = V.list.find(x => x.grade === g && READY.has(x.id)); draft.add(pick ? pick.id : `${g}-zhmb-2`); }
+    else [...draft].filter(x => x.startsWith(g + '-')).forEach(x => draft.delete(x));
+  }
+  if (v) v.checked ? draft.add(v.dataset.var) : draft.delete(v.dataset.var);
+  // keep the open/closed motion: update classes in place instead of re-rendering
+  GRADES.forEach(g => {
+    const box = document.querySelector(`.cls[data-cg="${g}"]`); if (!box) return;
+    const on = [...draft].some(x => x === String(g) || x.startsWith(g + '-'));
+    box.classList.toggle('on', on); box.querySelector('[data-cls]').checked = on;
+    if (g >= 10) {
+      box.querySelectorAll('[data-var]').forEach(i => i.checked = draft.has(i.dataset.var));
+      const x = [...draft].filter(y => y.startsWith(g + '-')).map(y => { const [, d, h] = y.split('-'); return `${DIRN[d]} ${h} сағ.`; });
+      box.querySelector('.ct small').textContent = x.length ? x.join(', ') : 'Бағыт пен сағатты таңдаңыз';
+    }
+  });
+  msg($('cls-msg'));
 });
+$('cls-save').onclick = async () => {
+  const order = V.list.map(x => x.id), vs = [...draft].sort((a, b) => order.indexOf(a) - order.indexOf(b));
+  if (!vs.length) return msg($('cls-msg'), 'Кемінде бір сыныпты таңдаңыз.');
+  $('cls-save').disabled = true;
+  const { error } = await sb.from('profiles').update({ variants: vs, classes_set: true }).eq('id', session.user.id);
+  $('cls-save').disabled = false;
+  if (error) return msg($('cls-msg'), 'Сақтау мүмкін болмады: ' + error.message);
+  profile.variants = vs; profile.classes_set = true; draft = null;
+  closeSheet($('variants')); render(); toast('Сыныптарыңыз бекітілді');
+};
 
 function picked() { return GRADES.filter(g => $('pick-' + g) && $('pick-' + g).checked); }
 function plan() { return $('plan-year').checked ? 'year' : 'month'; }
@@ -621,19 +691,24 @@ function renderWeek() {
     $('week').innerHTML = `<div class="empty card alt"><h3>Әзірге жазылым жоқ</h3><p>Сыныпты және мерзімді таңдап, өтінім жіберіңіз. Төлем расталған соң осы аптаның ҚМЖ мен презентациялары осы жерде пайда болады.</p><div style="display:flex;gap:10px 22px;flex-wrap:wrap;align-items:center"><button class="pill" type="button" data-sheet="subscribe">Жазылымды рәсімдеу</button><a href="/samples">Тегін үлгіні көру</a></div></div>`;
     return;
   }
-  if (!act.includes(selG)) selG = act[0];
+  const vis = act.filter(teaches);
+  if (!vis.length) {
+    $('week').innerHTML = `<div class="need"><h3>Сыныптарыңызды бекітіңіз</h3><p>Қай сыныптарда сабақ беретініңізді белгілесеңіз, кабинетте тек солардың сабақтары шығады. 10–11-сыныпта бағыт пен сағат санын да таңдайсыз.</p><button class="pill" type="button" data-sheet="variants">Сыныптарды таңдау</button></div>`;
+    return;
+  }
+  if (!vis.includes(selG)) selG = vis[0];
   const all = weekLessons(selG, w);
   const days = []; for (let d = w.from; d <= w.to; d = addDays(d, 1)) days.push(d);
   const strip = days.map((d, i) => {
     const c = all.filter(l => l.date === d).length;
     return `<button class="day${d === w.today ? ' today' : ''}${c ? '' : ' off'}" type="button" data-day="${d}" aria-pressed="${d === selDay}">${DOW[i % 7]}<b>${+d.slice(8)}</b><span class="dots">${'<i></i>'.repeat(Math.min(c, 3))}</span></button>`;
   }).join('');
-  const tabs = act.map(g => `<button type="button" role="tab" data-g="${g}" aria-selected="${g === selG}">${g}-сынып<small>${weekLessons(g, w).length}</small></button>`).join('');
+  const tabs = vis.map(g => `<button type="button" role="tab" data-g="${g}" aria-selected="${g === selG}">${g}-сынып<small>${weekLessons(g, w).length}</small></button>`).join('');
   const sub = subs.find(x => x.grade === selG);
   const meta = `<div class="gmeta"><span>${selDay ? DOW[(Date.parse(selDay) / 864e5 + 3) % 7] + ', ' + dm(selDay) : 'Барлық күн'} · ${(selDay ? all.filter(l => l.date === selDay) : all).length} сабақ</span><span class="chip ${sub.trial ? 'warn' : 'ok'}">${sub.trial ? 'сынақ · ' : ''}${dm(sub.paid_until)} дейін</span></div>`;
   const vs = myVariants(selG);
   const shown = selDay ? all.filter(l => l.date === selDay) : all;
-  const cards = !vs.length ? `<div class="none">Бағыт пен сағат санын таңдаңыз. <button class="textbtn" type="button" data-sheet="variants">Таңдау</button></div>`
+  const cards = !vs.length ? `<div class="none">Бұл бағыттың материалдары әзірленуде. <button class="textbtn" type="button" data-sheet="variants">Сыныптарым</button></div>`
     : !shown.length ? `<div class="none">${selDay ? 'Бұл күні сабақ жоқ.' : 'Бұл аптада сабақ жоқ.'}</div>`
     : shown.map(l => `<article class="lc${l.date === w.today ? ' now' : ''}" style="view-transition-name:l-${l.v}-${l.n}">
         <div class="ld"><b>${+l.date.slice(8)}</b><span>${DOW[(Date.parse(l.date) / 864e5 + 3) % 7]}</span></div>
@@ -683,6 +758,7 @@ function openSheet(id, from) {
   const d = $(id); if (!d || d.open) return;
   opener = from && from.closest('.mrow') ? from.closest('.mrow') : $('row-' + id);
   if (id === 'plan-sec') setTimeout(renderPlan, 0);
+  if (id === 'variants') { draft = null; renderVariants(); msg($('cls-msg')); }
   const canMorph = !reduce && document.startViewTransition && opener && opener.offsetParent;
   if (!canMorph) { d.showModal(); return; }
   document.documentElement.classList.add('vt');
