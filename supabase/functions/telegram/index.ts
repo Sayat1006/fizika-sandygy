@@ -1,4 +1,4 @@
-// Физика Сандығы: Telegram бот.
+// Сабақтас: Telegram бот.
 // 1) Telegram webhook: /start <код> мұғалімнің аккаунтын чатпен байланыстырады, /stop ажыратады.
 // 2) {type:'request', id}: жаңа өтінім туралы әкімшілерге хабар (дерекқор триггерінен).
 // 3) {type:'decided', id}: төлем расталғанын мұғалімге хабарлау (дерекқор триггерінен).
@@ -7,11 +7,11 @@
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 
 const TOKEN = Deno.env.get('TELEGRAM_BOT_TOKEN') ?? '';
-const SITE = Deno.env.get('SITE_URL') ?? 'https://fizika-sandygy.vercel.app';
+const SITE = Deno.env.get('SITE_URL') ?? 'https://sabaqtas-kz.vercel.app';
 const db = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!, { auth: { persistSession: false } });
 
 const esc = (s: unknown) => String(s ?? '').replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]!));
-const fmt = (n: number) => n.toLocaleString('ru-RU').replace(/ /g, ' ') + ' ₸';
+const fmt = (n: number) => n.toLocaleString('ru-RU').replace(/\u00a0/g, ' ') + ' ₸';
 const dm = (iso: string) => iso.slice(8, 10) + '.' + iso.slice(5, 7);
 
 async function secret(): Promise<string> {
@@ -52,7 +52,7 @@ async function onUpdate(u: any) {
     await db.from('profiles').update({ tg_chat_id: null }).eq('tg_chat_id', chat);
     return send(chat, 'Хабарламалар өшірілді. Қайта қосу үшін кабинеттегі «Telegram-ды қосу» батырмасын басыңыз.');
   }
-  return send(chat, 'Бұл — Физика Сандығы боты. Хабарламаларды қосу үшін кабинетке кіріп, «Telegram-ды қосу» батырмасын басыңыз.', { text: 'Кабинетті ашу', url: SITE + '/app' });
+  return send(chat, 'Бұл — Сабақтас боты. Хабарламаларды қосу үшін кабинетке кіріп, «Telegram-ды қосу» батырмасын басыңыз.', { text: 'Кабинетті ашу', url: SITE + '/app' });
 }
 
 async function onRequest(id: string) {
@@ -103,7 +103,7 @@ async function onWeekly() {
       if (!ls.length) return `<b>${s.grade}-сынып</b>\nБұл аптада сабақ жоқ.`;
       return `<b>${s.grade}-сынып</b>\n` + ls.map((l) => `• ${dm(l.date)} — ${esc(l.topic)}`).join('\n');
     }).join('\n\n');
-    const head = `📚 <b>Осы аптаның сабақтары</b> (${dm(w.from)}–${dm(w.to)})\nҚМЖ мен презентация кабинетте ашық.\n\n`;
+    const head = `📚 <b>Осы аптаның сабақтары</b> (${dm(w.from)}–${dm(w.to)})\nҚМЖ, презентация мен жұмыс парағы кабинетте ашық.\n\n`;
     const tail = paid.length ? '' : '\n\nТегін сынақ мерзімі аяқталған соң сабақтар жабылады. Ұнаса, керек сыныптарға жазылыңыз.';
     await send(p.tg_chat_id, head + blocks + tail, { text: 'Кабинетті ашу', url: SITE + '/app' });
     sent++;

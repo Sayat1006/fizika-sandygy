@@ -9,7 +9,7 @@ window.FS_CONFIG = {
   prices: { month: 1490, year: 9990 }, // бір сынып үшін, ₸ (дерекқордағы plan_price функциясымен бірдей болуы керек)
   googleLogin: false,                 // Supabase-те Google провайдері қосылған соң true етіңіз
   telegramBot: 'impulse_edu_bot',                  // хабарлама боты, мысалы 'fizika_sandygy_bot' (@ белгісіз)
-  siteUrl: 'https://fizika-sandygy.vercel.app'
+  siteUrl: 'https://sabaqtas-kz.vercel.app'
 };
 
 /* Сабақтың ашылу ережесі: ҚТЖ бойынша осы аптаның сабақтары (дүйсенбі–жексенбі).

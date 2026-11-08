@@ -2,4 +2,4 @@ User-agent: *
 Allow: /
 Disallow: /admin
 Disallow: /api/
-Sitemap: https://fizika-sandygy.vercel.app/sitemap.xml
+Sitemap: https://sabaqtas-kz.vercel.app/sitemap.xml
