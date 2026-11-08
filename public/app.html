@@ -151,7 +151,7 @@ form.stack .pill { width: 100%; margin-top: 4px; }
       <button type="button" role="tab" id="t-signup" aria-selected="false">Тіркелу</button>
     </div>
     <form class="stack" id="f-login">
-      <div class="field"><label for="l-email">Email</label><input id="l-email" type="email" autocomplete="email" required></div>
+      <div class="field"><label for="l-email">Email немесе логин</label><input id="l-email" type="text" autocomplete="username" autocapitalize="off" spellcheck="false" required></div>
       <div class="field"><label for="l-pass">Құпиясөз</label><input id="l-pass" type="password" autocomplete="current-password" required minlength="6"></div>
       <div class="msg err" id="l-msg" hidden></div>
       <button class="pill" type="submit">Кіру</button>
@@ -274,7 +274,7 @@ function show(view) { ['v-loading', 'v-auth', 'v-recover', 'v-cab'].forEach(v =>
 function msg(el, text, kind = 'err') { el.hidden = !text; el.textContent = text || ''; el.className = 'msg ' + kind; }
 function authErr(e) {
   const m = (e && e.message) || '';
-  if (/Invalid login/i.test(m)) return 'Email немесе құпиясөз қате.';
+  if (/Invalid login/i.test(m)) return 'Логин немесе құпиясөз қате.';
   if (/not confirmed/i.test(m)) return 'Email расталмаған. Поштаңыздағы хатты ашып, сілтемені басыңыз.';
   if (/already registered/i.test(m)) return 'Бұл email тіркелген. «Кіру» бөлімін қолданыңыз.';
   if (/rate limit/i.test(m)) return 'Тым көп әрекет. Бірнеше минуттан соң қайталаңыз.';
@@ -290,7 +290,8 @@ $('t-login').onclick = () => authTab('login');
 $('t-signup').onclick = () => authTab('signup');
 $('f-login').onsubmit = async e => {
   e.preventDefault(); msg($('l-msg'));
-  const { error } = await sb.auth.signInWithPassword({ email: $('l-email').value.trim(), password: $('l-pass').value });
+  const login = $('l-email').value.trim().toLowerCase();
+  const { error } = await sb.auth.signInWithPassword({ email: login.includes('@') ? login : login + '@fizika-sandygy.kz', password: $('l-pass').value });
   if (error) msg($('l-msg'), authErr(error));
 };
 $('f-signup').onsubmit = async e => {
