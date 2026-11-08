@@ -295,18 +295,23 @@ $('f-login').onsubmit = async e => {
 };
 $('f-signup').onsubmit = async e => {
   e.preventDefault(); msg($('s-msg'));
-  const { data, error } = await sb.auth.signUp({
-    email: $('s-email').value.trim(), password: $('s-pass').value,
-    options: { emailRedirectTo: location.origin + '/app', data: { full_name: $('s-name').value.trim(), phone: $('s-phone').value.trim(), school: $('s-school').value.trim(), consent: 'true' } }
-  });
-  if (error) return msg($('s-msg'), authErr(error));
-  if (!data.session) msg($('s-msg'), 'Тіркелдіңіз. Поштаңызға хат жіберілді: сілтемені басып, email-ді растаңыз, содан соң кіріңіз.', 'ok');
+  const btn = e.submitter || $('f-signup').querySelector('[type=submit]'); btn.disabled = true;
+  const email = $('s-email').value.trim(), password = $('s-pass').value;
+  try {
+    const r = await fetch(C.supabaseUrl + '/functions/v1/account', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'signup', email, password, full_name: $('s-name').value.trim(), phone: $('s-phone').value.trim(), school: $('s-school').value.trim(), consent: $('s-consent').checked }) });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) { btn.disabled = false; return msg($('s-msg'), j.error || 'Тіркелу мүмкін болмады.'); }
+    const { error } = await sb.auth.signInWithPassword({ email, password });
+    if (error) msg($('s-msg'), authErr(error));
+  } catch (err) { msg($('s-msg'), 'Желі қатесі. Қайталап көріңіз.'); }
+  btn.disabled = false;
 };
-$('forgot').onclick = async () => {
-  const email = $('l-email').value.trim();
-  if (!email) return msg($('l-msg'), 'Алдымен email-ді жазыңыз.');
-  const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: location.origin + '/app' });
-  msg($('l-msg'), error ? authErr(error) : 'Құпиясөзді қалпына келтіру сілтемесі поштаңызға жіберілді.', error ? 'err' : 'ok');
+$('forgot').onclick = () => {
+  const t = `Сәлеметсіз бе! Сабақтас кабинетінің құпиясөзін ұмытып қалдым. Email: ${$('l-email').value.trim()}`;
+  msg($('l-msg'), '', 'ok');
+  $('l-msg').hidden = false; $('l-msg').className = 'msg ok';
+  $('l-msg').innerHTML = `Жаңа құпиясөз алу үшін WhatsApp-қа жазыңыз: <a href="https://wa.me/${C.whatsapp}?text=${encodeURIComponent(t)}" target="_blank" rel="noopener">${C.whatsappShow}</a>`;
 };
 $('f-recover').onsubmit = async e => {
   e.preventDefault();

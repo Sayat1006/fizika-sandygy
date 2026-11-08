@@ -6,7 +6,7 @@
 // 5) GET ?setup=1: webhook-ты осы функцияға бағыттау.
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 
-const TOKEN = Deno.env.get('TELEGRAM_BOT_TOKEN') ?? '';
+let TOKEN = Deno.env.get('TELEGRAM_BOT_TOKEN') ?? '';
 const SITE = Deno.env.get('SITE_URL') ?? 'https://sabaqtas-kz.vercel.app';
 const db = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!, { auth: { persistSession: false } });
 
@@ -32,7 +32,8 @@ function week(now = Date.now()) {
   const sun = new Date(mon.getTime() + 6 * 86400000);
   return { today: t.toISOString().slice(0, 10), from: mon.toISOString().slice(0, 10), to: sun.toISOString().slice(0, 10) };
 }
-const json = (o: unknown, status = 200) => new Response(JSON.stringify(o), { status, headers: { 'Content-Type': 'application/json' } });
+const CORS = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'authorization, content-type, apikey, x-client-info', 'Access-Control-Allow-Methods': 'GET, POST, OPTIONS' };
+const json = (o: unknown, status = 200) => new Response(JSON.stringify(o), { status, headers: { 'Content-Type': 'application/json', ...CORS } });
 
 async function onUpdate(u: any) {
   const m = u.message;
@@ -114,6 +115,11 @@ async function onWeekly() {
 }
 
 Deno.serve(async (req) => {
+  if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS });
+  if (!Deno.env.get('TELEGRAM_BOT_TOKEN')) {
+    const { data } = await db.from('app_secrets').select('value').eq('name', 'TELEGRAM_BOT_TOKEN').maybeSingle();
+    TOKEN = data?.value ?? '';
+  }
   if (!TOKEN) return json({ error: 'TELEGRAM_BOT_TOKEN орнатылмаған' }, 503);
   const url = new URL(req.url);
   if (req.method === 'GET' && url.searchParams.get('setup') === '1') {

@@ -81,8 +81,19 @@ tr.flag td { background: var(--warn-bg); }
 
     <div class="sec">
       <h2>Мұғалімдер</h2>
+      <p class="hint" style="margin-bottom:12px">Мұғалім құпиясөзін ұмытса, «Жаңа құпиясөз» басыңыз: жаңа құпиясөз шығады және оны WhatsApp арқылы жіберу батырмасы пайда болады.</p>
       <div class="filter"><input id="q" placeholder="Аты, телефон, email бойынша іздеу" aria-label="Іздеу"></div>
       <div class="tbl" id="users"></div>
+    </div>
+
+    <div class="sec">
+      <h2>Telegram бот</h2>
+      <div class="card" style="display:grid;gap:12px;max-width:640px">
+        <p id="bot-state" class="hint"></p>
+        <div class="field"><label for="bot-token">BotFather берген токен</label><input id="bot-token" type="password" autocomplete="off" placeholder="123456789:AA..."></div>
+        <div class="acts"><button class="pill sm" type="button" id="bot-save">Сақтап, ботты қосу</button></div>
+        <p class="hint">Токен жабық сақталады, оны сайт пен бот қана оқиды. Сақтаған соң кабинетке кіріп, «Telegram-ды қосу» батырмасын басыңыз: жаңа өтінім түскенде хабар келеді.</p>
+      </div>
     </div>
 
     <div class="sec">
@@ -139,14 +150,14 @@ function render() {
 
   const q = $('q').value.trim().toLowerCase();
   const users = P.filter(u => !q || [u.full_name, u.phone, u.email, u.school].join(' ').toLowerCase().includes(q));
-  $('users').innerHTML = users.length ? `<table><thead><tr><th>Мұғалім</th><th>Мектеп</th><th>Жазылым</th><th>Тіркелген</th></tr></thead><tbody>` +
+  $('users').innerHTML = users.length ? `<table><thead><tr><th>Мұғалім</th><th>Мектеп</th><th>Жазылым</th><th>Тіркелген</th><th></th></tr></thead><tbody>` +
     users.map(u => {
       const ss = S.filter(x => x.user_id === u.id).sort((a, b) => a.grade - b.grade);
       const paidS = ss.filter(x => !x.trial), trialS = ss.filter(x => x.trial);
       const chips = (paidS.length ? paidS.map(x => `<span class="chip ${x.paid_until >= today ? 'ok' : 'err'}">${x.grade}: ${dmy(x.paid_until)}</span>`).join(' ') : '')
         + (trialS.length ? ` <span class="chip ${trialS[0].paid_until >= today ? 'warn' : 'mute'}">сынақ ${trialS.map(x => x.grade).join(',')}: ${dmy(trialS[0].paid_until)}</span>` : '')
         || '<span class="chip mute">жоқ</span>';
-      return `<tr><td>${esc(u.full_name) || '—'}${u.is_admin ? ' <span class="chip mute">әкімші</span>' : ''}${u.tg_chat_id ? ' <span class="chip mute">Telegram</span>' : ''}<small>${esc(u.phone)} · ${esc(u.email)}</small></td><td>${esc(u.school)}</td><td>${chips}</td><td class="num">${dmy(u.created_at)}</td></tr>`;
+      return `<tr><td>${esc(u.full_name) || '—'}${u.is_admin ? ' <span class="chip mute">әкімші</span>' : ''}${u.tg_chat_id ? ' <span class="chip mute">Telegram</span>' : ''}<small>${esc(u.phone)} · ${esc(u.email)}</small></td><td>${esc(u.school)}</td><td>${chips}</td><td class="num">${dmy(u.created_at)}</td><td>${u.is_admin ? '' : `<button class="textbtn" type="button" data-pw="${u.id}">Жаңа құпиясөз</button>`}</td></tr>`;
     }).join('') + '</tbody></table>' : '<p class="empty">Мұғалім табылмады.</p>';
 
   const per = {}; D.forEach(x => per[x.user_id] = (per[x.user_id] || 0) + 1);
@@ -171,6 +182,35 @@ document.addEventListener('click', e => {
   const b = e.target.closest('[data-no]'); if (b) return decide(b.dataset.no, false, b);
 });
 $('q').addEventListener('input', render);
+document.addEventListener('click', async e => {
+  const b = e.target.closest('[data-pw]'); if (!b) return;
+  const u = P.find(x => x.id === b.dataset.pw); if (!u) return;
+  b.disabled = true; b.textContent = '...';
+  const { data } = await sb.auth.getSession();
+  const r = await fetch(C.supabaseUrl + '/functions/v1/account', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + data.session.access_token }, body: JSON.stringify({ action: 'reset_password', user_id: u.id }) });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) { b.disabled = false; b.textContent = 'Жаңа құпиясөз'; return toast(j.error || 'Қате'); }
+  const phone = (u.phone || '').replace(/\D/g, '').replace(/^8/, '7');
+  const text = `Сәлеметсіз бе! Сабақтас кабинетіне кіру: ${C.siteUrl}/app\nEmail: ${u.email}\nЖаңа құпиясөз: ${j.password}\nКіргеннен кейін құпиясөзді сақтап қойыңыз.`;
+  b.outerHTML = `<span class="chip warn" style="user-select:all">${j.password}</span> ${phone ? `<a class="textbtn" target="_blank" rel="noopener" href="https://wa.me/${phone}?text=${encodeURIComponent(text)}">WhatsApp-қа жіберу</a>` : ''}`;
+});
+async function botState() {
+  const { data } = await sb.rpc('bot_token_set');
+  $('bot-state').textContent = data ? 'Бот токені сақталған. Ауыстыру үшін жаңа токенді енгізіңіз.' : 'Бот әлі қосылмаған.';
+}
+$('bot-save').onclick = async () => {
+  const tok = $('bot-token').value.trim(); if (!tok) return toast('Токенді енгізіңіз');
+  $('bot-save').disabled = true;
+  const { error } = await sb.rpc('set_bot_token', { p_token: tok });
+  if (error) { $('bot-save').disabled = false; return toast('Қате: ' + error.message); }
+  $('bot-token').value = '';
+  try {
+    const r = await fetch(C.supabaseUrl + '/functions/v1/telegram?setup=1');
+    const j = await r.json();
+    toast(j.webhook && j.webhook.ok ? `Бот қосылды: @${j.bot}` : 'Токен сақталды, бірақ бот жауап бермеді. Токенді тексеріңіз.');
+  } catch (_) { toast('Токен сақталды. Ботты тексеру мүмкін болмады.'); }
+  $('bot-save').disabled = false; botState();
+};
 $('refresh').onclick = refresh;
 
 const ADMIN_DOMAIN = '@fizika-sandygy.kz'; // «admin» логині admin@fizika-sandygy.kz аккаунтына сәйкес келеді
@@ -181,7 +221,7 @@ async function enter() {
   const { data: me } = await sb.from('profiles').select('is_admin').eq('id', data.session.user.id).single();
   if (!me || !me.is_admin) { await sb.auth.signOut(); return showLogin('Бұл аккаунтта әкімші құқығы жоқ.'); }
   $('login').hidden = true; $('adm').hidden = false; $('refresh').hidden = false; $('logout').hidden = false;
-  refresh();
+  refresh(); botState();
 }
 $('f-login').onsubmit = async e => {
   e.preventDefault(); $('a-msg').hidden = true; $('a-go').disabled = true;
