@@ -4,6 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Әкімші · Физика Сандығы</title>
+<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/assets/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
 <meta name="robots" content="noindex">
 <link rel="preload" href="/assets/fonts/nunito-cyrillic-400-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/assets/fonts/nunito-cyrillic-ext-800-normal.woff2" as="font" type="font/woff2" crossorigin>
@@ -62,7 +68,7 @@ tr.flag td { background: var(--warn-bg); }
     <h1>Әкімші беті</h1>
     <div class="kpis">
       <div class="kpi"><b id="k-pend">0</b><span>төлем күтілуде</span></div>
-      <div class="kpi"><b id="k-act">0</b><span>белсенді мұғалім</span></div>
+      <div class="kpi"><b id="k-act">0</b><span>төлеген мұғалім</span></div>
       <div class="kpi"><b id="k-users">0</b><span>тіркелген</span></div>
       <div class="kpi"><b id="k-dl">0</b><span>жүктеу, 7 күн</span></div>
     </div>
@@ -119,7 +125,7 @@ const prof = id => P.find(x => x.id === id) || {};
 function render() {
   const today = FS_WEEK().today;
   const pend = R.filter(x => x.status === 'pending');
-  const active = new Set(S.filter(x => x.paid_until >= today).map(x => x.user_id));
+  const active = new Set(S.filter(x => !x.trial && x.paid_until >= today).map(x => x.user_id));
   $('k-pend').textContent = pend.length; $('k-act').textContent = active.size; $('k-users').textContent = P.length; $('k-dl').textContent = D.length;
 
   $('pending').innerHTML = pend.length ? `<table><thead><tr><th>Күні</th><th>Мұғалім</th><th>Сынып</th><th>Мерзім</th><th>Сома</th><th>Код</th><th></th></tr></thead><tbody>` +
@@ -136,15 +142,18 @@ function render() {
   $('users').innerHTML = users.length ? `<table><thead><tr><th>Мұғалім</th><th>Мектеп</th><th>Жазылым</th><th>Тіркелген</th></tr></thead><tbody>` +
     users.map(u => {
       const ss = S.filter(x => x.user_id === u.id).sort((a, b) => a.grade - b.grade);
-      const chips = ss.length ? ss.map(x => `<span class="chip ${x.paid_until >= today ? 'ok' : 'err'}">${x.grade}: ${dmy(x.paid_until)}</span>`).join(' ') : '<span class="chip mute">жоқ</span>';
-      return `<tr><td>${esc(u.full_name) || '—'}${u.is_admin ? ' <span class="chip mute">әкімші</span>' : ''}<small>${esc(u.phone)} · ${esc(u.email)}</small></td><td>${esc(u.school)}</td><td>${chips}</td><td class="num">${dmy(u.created_at)}</td></tr>`;
+      const paidS = ss.filter(x => !x.trial), trialS = ss.filter(x => x.trial);
+      const chips = (paidS.length ? paidS.map(x => `<span class="chip ${x.paid_until >= today ? 'ok' : 'err'}">${x.grade}: ${dmy(x.paid_until)}</span>`).join(' ') : '')
+        + (trialS.length ? ` <span class="chip ${trialS[0].paid_until >= today ? 'warn' : 'mute'}">сынақ ${trialS.map(x => x.grade).join(',')}: ${dmy(trialS[0].paid_until)}</span>` : '')
+        || '<span class="chip mute">жоқ</span>';
+      return `<tr><td>${esc(u.full_name) || '—'}${u.is_admin ? ' <span class="chip mute">әкімші</span>' : ''}${u.tg_chat_id ? ' <span class="chip mute">Telegram</span>' : ''}<small>${esc(u.phone)} · ${esc(u.email)}</small></td><td>${esc(u.school)}</td><td>${chips}</td><td class="num">${dmy(u.created_at)}</td></tr>`;
     }).join('') + '</tbody></table>' : '<p class="empty">Мұғалім табылмады.</p>';
 
   const per = {}; D.forEach(x => per[x.user_id] = (per[x.user_id] || 0) + 1);
   $('dls').innerHTML = D.length ? `<table><thead><tr><th>Уақыт</th><th>Мұғалім</th><th>Сабақ</th><th>Файл</th><th>7 күнде</th></tr></thead><tbody>` +
     D.slice(0, 200).map(x => { const u = prof(x.user_id), l = L[x.grade + '-' + x.n] || {}; return `<tr class="${per[x.user_id] > 40 ? 'flag' : ''}">
       <td class="num">${tm(x.created_at)}</td><td>${esc(u.full_name) || '—'}<small>${esc(u.phone)}</small></td>
-      <td>${x.grade}-сынып, №${esc(l.disp || x.n)}<small>${esc(l.topic || '')}</small></td><td>${x.kind === 'kmzh' ? 'ҚМЖ' : 'Презентация'}</td><td class="num">${per[x.user_id]}</td></tr>`; }).join('') + '</tbody></table>'
+      <td>${x.grade}-сынып, №${esc(l.disp || x.n)}<small>${esc(l.topic || '')}</small></td><td>${{ kmzh: 'ҚМЖ', pres: 'Презентация', ws: 'Жұмыс парағы' }[x.kind]}</td><td class="num">${per[x.user_id]}</td></tr>`; }).join('') + '</tbody></table>'
     : '<p class="empty">Соңғы 7 күнде жүктеу болмады.</p>';
 }
 

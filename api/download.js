@@ -46,7 +46,7 @@ module.exports = async (req, res) => {
     const grade = parseInt(url.searchParams.get('grade'), 10);
     const n = parseInt(url.searchParams.get('n'), 10);
     const kind = url.searchParams.get('kind');
-    if (!(grade >= 7 && grade <= 11) || !(n > 0) || !['kmzh', 'pres'].includes(kind)) return fail(res, 400, 'Сұраныс қате.');
+    if (!(grade >= 7 && grade <= 11) || !(n > 0) || !['kmzh', 'pres', 'ws'].includes(kind)) return fail(res, 400, 'Сұраныс қате.');
 
     const u = await sb('/auth/v1/user', token);
     if (!u.ok) return fail(res, 401, 'Сессия аяқталды. Қайта кіріңіз.');
@@ -72,9 +72,11 @@ module.exports = async (req, res) => {
 
     const data = fs.readFileSync(path.join(ROOT, file.path));
     res.statusCode = 200;
-    res.setHeader('Content-Type', kind === 'kmzh'
-      ? 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-      : 'application/vnd.openxmlformats-officedocument.presentationml.presentation');
+    res.setHeader('Content-Type', {
+      kmzh: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      pres: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      ws: 'application/pdf',
+    }[kind]);
     res.setHeader('Content-Disposition', `attachment; filename="${kind}_${grade}_${n}${path.extname(file.path)}"; filename*=UTF-8''${encodeURIComponent(file.name)}`);
     res.setHeader('Cache-Control', 'private, no-store');
     res.setHeader('Content-Length', data.length);

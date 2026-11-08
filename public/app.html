@@ -4,6 +4,23 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Кабинет · Физика Сандығы</title>
+<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/assets/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Физика Сандығы">
+<meta property="og:locale" content="kk_KZ">
+<meta property="og:title" content="Мұғалім кабинеті · Физика Сандығы">
+<meta property="og:description" content="Тіркеліңіз: 7 күн тегін. ҚМЖ мен презентация ҚТЖ бойынша апта сайын ашылады.">
+<meta property="og:url" content="https://fizika-sandygy.vercel.app/app">
+<meta property="og:image" content="https://fizika-sandygy.vercel.app/assets/og.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="canonical" href="https://fizika-sandygy.vercel.app/app">
 <meta name="robots" content="noindex">
 <link rel="preload" href="/assets/fonts/nunito-cyrillic-400-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/assets/fonts/nunito-cyrillic-ext-800-normal.woff2" as="font" type="font/woff2" crossorigin>
@@ -86,7 +103,21 @@ form.stack .pill { width: 100%; margin-top: 4px; }
 .profile { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; align-items: end; }
 @media (max-width: 720px) { .profile { grid-template-columns: 1fr; } }
 .loading { padding: 20vh 0; text-align: center; color: var(--fg-2); }
+.gbtn { width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px; font: 600 15px var(--text); color: var(--fg); background: var(--bg); border: 1px solid var(--line); border-radius: 999px; min-height: 46px; cursor: pointer; transition: background .2s var(--ease); }
+.gbtn:hover { background: var(--bg-2); }
+.gbtn svg { width: 20px; height: 20px; }
+.google { display: grid; gap: 10px; }
+.or { display: flex; align-items: center; gap: 12px; color: var(--fg-3); font-size: 13px; margin-top: 4px; }
+.or::before, .or::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+.consent { display: grid; grid-template-columns: 20px 1fr; gap: 10px; align-items: start; font-size: 13.5px; color: var(--fg-2); cursor: pointer; }
+.consent input { width: 18px; height: 18px; margin: 1px 0 0; accent-color: var(--accent); }
+.banner { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 18px; padding: 14px 18px; border-radius: 16px; background: var(--warn-bg); color: var(--fg); margin-bottom: 18px; }
+.banner.info { background: color-mix(in srgb, var(--accent) 9%, var(--bg)); }
+.banner p { font-size: 15px; }
+.tg { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 20px; }
+.tg p { color: var(--fg-2); max-width: 56ch; }
 </style>
+<script defer src="/_vercel/insights/script.js"></script>
 </head>
 <body>
 <header class="nav">
@@ -109,7 +140,12 @@ form.stack .pill { width: 100%; margin-top: 4px; }
   <!-- Кіру / тіркелу -->
   <section class="auth" id="v-auth" hidden>
     <h1>Мұғалім кабинеті</h1>
-    <p class="sub">ҚМЖ мен презентацияларды апта сайын осы жерден аласыз.</p>
+    <p class="sub">ҚМЖ, презентация мен жұмыс парағын апта сайын осы жерден аласыз. Тіркелгенде 7 күн тегін.</p>
+    <div class="google" id="google-box" hidden>
+      <button class="gbtn" type="button" id="google"><svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="m6.3 14.7 6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-7.9l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg>Google арқылы кіру</button>
+      <p class="hint center">Кіру арқылы <a href="/oferta" target="_blank">офертамен</a> және <a href="/privacy" target="_blank">құпиялылық саясатымен</a> келісесіз.</p>
+      <div class="or"><span>немесе</span></div>
+    </div>
     <div class="seg2" role="tablist">
       <button type="button" role="tab" id="t-login" aria-selected="true">Кіру</button>
       <button type="button" role="tab" id="t-signup" aria-selected="false">Тіркелу</button>
@@ -127,8 +163,9 @@ form.stack .pill { width: 100%; margin-top: 4px; }
       <div class="field"><label for="s-school">Мектеп, қала</label><input id="s-school" placeholder="№12 мектеп-гимназия, Шымкент"></div>
       <div class="field"><label for="s-email">Email</label><input id="s-email" type="email" autocomplete="email" required></div>
       <div class="field"><label for="s-pass">Құпиясөз</label><input id="s-pass" type="password" autocomplete="new-password" required minlength="6"><span class="hint">Кемінде 6 таңба</span></div>
+      <label class="consent" for="s-consent"><input type="checkbox" id="s-consent" required><span><a href="/oferta" target="_blank">Оферта</a> шарттарымен келісемін және дербес деректерімді <a href="/privacy" target="_blank">құпиялылық саясатына</a> сәйкес өңдеуге келісім беремін.</span></label>
       <div class="msg" id="s-msg" hidden></div>
-      <button class="pill" type="submit">Тіркелу</button>
+      <button class="pill" type="submit">Тіркелу · 7 күн тегін</button>
     </form>
   </section>
 
@@ -148,6 +185,8 @@ form.stack .pill { width: 100%; margin-top: 4px; }
       <h1 id="hello"></h1>
       <p id="weeklabel"></p>
     </div>
+    <div class="banner info" id="trial-banner" hidden><p id="trial-text"></p><a class="pill sm" href="#subscribe">Жазылымды рәсімдеу</a></div>
+    <div class="banner" id="phone-banner" hidden><p>Төлемді растау үшін телефон нөміріңізді профильге жазыңыз.</p><a class="pill ghost sm" href="#profile">Профильді толтыру</a></div>
 
     <div class="sec" style="margin-top:0">
       <div class="sec-h"><h2>Осы аптаның сабақтары</h2><span class="hint" id="weekrange"></span></div>
@@ -196,7 +235,12 @@ form.stack .pill { width: 100%; margin-top: 4px; }
       <div class="plan" id="plan"></div>
     </div>
 
-    <div class="sec">
+    <div class="sec" id="tg-sec" hidden>
+      <div class="sec-h"><h2>Telegram хабарламалары</h2></div>
+      <div class="card tg"><p id="tg-text"></p><div id="tg-act"></div></div>
+    </div>
+
+    <div class="sec" id="profile">
       <div class="sec-h"><h2>Профиль</h2></div>
       <form class="profile" id="f-prof">
         <div class="field"><label for="p-name">Аты-жөні</label><input id="p-name" required></div>
@@ -208,7 +252,7 @@ form.stack .pill { width: 100%; margin-top: 4px; }
   </section>
 </main>
 
-<footer><div class="wrap"><span>© 2026 Физика Сандығы</span><span>Материалдар тек өз сабағыңызда қолдануға арналған.</span></div></footer>
+<footer><div class="wrap"><span>© 2026 Физика Сандығы</span><span>Материалдар тек өз сабағыңызда қолдануға арналған. · <a href="/oferta">Оферта</a> · <a href="/privacy">Құпиялылық</a></span></div></footer>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
@@ -253,7 +297,7 @@ $('f-signup').onsubmit = async e => {
   e.preventDefault(); msg($('s-msg'));
   const { data, error } = await sb.auth.signUp({
     email: $('s-email').value.trim(), password: $('s-pass').value,
-    options: { emailRedirectTo: location.origin + '/app', data: { full_name: $('s-name').value.trim(), phone: $('s-phone').value.trim(), school: $('s-school').value.trim() } }
+    options: { emailRedirectTo: location.origin + '/app', data: { full_name: $('s-name').value.trim(), phone: $('s-phone').value.trim(), school: $('s-school').value.trim(), consent: 'true' } }
   });
   if (error) return msg($('s-msg'), authErr(error));
   if (!data.session) msg($('s-msg'), 'Тіркелдіңіз. Поштаңызға хат жіберілді: сілтемені басып, email-ді растаңыз, содан соң кіріңіз.', 'ok');
@@ -271,6 +315,40 @@ $('f-recover').onsubmit = async e => {
   msg($('r-msg'), 'Құпиясөз жаңартылды.', 'ok'); recovering = false; history.replaceState(null, '', '/app'); setTimeout(() => boot(), 900);
 };
 $('logout').onclick = async () => { await sb.auth.signOut(); };
+if (C.googleLogin) {
+  $('google-box').hidden = false;
+  $('google').onclick = async () => {
+    const { error } = await sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: location.origin + '/app' } });
+    if (error) msg($('l-msg'), 'Google арқылы кіру әзірге қосылмаған. Email арқылы кіріңіз.');
+  };
+}
+
+function renderTg() {
+  if (!C.telegramBot) { $('tg-sec').hidden = true; return; }
+  $('tg-sec').hidden = false;
+  if (profile.tg_chat_id) {
+    $('tg-text').textContent = 'Қосылған. Дүйсенбі сайын осы аптаның сабақтары туралы хабарлама келеді.';
+    $('tg-act').innerHTML = '<button class="pill ghost sm" type="button" id="tg-off">Ажырату</button>';
+  } else {
+    $('tg-text').textContent = 'Telegram-ды қоссаңыз, дүйсенбі сайын осы аптаның сабақтары туралы хабарлама аласыз. Төлем расталғанда да хабар келеді.';
+    $('tg-act').innerHTML = '<button class="pill sm" type="button" id="tg-on">Telegram-ды қосу</button>';
+  }
+}
+document.addEventListener('click', async e => {
+  if (e.target.closest('#tg-on')) {
+    const w = window.open('', '_blank');
+    const { data: code, error } = await sb.rpc('tg_link_code');
+    if (error) { if (w) w.close(); return toast('Қате: ' + error.message); }
+    const url = `https://t.me/${C.telegramBot}?start=${code}`;
+    if (w) w.location = url; else location.href = url;
+    toast('Telegram-да «Start» батырмасын басыңыз, содан соң осы бетті жаңартыңыз.');
+  }
+  if (e.target.closest('#tg-off')) {
+    const { error } = await sb.rpc('tg_unlink');
+    if (error) return toast('Қате: ' + error.message);
+    profile.tg_chat_id = null; renderTg(); toast('Telegram ажыратылды');
+  }
+});
 
 let recovering = /type=recovery/.test(location.hash);
 sb.auth.onAuthStateChange((ev, s) => {
@@ -289,7 +367,7 @@ async function loadAll() {
   const uid = session.user.id;
   const [p, s, q] = await Promise.all([
     sb.from('profiles').select('*').eq('id', uid).single(),
-    sb.from('subscriptions').select('grade,paid_until').eq('user_id', uid),
+    sb.from('subscriptions').select('grade,paid_until,trial').eq('user_id', uid),
     sb.from('payment_requests').select('*').eq('user_id', uid).order('created_at', { ascending: false }).limit(10),
     loadLessons()
   ]);
@@ -314,7 +392,16 @@ function render() {
   const w = FS_WEEK(), act = activeGrades(w.today);
   const first = (profile.full_name || '').split(' ').filter(Boolean)[1] || (profile.full_name || '').split(' ')[0] || '';
   $('hello').textContent = first ? `Сәлеметсіз бе, ${first}!` : 'Сәлеметсіз бе!';
-  $('weeklabel').textContent = act.length ? `Белсенді жазылым: ${act.map(g => g + '-сынып').join(', ')}.` : 'Сабақтарды алу үшін жазылымды рәсімдеңіз.';
+  const paid = subs.filter(x => !x.trial && x.paid_until >= w.today).map(x => x.grade).sort((a, b) => a - b);
+  const trial = subs.filter(x => x.trial && x.paid_until >= w.today);
+  $('weeklabel').textContent = paid.length ? `Белсенді жазылым: ${paid.map(g => g + '-сынып').join(', ')}.` : trial.length ? 'Тегін сынақ кезеңі: барлық сыныптың осы аптадағы сабақтары ашық.' : 'Сабақтарды алу үшін жазылымды рәсімдеңіз.';
+  if (trial.length && !paid.length) {
+    const left = Math.max(0, Math.round((Date.parse(trial[0].paid_until) - Date.parse(w.today)) / 864e5));
+    $('trial-text').textContent = left > 0 ? `Тегін сынақ: тағы ${left} күн. Ұнаса, керек сыныптарға жазылыңыз.` : 'Тегін сынақ бүгін аяқталады. Ұнаса, керек сыныптарға жазылыңыз.';
+    $('trial-banner').hidden = false;
+  } else $('trial-banner').hidden = true;
+  $('phone-banner').hidden = !!(profile.phone || '').trim();
+  renderTg();
   $('weekrange').textContent = `${dmy(w.from)} – ${dmy(w.to)}`;
 
   // week
@@ -330,17 +417,18 @@ function render() {
           <div class="btns">
             ${l.kmzh ? `<button class="pill sm" type="button" data-dl="${g}|${l.n}|kmzh">ҚМЖ</button>` : ''}
             ${l.pres ? `<button class="pill ghost sm" type="button" data-dl="${g}|${l.n}|pres">Презентация</button>` : ''}
+            ${l.ws ? `<button class="pill ghost sm" type="button" data-dl="${g}|${l.n}|ws">Жұмыс парағы</button>` : ''}
           </div>
         </div>`).join('') : `<p class="hint" style="padding:14px 0">Бұл аптада ${g}-сыныпқа ҚТЖ бойынша сабақ жоқ (демалыс немесе мереке).</p>`;
       const sub = subs.find(x => x.grade === g);
-      return `<div class="grade-block"><div class="grade-title">${g}-сынып <span class="chip ok">${dmy(sub.paid_until)} дейін</span></div>${rows}</div>`;
+      return `<div class="grade-block"><div class="grade-title">${g}-сынып <span class="chip ${sub.trial ? 'warn' : 'ok'}">${sub.trial ? 'Сынақ, ' : ''}${dmy(sub.paid_until)} дейін</span></div>${rows}</div>`;
     }).join('');
   }
 
   // status
   $('status').innerHTML = GRADES.map(g => {
     const s = subs.find(x => x.grade === g);
-    const chip = s && s.paid_until >= w.today ? `<span class="chip ok">${dmy(s.paid_until)} дейін</span>` : s ? `<span class="chip err">Мерзімі өтті</span>` : `<span class="chip mute">Жазылым жоқ</span>`;
+    const chip = s && s.paid_until >= w.today ? `<span class="chip ${s.trial ? 'warn' : 'ok'}">${s.trial ? 'Тегін сынақ, ' : ''}${dmy(s.paid_until)} дейін</span>` : s ? `<span class="chip err">Мерзімі өтті</span>` : `<span class="chip mute">Жазылым жоқ</span>`;
     return `<div class="r"><span class="g">${g}-сынып</span>${chip}</div>`;
   }).join('');
   const st = { pending: ['warn', 'Төлем күтілуде'], approved: ['ok', 'Расталды'], rejected: ['err', 'Қабылданбады'] };

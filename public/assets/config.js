@@ -6,7 +6,10 @@ window.FS_CONFIG = {
   whatsapp: '77000000000',            // WhatsApp: тек цифрлар
   whatsappShow: '+7 7__ ___ __ __',
   telegram: 'username',               // Telegram логині, @ белгісіз
-  prices: { month: 1490, year: 9990 } // бір сынып үшін, ₸ (дерекқордағы plan_price функциясымен бірдей болуы керек)
+  prices: { month: 1490, year: 9990 }, // бір сынып үшін, ₸ (дерекқордағы plan_price функциясымен бірдей болуы керек)
+  googleLogin: false,                 // Supabase-те Google провайдері қосылған соң true етіңіз
+  telegramBot: '',                    // хабарлама боты, мысалы 'fizika_sandygy_bot' (@ белгісіз)
+  siteUrl: 'https://fizika-sandygy.vercel.app'
 };
 
 /* Сабақтың ашылу ережесі: ҚТЖ бойынша осы аптаның сабақтары (дүйсенбі–жексенбі).

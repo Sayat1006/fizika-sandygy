@@ -4,6 +4,23 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Тегін үлгілер · Физика Сандығы</title>
+<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/assets/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Физика Сандығы">
+<meta property="og:locale" content="kk_KZ">
+<meta property="og:title" content="Тегін үлгілер · Физика Сандығы">
+<meta property="og:description" content="Әр сыныптан бір сабақтың толық ҚМЖ-сы мен презентациясы. Тіркелусіз қарап, жүктеп алыңыз.">
+<meta property="og:url" content="https://fizika-sandygy.vercel.app/samples">
+<meta property="og:image" content="https://fizika-sandygy.vercel.app/assets/og.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="canonical" href="https://fizika-sandygy.vercel.app/samples">
 <meta name="description" content="Физика пәнінен ҚМЖ мен презентацияның тегін үлгілері, 7–11-сынып. Тіркелусіз қарап, жүктеп алуға болады.">
 <link rel="preload" href="/assets/fonts/nunito-cyrillic-400-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/assets/fonts/nunito-cyrillic-ext-800-normal.woff2" as="font" type="font/woff2" crossorigin>
@@ -61,6 +78,7 @@
 .cta .more { font-size: 17px; }
 .note { color: var(--fg-3); font-size: 13px; text-align: center; margin-top: 18px; }
 </style>
+<script defer src="/_vercel/insights/script.js"></script>
 </head>
 <body>
 <header class="nav">
@@ -78,7 +96,7 @@
   <section class="head">
     <span class="eyebrow">Тіркелусіз · Тегін</span>
     <h1>Алдымен көріп алыңыз.</h1>
-    <p>Әр сыныптан бір сабақтың толық ҚМЖ-сы мен презентациясы. Қарап шығыңыз, жүктеп алып, сабағыңызда қолданып көріңіз.</p>
+    <p>Әр сыныптан бір сабақтың толық ҚМЖ-сы, презентациясы мен жұмыс парағы. Қарап шығыңыз, жүктеп алып, сабағыңызда қолданып көріңіз.</p>
     <div class="tabs" role="tablist" id="tabs" aria-label="Сынып"></div>
   </section>
 
@@ -96,13 +114,13 @@
 
   <section class="cta">
     <h2>Ұнады ма? Әр аптаның сабағы осындай.</h2>
-    <p id="cta-p">Жазылсаңыз, ҚТЖ бойынша әр аптаның ҚМЖ мен презентациясы кабинетіңізде ашылып отырады.</p>
-    <div class="row"><a class="pill lg" href="/app" style="font-size:17px;padding:12px 24px;min-height:48px">Тіркелу</a><a class="more" href="/#price">Бағасы ›</a></div>
+    <p id="cta-p">Тіркелсеңіз, 7 күн бойы барлық сыныптың сабақтары тегін ашық. Кейін ҚТЖ бойынша әр аптаның материалдары кабинетіңізде ашылып отырады.</p>
+    <div class="row"><a class="pill lg" href="/app" style="font-size:17px;padding:12px 24px;min-height:48px">Тіркелу · 7 күн тегін</a><a class="more" href="/#price">Бағасы ›</a></div>
   </section>
   <p class="note">Үлгілерді өз сабағыңызда еркін қолдана беріңіз. Ақылы материалдарды таратуға рұқсат жоқ.</p>
 </main>
 
-<footer><div class="wrap"><span>© 2026 Физика Сандығы</span><span>Физика пәні мұғалімдеріне арналған материалдар</span></div></footer>
+<footer><div class="wrap"><span>© 2026 Физика Сандығы</span><span>Физика пәні мұғалімдеріне арналған материалдар · <a href="/oferta">Оферта</a> · <a href="/privacy">Құпиялылық</a></span></div></footer>
 
 <script src="/assets/config.js"></script>
 <script>
@@ -119,18 +137,19 @@ function renderTabs() {
 }
 function render() {
   renderTabs();
-  if (!cur.pres && kind === 'pres') kind = 'kmzh';
+  if (!cur[kind]) kind = 'kmzh';
   $('k').textContent = `${cur.grade}-сынып · №${cur.disp} сабақ · ${cur.bolim}`;
   $('topic').textContent = cur.topic;
   const base = `/samples/${cur.grade}/`;
-  $('dls').innerHTML = ['kmzh', 'pres'].filter(k => cur[k]).map(k =>
-    `<a class="pill ${k === 'pres' ? 'ghost' : ''}" href="${base}${cur[k].file}" download="${esc(cur[k].name)}">${k === 'kmzh' ? 'ҚМЖ жүктеу' : 'Презентация жүктеу'} <small>${kb(cur[k].size)}</small></a>`).join('');
-  $('kinds').innerHTML = ['kmzh', 'pres'].filter(k => cur[k]).map(k =>
-    `<button type="button" role="tab" id="kind-${k}" aria-selected="${k === kind}" data-k="${k}">${k === 'kmzh' ? 'ҚМЖ' : 'Презентация'}</button>`).join('');
-  if (kind === 'kmzh') {
-    const p = cur.kmzh.pages;
+  const NAMES = { kmzh: 'ҚМЖ', pres: 'Презентация', ws: 'Жұмыс парағы' };
+  $('dls').innerHTML = ['kmzh', 'pres', 'ws'].filter(k => cur[k]).map(k =>
+    `<a class="pill ${k === 'kmzh' ? '' : 'ghost'}" href="${base}${cur[k].file}" download="${esc(cur[k].name)}">${NAMES[k]} <small>${kb(cur[k].size)}</small></a>`).join('');
+  $('kinds').innerHTML = ['kmzh', 'pres', 'ws'].filter(k => cur[k]).map(k =>
+    `<button type="button" role="tab" id="kind-${k}" aria-selected="${k === kind}" data-k="${k}">${NAMES[k]}</button>`).join('');
+  if (kind !== 'pres') {
+    const p = cur[kind].pages;
     $('count').textContent = `${p.length} бет`;
-    $('view').innerHTML = `<div class="doc">${p.map(([n, w, h], i) => `<img src="${base}${n}" width="${w}" height="${h}" alt="ҚМЖ, ${i + 1}-бет" ${i ? 'loading="lazy"' : ''} decoding="async">`).join('')}</div>`;
+    $('view').innerHTML = `<div class="doc">${p.map(([n, w, h], i) => `<img src="${base}${n}" width="${w}" height="${h}" alt="${NAMES[kind]}, ${i + 1}-бет" ${i ? 'loading="lazy"' : ''} decoding="async">`).join('')}</div>`;
   } else {
     const p = cur.pres.pages;
     slide = Math.min(slide, p.length - 1);

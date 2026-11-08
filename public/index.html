@@ -4,6 +4,23 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Физика Сандығы</title>
+<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/assets/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Физика Сандығы">
+<meta property="og:locale" content="kk_KZ">
+<meta property="og:title" content="Физика Сандығы">
+<meta property="og:description" content="ҚМЖ мен презентация апта сайын бір жерде. Физика, 7–11-сынып. Тегін үлгіні тіркелусіз көріңіз.">
+<meta property="og:url" content="https://fizika-sandygy.vercel.app/">
+<meta property="og:image" content="https://fizika-sandygy.vercel.app/assets/og.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="canonical" href="https://fizika-sandygy.vercel.app/">
 <meta name="description" content="Физика пәні мұғалімдеріне: ҚМЖ мен презентация ҚТЖ бойынша апта сайын жеке кабинетте. 7–11-сынып.">
 <link rel="preload" href="/assets/fonts/nunito-cyrillic-400-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/assets/fonts/nunito-cyrillic-ext-800-normal.woff2" as="font" type="font/woff2" crossorigin>
@@ -45,6 +62,7 @@ h1 { font-size: clamp(42px, 6.6vw, 84px); font-weight: 800; line-height: 1.02; l
 .step span { color: var(--fg-2); font-size: 15px; }
 
 footer .wrap a { color: var(--fg-2); }
+footer .wrap > span:last-child { display: flex; flex-wrap: wrap; gap: 4px; }
 
 .rise { animation: rise .6s var(--ease) both; }
 .rise.d1 { animation-delay: .06s; } .rise.d2 { animation-delay: .12s; } .rise.d3 { animation-delay: .18s; }
@@ -59,6 +77,7 @@ footer .wrap a { color: var(--fg-2); }
   .steps { grid-template-columns: 1fr; gap: 18px; text-align: left; }
 }
 </style>
+<script defer src="/_vercel/insights/script.js"></script>
 </head>
 <body>
 <header class="nav">
@@ -104,7 +123,7 @@ footer .wrap a { color: var(--fg-2); }
   </section>
 </main>
 
-<footer><div class="wrap"><span>© 2026 Физика Сандығы</span><span><span data-i="ask"></span> <a id="wa-link" target="_blank" rel="noopener">WhatsApp</a> · <a id="tg-link" target="_blank" rel="noopener">Telegram</a></span></div></footer>
+<footer><div class="wrap"><span>© 2026 Физика Сандығы</span><span><span data-i="ask"></span> <a id="wa-link" target="_blank" rel="noopener">WhatsApp</a> · <a id="tg-link" target="_blank" rel="noopener">Telegram</a> · <a href="/oferta">Оферта</a> · <a href="/privacy">Құпиялылық</a></span></div></footer>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" defer></script>
 <script src="/assets/config.js"></script>
@@ -114,8 +133,8 @@ const T = {
   kk: {
     login: 'Кіру', eyebrow: 'Физика · 7–11-сынып',
     h1: 'Әр аптаның сабағы дайын.',
-    sub: 'ҚМЖ мен презентация апта сайын бір жерде.',
-    cta: 'Тегін үлгіні көру', signup: 'Тіркелу', free: 'Үлгіні көру үшін тіркелу қажет емес.',
+    sub: 'ҚМЖ, презентация және жұмыс парағы апта сайын бір жерде.',
+    cta: 'Тегін үлгіні көру', signup: 'Тіркелу · 7 күн тегін', free: 'Үлгіні көру үшін тіркелу қажет емес.',
     s1: 'Үлгіні көріңіз', s1p: 'Әр сыныптың бір сабағы тегін.',
     s2: 'Сыныпқа жазылыңыз', s2p: (m, y) => `Айына ${m} немесе жылына ${y}.`,
     s3: 'Апта сайын жүктеңіз', s3p: 'Осы аптаның сабақтары кабинетте ашылады.',
@@ -124,8 +143,8 @@ const T = {
   ru: {
     login: 'Войти', eyebrow: 'Физика · 7–11 классы',
     h1: 'Урок на каждую неделю готов.',
-    sub: 'ҚМЖ и презентация каждую неделю в одном месте.',
-    cta: 'Смотреть бесплатный образец', signup: 'Регистрация', free: 'Для просмотра образца регистрация не нужна.',
+    sub: 'ҚМЖ, презентация и рабочий лист каждую неделю в одном месте.',
+    cta: 'Смотреть бесплатный образец', signup: 'Регистрация · 7 дней бесплатно', free: 'Для просмотра образца регистрация не нужна.',
     s1: 'Посмотрите образец', s1p: 'Один урок каждого класса бесплатно.',
     s2: 'Подпишитесь на класс', s2p: (m, y) => `${m} в месяц или ${y} в год.`,
     s3: 'Скачивайте каждую неделю', s3p: 'Уроки текущей недели открываются в кабинете.',

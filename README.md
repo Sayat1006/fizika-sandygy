@@ -12,11 +12,18 @@
 | `public/assets/config.js` | **Kaspi, WhatsApp, Telegram, бағалар** және апта ережесі |
 | `public/lessons.json` | Сабақтар тізімі мен күндері (файлсыз) |
 | `api/download.js` | Файлды тек жазылымы бар мұғалімге, тек өз аптасында береді; әр жүктеуді тіркейді; бір файлға 5 рет шек |
-| `materials/` | ҚМЖ (.docx) мен презентациялар (.pptx). Сырттан тікелей ашылмайды, тек `api/download` арқылы |
+| `public/samples.html` | Тегін үлгілер: тіркелусіз көру және жүктеу |
+| `public/oferta.html`, `public/privacy.html` | Оферта және құпиялылық саясаты (жоба, деректемелерді толтыру керек) |
+| `materials/` | ҚМЖ (.docx), презентациялар (.pptx), жұмыс парақтары (.pdf). Сырттан тікелей ашылмайды, тек `api/download` арқылы |
+| `supabase/functions/telegram` | Telegram бот: әкімшіге жаңа өтінім, мұғалімге төлем расталды, дүйсенбідегі апталық хабар |
 
 Дерекқор: Supabase жобасы `fizika-sandygy` (кестелер: `profiles`, `subscriptions`, `payment_requests`, `downloads`).
 
 ## Ережелер
+
+- Тіркелгенде 5 сыныптың бәріне 7 күн тегін сынақ ашылады (`subscriptions.trial = true`).
+- Telegram: Supabase-те `TELEGRAM_BOT_TOKEN` құпиясын қойып, `.../functions/v1/telegram?setup=1` ашу; `config.js` ішінде `telegramBot` толтыру. Апталық хабар: pg_cron, дүйсенбі 08:00.
+- Google арқылы кіру: Supabase → Authentication → Providers → Google қосылған соң `config.js` ішінде `googleLogin: true`.
 
 - Сабақ ҚТЖ күні түсетін аптада (дүйсенбі–жексенбі) ашық. Сенбі мен жексенбіде келесі аптаныкі де ашылады.
 - Баға: бір сыныпқа 1 ай – 1 490 ₸, 1 жыл – 9 990 ₸. Өзгертсеңіз, екі жерде өзгертіңіз: `public/assets/config.js` және дерекқордағы `plan_price` функциясы.
