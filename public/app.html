@@ -45,6 +45,11 @@ main { padding-block: 40px 96px; }
 .seg2 button[aria-selected="true"] { background: var(--bg); color: var(--fg); box-shadow: 0 1px 4px rgba(0, 0, 0, .1); }
 form.stack { display: grid; gap: 14px; }
 form.stack .pill { width: 100%; margin-top: 4px; }
+.field.pw { position: relative; }
+.field.pw input { padding-right: 48px; }
+.eye { position: absolute; right: 6px; top: 27px; width: 38px; height: 38px; border: 0; background: none; color: var(--fg-3); cursor: pointer; border-radius: 10px; display: grid; place-items: center; }
+.eye svg { width: 20px; height: 20px; }
+.eye.on { color: var(--accent); }
 .center { text-align: center; }
 
 /* week lessons */
@@ -102,7 +107,10 @@ form.stack .pill { width: 100%; margin-top: 4px; }
 
 .profile { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; align-items: end; }
 @media (max-width: 720px) { .profile { grid-template-columns: 1fr; } }
-.loading { padding: 20vh 0; text-align: center; color: var(--fg-2); }
+.loading { display: grid; gap: 12px; padding-top: 20px; }
+.sk { border-radius: 20px; background: linear-gradient(90deg, var(--bg-2) 30%, color-mix(in srgb, var(--bg-2) 60%, var(--bg)) 50%, var(--bg-2) 70%) 0 0 / 300% 100%; animation: sk 1.4s linear infinite; }
+.sk-stage { height: 236px; border-radius: 28px; } .sk-row { height: 46px; } .sk-card { height: 120px; }
+@keyframes sk { to { background-position: -150% 0; } }
 .vtitle { font: 600 13px var(--text); color: var(--accent); text-transform: uppercase; letter-spacing: .04em; padding: 14px 0 2px; }
 .vcard { display: grid; gap: 18px; }
 .vrow { display: grid; grid-template-columns: 110px 1fr; gap: 12px; align-items: start; }
@@ -195,6 +203,8 @@ main { padding-block: 20px 72px; }
 .dl:active { transform: scale(.93); }
 .dl.busy svg { animation: spin .8s linear infinite; }
 .dl.done { background: var(--ok-bg); color: var(--ok); }
+.dl.got { position: relative; }
+.dl.got::after { content: ""; position: absolute; top: 1px; right: 1px; width: 8px; height: 8px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 0 2px var(--bg); }
 @keyframes spin { to { transform: rotate(360deg); } }
 .none { padding: 26px 18px; text-align: center; color: var(--fg-2); border: 1.5px dashed var(--line); border-radius: 20px; font-size: 14.5px; }
 .empty { margin-top: 18px; }
@@ -314,7 +324,7 @@ dialog.sheet[open]::backdrop { animation: fade .4s var(--out); }
 </header>
 
 <main class="wrap">
-  <div class="loading" id="v-loading">Жүктелуде…</div>
+  <div class="loading" id="v-loading" aria-label="Жүктелуде"><div class="sk sk-stage"></div><div class="sk sk-row"></div><div class="sk sk-card"></div><div class="sk sk-card"></div></div>
 
   <!-- Кіру / тіркелу -->
   <section class="auth" id="v-auth" hidden>
@@ -432,7 +442,7 @@ const dmy = s => s.split('-').reverse().join('.');
 const dm = s => s.split('-').reverse().slice(0, 2).join('.');
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const GRADES = [7, 8, 9, 10, 11];
-let session = null, profile = null, subs = [], reqs = [], LESSONS = [], planVar = null;
+let session = null, profile = null, subs = [], reqs = [], LESSONS = [], planVar = null, GOT = new Set();
 const V = window.FS_VARIANTS;
 const openG = new Set((() => { try { return JSON.parse(localStorage.getItem('fs-openg') || '[]'); } catch (_) { return []; } })());
 let READY = new Set();
@@ -460,6 +470,13 @@ function authTab(which) {
   $('f-login').hidden = which !== 'login'; $('f-signup').hidden = which !== 'signup';
 }
 $('t-login').onclick = () => authTab('login');
+if (/[?&]signup/.test(location.search)) authTab('signup');
+document.querySelectorAll('input[type=password]').forEach(i => {
+  const b = document.createElement('button'); b.type = 'button'; b.className = 'eye'; b.setAttribute('aria-label', 'Құпиясөзді көрсету');
+  b.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
+  b.onclick = () => { const show = i.type === 'password'; i.type = show ? 'text' : 'password'; b.classList.toggle('on', show); b.setAttribute('aria-label', show ? 'Құпиясөзді жасыру' : 'Құпиясөзді көрсету'); i.focus(); };
+  i.parentNode.classList.add('pw'); i.after(b);
+});
 $('t-signup').onclick = () => authTab('signup');
 $('f-login').onsubmit = async e => {
   e.preventDefault(); msg($('l-msg'));
@@ -545,14 +562,16 @@ async function loadLessons() {
 }
 async function loadAll() {
   const uid = session.user.id;
-  const [p, s, q] = await Promise.all([
+  const [p, s, q, d] = await Promise.all([
     sb.from('profiles').select('*').eq('id', uid).single(),
     sb.from('subscriptions').select('grade,paid_until,trial').eq('user_id', uid),
     sb.from('payment_requests').select('*').eq('user_id', uid).order('created_at', { ascending: false }).limit(10),
+    sb.from('downloads').select('variant,grade,n,kind').eq('user_id', uid).limit(2000),
     loadLessons()
   ]);
   profile = p.data || { full_name: '', phone: '', school: '' };
   subs = s.data || []; reqs = q.data || [];
+  GOT = new Set(((d && d.data) || []).map(x => `${x.variant || x.grade}|${x.n}|${x.kind}`));
 }
 function activeGrades(today) { return subs.filter(x => x.paid_until >= today).map(x => x.grade).sort((a, b) => a - b); }
 
@@ -716,13 +735,14 @@ const vt = fn => { if (!reduce && document.startViewTransition) return document.
 function weekLessons(g, w) {
   return myVariants(g).flatMap(v => LESSONS.filter(l => l.v === v && l.date >= w.from && l.date <= w.to).map(l => ({ ...l, v })));
 }
+let jumpNow = false;
 let mode = (() => { try { return localStorage.getItem('fs-mode') || 'week'; } catch (_) { return 'week'; } })(), query = '';
 const dowOf = d => DOW[(Date.parse(d) / 864e5 + 3) % 7];
 function subOf(g) { const t = FS_WEEK().today; return subs.find(x => x.grade === g && x.paid_until >= t); }
 function dlBtns(l, g) {
   const ok = !!subOf(g);
   return ['kmzh', 'pres', 'ws'].filter(k => l[k]).map(k => k === 'kmzh' || ok
-    ? `<button class="dl" type="button" data-dl="${l.v}|${l.n}|${k}">${ICO[k]}<span>${LBL[k]}</span>${k === 'kmzh' ? '<em>тегін</em>' : ''}</button>`
+    ? `<button class="dl${GOT.has(`${l.v}|${l.n}|${k}`) ? ' got' : ''}" type="button" data-dl="${l.v}|${l.n}|${k}" title="${GOT.has(`${l.v}|${l.n}|${k}`) ? 'Бұрын жүктелген' : 'Жүктеу'}">${ICO[k]}<span>${LBL[k]}</span>${k === 'kmzh' && !GOT.has(`${l.v}|${l.n}|${k}`) ? '<em>тегін</em>' : ''}</button>`
     : `<button class="dl lock" type="button" data-lock="${g}" title="Жазылыммен ашылады">${ICO.lock}<span>${LBL[k]}</span></button>`).join('');
 }
 function renderWeek() {
@@ -768,7 +788,7 @@ function renderWeek() {
   }
   $('week').innerHTML = `${modes}<div class="gtabs" role="tablist" id="gtabs"><span class="ind" id="ind"></span>${tabs}</div><div class="gmeta acc-row"><span>${selG}-сынып${vs.length === 1 && selG >= 10 ? ' · ' + esc(V.byId[vs[0]].short) : ''}</span>${access}</div>${body}`;
   moveInd(true);
-  if (mode === 'all') filterTopics();
+  if (mode === 'all') { filterTopics(); if (!query && jumpNow) { jumpNow = false; const n = document.querySelector('#topics .tr.now'); if (n) setTimeout(() => n.scrollIntoView({ block: 'center', behavior: reduce ? 'auto' : 'smooth' }), 80); } }
   const td = document.querySelector('.day.today'); if (td) td.parentNode.scrollLeft = Math.max(0, td.offsetLeft - td.parentNode.offsetLeft - 120);
 }
 function filterTopics() {
@@ -784,7 +804,7 @@ document.addEventListener('click', e => {
     document.querySelectorAll('#topics .tr.open').forEach(x => { x.classList.remove('open'); x.querySelector('.th').setAttribute('aria-expanded', 'false'); });
     if (open) { r.classList.add('open'); th.setAttribute('aria-expanded', 'true'); } return; }
   const m = e.target.closest('[data-mode]');
-  if (m && m.dataset.mode !== mode) { mode = m.dataset.mode; selDay = null; try { localStorage.setItem('fs-mode', mode); } catch (_) {} swapWeek(); return; }
+  if (m && m.dataset.mode !== mode) { mode = m.dataset.mode; selDay = null; jumpNow = mode === 'all'; try { localStorage.setItem('fs-mode', mode); } catch (_) {} swapWeek(); return; }
   const lk = e.target.closest('[data-lock]');
   if (lk) { const g = +lk.dataset.lock; GRADES.forEach(x => { const c = $('pick-' + x); if (c) c.checked = x === g; }); calc(); $('pay').hidden = true; $('f-buy').hidden = false;
     toast('Презентация мен жұмыс парағы жазылыммен ашылады'); openSheet('subscribe'); }
@@ -920,12 +940,12 @@ async function download(v, n, kind, btn) {
     const blob = await r.blob();
     const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name;
     document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
-    ok = true;
+    ok = true; GOT.add(`${v}|${n}|${kind}`);
   } catch (err) { toast('Желі қатесі. Қайталап көріңіз.'); }
   finally {
     btn.classList.remove('busy'); btn.disabled = false;
     btn.querySelector('svg').outerHTML = ok ? ICO.done : keep;
-    if (ok) { btn.classList.add('done'); setTimeout(() => { btn.classList.remove('done'); btn.querySelector('svg').outerHTML = keep; }, 2200); }
+    if (ok) { btn.classList.add('done'); const em = btn.querySelector('em'); if (em) em.remove(); setTimeout(() => { btn.classList.remove('done'); btn.classList.add('got'); btn.querySelector('svg').outerHTML = keep; }, 2200); }
   }
 }
 
