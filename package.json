@@ -1,0 +1,7 @@
+{
+  "name": "fizika-sandygy",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Физика пәні мұғалімдеріне арналған ҚМЖ мен презентациялар: жеке кабинет",
+  "engines": { "node": ">=20" }
+}

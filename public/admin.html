@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="kk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Әкімші · Физика Сандығы</title>
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Manrope:wght@600;700;800&display=swap">
+<link rel="stylesheet" href="/assets/base.css">
+<style>
+main { padding-block: 36px 96px; }
+h1 { font-size: clamp(28px, 4vw, 40px); font-weight: 800; }
+.kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin: 24px 0 8px; }
+.kpi { background: var(--bg-2); border-radius: 18px; padding: 18px 20px; }
+.kpi b { display: block; font: 800 32px/1.1 var(--display); letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
+.kpi span { color: var(--fg-2); font-size: 14px; }
+@media (max-width: 720px) { .kpis { grid-template-columns: 1fr 1fr; } }
+.sec { margin-top: 48px; }
+.sec h2 { font-size: clamp(21px, 2.4vw, 28px); font-weight: 700; margin-bottom: 14px; }
+.tbl { overflow-x: auto; border-top: 1px solid var(--line); }
+table { width: 100%; border-collapse: collapse; font-size: 14.5px; }
+th { text-align: left; font-weight: 600; color: var(--fg-2); font-size: 13px; padding: 10px 10px 10px 0; border-bottom: 1px solid var(--line); white-space: nowrap; }
+td { padding: 12px 10px 12px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+td small { display: block; color: var(--fg-2); font-size: 12.5px; }
+td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.acts { display: flex; gap: 8px; flex-wrap: wrap; }
+.filter { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 12px; }
+.filter input { font: 15px var(--text); color: var(--fg); background: var(--bg-2); border: 1px solid transparent; border-radius: 10px; padding: 9px 12px; min-width: 0; width: 260px; max-width: 100%; }
+.filter input:focus { outline: none; border-color: var(--accent); }
+.deny { padding: 20vh 0; text-align: center; color: var(--fg-2); display: grid; gap: 14px; justify-items: center; }
+.empty { color: var(--fg-2); padding: 16px 0; }
+tr.flag td { background: var(--warn-bg); }
+</style>
+</head>
+<body>
+<header class="nav">
+  <div class="wrap">
+    <a class="brand" href="/">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><ellipse cx="12" cy="12" rx="10" ry="3.8"/><ellipse cx="12" cy="12" rx="10" ry="3.8" transform="rotate(60 12 12)"/><ellipse cx="12" cy="12" rx="10" ry="3.8" transform="rotate(120 12 12)"/><circle cx="12" cy="12" r="1.8" fill="currentColor" stroke="none"/></svg>
+      Физика Сандығы
+    </a>
+    <div class="right"><a class="textbtn" href="/app">Кабинет</a><button class="pill ghost sm" type="button" id="refresh">Жаңарту</button></div>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="deny" id="deny" hidden><p id="deny-t">Бұл бет тек әкімшіге арналған.</p><a class="pill" href="/app">Кабинетке кіру</a></div>
+  <div id="adm" hidden>
+    <h1>Әкімші беті</h1>
+    <div class="kpis">
+      <div class="kpi"><b id="k-pend">0</b><span>төлем күтілуде</span></div>
+      <div class="kpi"><b id="k-act">0</b><span>белсенді мұғалім</span></div>
+      <div class="kpi"><b id="k-users">0</b><span>тіркелген</span></div>
+      <div class="kpi"><b id="k-dl">0</b><span>жүктеу, 7 күн</span></div>
+    </div>
+
+    <div class="sec">
+      <h2>Төлем күтіп тұрған өтінімдер</h2>
+      <p class="hint" style="margin-bottom:12px">Kaspi-де ақша түскенін тексеріп, «Растау» басыңыз. Жазылым бірден ашылады (бар жазылымға мерзім қосылады).</p>
+      <div class="tbl" id="pending"></div>
+    </div>
+
+    <div class="sec">
+      <h2>Мұғалімдер</h2>
+      <div class="filter"><input id="q" placeholder="Аты, телефон, email бойынша іздеу" aria-label="Іздеу"></div>
+      <div class="tbl" id="users"></div>
+    </div>
+
+    <div class="sec">
+      <h2>Соңғы жүктеулер</h2>
+      <p class="hint" style="margin-bottom:12px">Сары жол: бір мұғалім 7 күнде 40-тан көп файл жүктеген. Бұл материалды таратып жүргенін білдіруі мүмкін.</p>
+      <div class="tbl" id="dls"></div>
+    </div>
+  </div>
+</main>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="/assets/config.js"></script>
+<script>
+const C = window.FS_CONFIG;
+const sb = supabase.createClient(C.supabaseUrl, C.supabaseKey);
+const $ = id => document.getElementById(id);
+const fmt = n => n.toLocaleString('ru-RU').replace(/ /g, ' ') + ' ₸';
+const dmy = s => s.slice(0, 10).split('-').reverse().join('.');
+const tm = s => new Date(s).toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+let tt; function toast(t) { const el = $('toast'); el.textContent = t; el.classList.add('show'); clearTimeout(tt); tt = setTimeout(() => el.classList.remove('show'), 3000); }
+let P = [], S = [], R = [], D = [], L = {};
+
+async function load() {
+  const since = new Date(Date.now() - 7 * 86400000).toISOString();
+  const [p, s, r, d, l] = await Promise.all([
+    sb.from('profiles').select('*').order('created_at', { ascending: false }),
+    sb.from('subscriptions').select('*'),
+    sb.from('payment_requests').select('*').order('created_at', { ascending: true }),
+    sb.from('downloads').select('*').gte('created_at', since).order('created_at', { ascending: false }).limit(1000),
+    Object.keys(L).length ? null : fetch('/lessons.json').then(x => x.json())
+  ]);
+  if (p.error) throw p.error;
+  P = p.data; S = s.data || []; R = r.data || []; D = d.data || [];
+  if (l) l.forEach(x => L[x.grade + '-' + x.n] = x);
+}
+const prof = id => P.find(x => x.id === id) || {};
+
+function render() {
+  const today = FS_WEEK().today;
+  const pend = R.filter(x => x.status === 'pending');
+  const active = new Set(S.filter(x => x.paid_until >= today).map(x => x.user_id));
+  $('k-pend').textContent = pend.length; $('k-act').textContent = active.size; $('k-users').textContent = P.length; $('k-dl').textContent = D.length;
+
+  $('pending').innerHTML = pend.length ? `<table><thead><tr><th>Күні</th><th>Мұғалім</th><th>Сынып</th><th>Мерзім</th><th>Сома</th><th>Код</th><th></th></tr></thead><tbody>` +
+    pend.map(r => { const u = prof(r.user_id); return `<tr>
+      <td class="num">${tm(r.created_at)}</td>
+      <td>${esc(u.full_name) || '—'}<small>${esc(u.phone)} · ${esc(u.email)}</small><small>${esc(u.school)}</small></td>
+      <td>${r.grades.join(', ')}</td><td>${r.plan === 'month' ? '1 ай' : '1 жыл'}</td><td class="num"><b>${fmt(r.amount)}</b></td>
+      <td class="num">${r.id.slice(0, 8).toUpperCase()}</td>
+      <td><div class="acts"><button class="pill sm" type="button" data-ok="${r.id}">Растау</button><button class="pill danger sm" type="button" data-no="${r.id}">Бас тарту</button></div></td></tr>`; }).join('') + '</tbody></table>'
+    : '<p class="empty">Күтіп тұрған өтінім жоқ.</p>';
+
+  const q = $('q').value.trim().toLowerCase();
+  const users = P.filter(u => !q || [u.full_name, u.phone, u.email, u.school].join(' ').toLowerCase().includes(q));
+  $('users').innerHTML = users.length ? `<table><thead><tr><th>Мұғалім</th><th>Мектеп</th><th>Жазылым</th><th>Тіркелген</th></tr></thead><tbody>` +
+    users.map(u => {
+      const ss = S.filter(x => x.user_id === u.id).sort((a, b) => a.grade - b.grade);
+      const chips = ss.length ? ss.map(x => `<span class="chip ${x.paid_until >= today ? 'ok' : 'err'}">${x.grade}: ${dmy(x.paid_until)}</span>`).join(' ') : '<span class="chip mute">жоқ</span>';
+      return `<tr><td>${esc(u.full_name) || '—'}${u.is_admin ? ' <span class="chip mute">әкімші</span>' : ''}<small>${esc(u.phone)} · ${esc(u.email)}</small></td><td>${esc(u.school)}</td><td>${chips}</td><td class="num">${dmy(u.created_at)}</td></tr>`;
+    }).join('') + '</tbody></table>' : '<p class="empty">Мұғалім табылмады.</p>';
+
+  const per = {}; D.forEach(x => per[x.user_id] = (per[x.user_id] || 0) + 1);
+  $('dls').innerHTML = D.length ? `<table><thead><tr><th>Уақыт</th><th>Мұғалім</th><th>Сабақ</th><th>Файл</th><th>7 күнде</th></tr></thead><tbody>` +
+    D.slice(0, 200).map(x => { const u = prof(x.user_id), l = L[x.grade + '-' + x.n] || {}; return `<tr class="${per[x.user_id] > 40 ? 'flag' : ''}">
+      <td class="num">${tm(x.created_at)}</td><td>${esc(u.full_name) || '—'}<small>${esc(u.phone)}</small></td>
+      <td>${x.grade}-сынып, №${esc(l.disp || x.n)}<small>${esc(l.topic || '')}</small></td><td>${x.kind === 'kmzh' ? 'ҚМЖ' : 'Презентация'}</td><td class="num">${per[x.user_id]}</td></tr>`; }).join('') + '</tbody></table>'
+    : '<p class="empty">Соңғы 7 күнде жүктеу болмады.</p>';
+}
+
+async function decide(id, ok, btn) {
+  btn.disabled = true;
+  const { error } = await sb.rpc('decide_request', { p_id: id, p_approve: ok });
+  if (error) { btn.disabled = false; return toast('Қате: ' + error.message); }
+  toast(ok ? 'Жазылым ашылды' : 'Өтінім жабылды');
+  await refresh();
+}
+async function refresh() { try { await load(); render(); } catch (e) { toast('Жүктеу қатесі: ' + e.message); } }
+
+document.addEventListener('click', e => {
+  const a = e.target.closest('[data-ok]'); if (a) return decide(a.dataset.ok, true, a);
+  const b = e.target.closest('[data-no]'); if (b) return decide(b.dataset.no, false, b);
+});
+$('q').addEventListener('input', render);
+$('refresh').onclick = refresh;
+
+(async () => {
+  const { data } = await sb.auth.getSession();
+  if (!data.session) { $('deny-t').textContent = 'Алдымен кабинетке кіріңіз.'; $('deny').hidden = false; return; }
+  const { data: me } = await sb.from('profiles').select('is_admin').eq('id', data.session.user.id).single();
+  if (!me || !me.is_admin) { $('deny').hidden = false; return; }
+  $('adm').hidden = false; refresh();
+})();
+</script>
+</body>
+</html>
