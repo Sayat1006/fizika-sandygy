@@ -399,10 +399,11 @@ dialog.sheet[open]::backdrop { animation: fade .4s var(--out); }
             </form>
             <div class="pay" id="pay" hidden>
               <div class="mini-h">Төлем</div>
-              <p class="hint">Сомасын Kaspi Gold-қа аударып, чекті WhatsApp-қа жіберіңіз. Төлем расталған соң жазылым ашылады.</p>
+              <p class="hint">1. Сомасын Kaspi Gold-қа аударыңыз.<br>2. Kaspi чегін Telegram ботқа жіберіңіз. Төлем расталған сәтте жазылым өзі ашылады, ботқа хабар келеді.</p>
               <div class="row"><div><div class="hint">Сомасы</div><div class="num" id="pay-sum"></div></div></div>
               <div class="row"><div><div class="hint">Kaspi Gold</div><div class="num" id="pay-kaspi"></div></div><button class="textbtn" type="button" id="copy-kaspi">Көшіру</button></div>
-              <a class="pill" id="pay-wa" target="_blank" rel="noopener">Чекті WhatsApp-қа жіберу</a>
+              <a class="pill" id="pay-tg" target="_blank" rel="noopener">Чекті Telegram-ға жіберу</a>
+              <a class="textbtn" id="pay-wa" target="_blank" rel="noopener" style="text-align:center">Telegram жоқ па? WhatsApp-қа жіберу</a>
               <button class="textbtn" type="button" id="pay-back">Жаңа өтінім</button>
             </div>
           </div>
@@ -596,7 +597,7 @@ function render() {
   }).join('');
   const st = { pending: ['warn', 'Төлем күтілуде'], approved: ['ok', 'Расталды'], rejected: ['err', 'Қабылданбады'] };
   $('reqs').innerHTML = reqs.length ? '<div class="hint" style="padding-bottom:6px">Өтінімдер</div>' + reqs.map(r => `
-    <div class="r"><span>${dmy(r.created_at.slice(0, 10))} · ${r.grades.join(', ')}-сынып · ${r.plan === 'month' ? '1 ай' : '1 жыл'} · ${fmt(r.amount)}</span><span class="chip ${st[r.status][0]}">${st[r.status][1]}</span></div>`).join('') : '';
+    <div class="r"><span>${dmy(r.created_at.slice(0, 10))} · ${r.grades.join(', ')}-сынып · ${r.plan === 'month' ? '1 ай' : '1 жыл'} · ${fmt(r.amount)}</span>${r.status === 'pending' && C.telegramBot ? `<a href="${tgPay(r.id)}" target="_blank" rel="noopener">Чек жіберу</a>` : `<span class="chip ${st[r.status][0]}">${st[r.status][1]}</span>`}</div>`).join('') : '';
 
   // buy form
   if (!$('picks').children.length) {
@@ -689,6 +690,7 @@ $('cls-save').onclick = async () => {
   closeSheet($('variants')); render(); toast('Сыныптарыңыз бекітілді');
 };
 
+const tgPay = id => `https://t.me/${C.telegramBot}?start=p${String(id).replace(/-/g, '')}`;
 function picked() { return GRADES.filter(g => $('pick-' + g) && $('pick-' + g).checked); }
 function plan() { return $('plan-year').checked ? 'year' : 'month'; }
 function calc() { const n = picked().length; $('total').textContent = fmt(n * C.prices[plan()]); $('b-go').disabled = !n; }
@@ -940,6 +942,7 @@ $('f-buy').onsubmit = async e => {
   $('pay-sum').textContent = fmt(r.amount); $('pay-kaspi').textContent = C.kaspi;
   const text = `Сәлеметсіз бе! Сабақтас, өтінім №${code}: ${r.grades.join(', ')}-сынып, ${r.plan === 'month' ? '1 ай' : '1 жыл'}, ${fmt(r.amount)}. Аты-жөні: ${profile.full_name}. Email: ${session.user.email}. Kaspi чегін қоса жіберемін.`;
   $('pay-wa').href = `https://wa.me/${C.whatsapp}?text=${encodeURIComponent(text)}`;
+  $('pay-tg').href = tgPay(id); $('pay-tg').hidden = !C.telegramBot;
   $('f-buy').hidden = true; $('pay').hidden = false;
 };
 $('pay-back').onclick = () => { $('pay').hidden = true; $('f-buy').hidden = false; };

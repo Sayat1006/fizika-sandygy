@@ -15,7 +15,7 @@
 | `public/samples.html` | Тегін үлгілер: тіркелусіз көру және жүктеу |
 | `public/oferta.html`, `public/privacy.html` | Оферта және құпиялылық саясаты (жоба, деректемелерді толтыру керек) |
 | `materials/` | ҚМЖ (.docx), презентациялар (.pptx), жұмыс парақтары (.pdf). Сырттан тікелей ашылмайды, тек `api/download` арқылы |
-| `supabase/functions/telegram` | Telegram бот: әкімшіге жаңа өтінім, мұғалімге төлем расталды, дүйсенбідегі апталық хабар |
+| `supabase/functions/telegram` | Telegram бот: мұғалім Kaspi чегін ботқа жібереді → әкімшіге «✅ Растау / ❌ Бас тарту» батырмаларымен келеді → бір басқанда жазылым ашылып, мұғалімге хабар кетеді; дүйсенбідегі апталық хабар |
 
 Дерекқор: Supabase жобасы `fizika-sandygy` (кестелер: `profiles`, `subscriptions`, `payment_requests`, `downloads`).
 
