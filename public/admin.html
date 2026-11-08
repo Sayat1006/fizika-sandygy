@@ -90,6 +90,7 @@ tr.flag td { background: var(--warn-bg); }
       <h2>Telegram бот</h2>
       <div class="card" style="display:grid;gap:12px;max-width:640px">
         <p id="bot-state" class="hint"></p>
+        <div class="acts" id="tg-link-row" hidden><button class="pill sm" type="button" id="tg-link">Telegram-ымды байланыстыру</button><span class="hint" id="tg-link-state"></span></div>
         <div class="field"><label for="bot-token">BotFather берген токен</label><input id="bot-token" type="password" autocomplete="off" placeholder="123456789:AA..."></div>
         <div class="acts"><button class="pill sm" type="button" id="bot-save">Сақтап, ботты қосу</button></div>
         <p class="hint">Токен жабық сақталады, оны сайт пен бот қана оқиды. Сақтаған соң кабинетке кіріп, «Telegram-ды қосу» батырмасын басыңыз: жаңа өтінім түскенде хабар келеді.</p>
@@ -175,7 +176,7 @@ async function decide(id, ok, btn) {
   toast(ok ? 'Жазылым ашылды' : 'Өтінім жабылды');
   await refresh();
 }
-async function refresh() { try { await load(); render(); } catch (e) { toast('Жүктеу қатесі: ' + e.message); } }
+async function refresh() { try { await load(); render(); botState(); } catch (e) { toast('Жүктеу қатесі: ' + e.message); } }
 
 document.addEventListener('click', e => {
   const a = e.target.closest('[data-ok]'); if (a) return decide(a.dataset.ok, true, a);
@@ -196,8 +197,21 @@ document.addEventListener('click', async e => {
 });
 async function botState() {
   const { data } = await sb.rpc('bot_token_set');
-  $('bot-state').textContent = data ? 'Бот токені сақталған. Ауыстыру үшін жаңа токенді енгізіңіз.' : 'Бот әлі қосылмаған.';
+  $('bot-state').textContent = data ? 'Бот қосылған. Токенді ауыстыру үшін ғана жаңасын енгізіңіз.' : 'Бот әлі қосылмаған.';
+  const { data: s } = await sb.auth.getSession();
+  const me = P.find(x => x.id === s.session.user.id) || {};
+  $('tg-link-row').hidden = !data;
+  $('tg-link-state').textContent = me.tg_chat_id ? 'Байланыстырылған: жаңа өтінім түскенде Telegram-ға хабар келеді.' : 'Байланыстырылмаған.';
+  $('tg-link').textContent = me.tg_chat_id ? 'Қайта байланыстыру' : 'Telegram-ымды байланыстыру';
 }
+$('tg-link').onclick = async () => {
+  const w = window.open('', '_blank');
+  const { data: code, error } = await sb.rpc('tg_link_code');
+  if (error) { if (w) w.close(); return toast('Қате: ' + error.message); }
+  const url = `https://t.me/${C.telegramBot}?start=${code}`;
+  if (w) w.location = url; else location.href = url;
+  toast('Telegram-да «Start» басыңыз, сосын «Жаңарту» батырмасын басыңыз.');
+};
 $('bot-save').onclick = async () => {
   const tok = $('bot-token').value.trim(); if (!tok) return toast('Токенді енгізіңіз');
   $('bot-save').disabled = true;
@@ -221,7 +235,7 @@ async function enter() {
   const { data: me } = await sb.from('profiles').select('is_admin').eq('id', data.session.user.id).single();
   if (!me || !me.is_admin) { await sb.auth.signOut(); return showLogin('Бұл аккаунтта әкімші құқығы жоқ.'); }
   $('login').hidden = true; $('adm').hidden = false; $('refresh').hidden = false; $('logout').hidden = false;
-  refresh(); botState();
+  refresh();
 }
 $('f-login').onsubmit = async e => {
   e.preventDefault(); $('a-msg').hidden = true; $('a-go').disabled = true;
