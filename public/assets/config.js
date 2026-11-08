@@ -8,7 +8,7 @@ window.FS_CONFIG = {
   telegram: 'username',               // Telegram логині, @ белгісіз
   prices: { month: 1490, year: 9990 }, // бір сынып үшін, ₸ (дерекқордағы plan_price функциясымен бірдей болуы керек)
   googleLogin: false,                 // Supabase-те Google провайдері қосылған соң true етіңіз
-  telegramBot: '',                    // хабарлама боты, мысалы 'fizika_sandygy_bot' (@ белгісіз)
+  telegramBot: 'impulse_edu_bot',                  // хабарлама боты, мысалы 'fizika_sandygy_bot' (@ белгісіз)
   siteUrl: 'https://fizika-sandygy.vercel.app'
 };
 
