@@ -1,4 +1,4 @@
-// ҚМЖ-ны мұғалімге бейімдеу: «Педагогтың аты-жөні» мен «Күні» ұяшықтарын толтырады.
+// ҚМЖ-ны мұғалімге бейімдеу: «Педагогтың аты-жөні» ұяшығын толтырады (күнді мұғалім өзі қояды).
 const { readZip, writeZip, entryData } = require('./_zip');
 
 const xmlEsc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -42,7 +42,7 @@ function personalizeKmzh(buf, { teacher, date }) {
     let xml = entryData(doc).toString('utf8');
     // ескі үлгі «Педагогтың аты-жөні:», жаңа үлгі (130-бұйрық) «Педагогтің тегі, аты, әкесінің аты»
     xml = xml.includes('Педагогтің тегі, аты') ? fillNextCell(xml, 'Педагогтің тегі, аты', teacher) : fillNextCell(xml, 'Педагогтың аты-жөні:', teacher);
-    xml = fillNextCell(xml, 'Күні:', date);
+    // Күнді қоймаймыз: әр мұғалімнің сабақ кестесі әртүрлі
     return writeZip(entries.map((e) => (e === doc ? { name: e.name, data: Buffer.from(xml, 'utf8') } : e)));
   } catch (e) {
     console.error('personalize failed', e);
