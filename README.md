@@ -28,7 +28,7 @@
 
 ## Ережелер
 
-- Тіркелгенде 5 сыныптың бәріне 7 күн тегін сынақ ашылады (`subscriptions.trial = true`).
+- Тіркелгенде 5 сыныптың бәріне 3 күн тегін сынақ ашылады (`subscriptions.trial = true`).
 - Telegram: Supabase-те `TELEGRAM_BOT_TOKEN` құпиясын қойып, `.../functions/v1/telegram?setup=1` ашу; `config.js` ішінде `telegramBot` толтыру. Апталық хабар: pg_cron, дүйсенбі 08:00.
 - Google арқылы кіру: Supabase → Authentication → Providers → Google қосылған соң `config.js` ішінде `googleLogin: true`.
 

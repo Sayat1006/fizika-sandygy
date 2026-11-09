@@ -4,6 +4,7 @@
 // 3) {type:'decided', id}: төлем расталғанын мұғалімге хабарлау (дерекқор триггерінен).
 // 4) {type:'weekly'}: дүйсенбі сайын осы аптаның сабақтары (pg_cron-нан).
 // 5) GET ?setup=1: webhook-ты осы функцияға бағыттау.
+// 7) {type:'trial_end'}: тегін сынақтың соңғы күні мұғалімге еске салу (pg_cron, күн сайын).
 // 6) /start p<өтінім>: мұғалім Kaspi чегін ботқа жібереді → әкімшіге «Растау / Бас тарту» батырмаларымен келеді.
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 
@@ -179,12 +180,31 @@ async function onWeekly() {
     }).join('\n\n');
     if (!blocks) continue;
     const head = `📚 <b>Осы аптаның сабақтары</b> (${dm(w.from)}–${dm(w.to)})\nҚМЖ, презентация мен жұмыс парағы кабинетте ашық.\n\n`;
-    const tail = paid.length ? '' : '\n\nТегін сынақ мерзімі аяқталған соң сабақтар жабылады. Ұнаса, керек сыныптарға жазылыңыз.';
+    const tail = paid.length ? '' : '\n\nТегін сынақ аяқталған соң слайд пен парақ жабылады, ҚМЖ тегін болып қала береді.';
     await send(p.tg_chat_id, head + blocks + tail, { text: 'Кабинетті ашу', url: SITE + '/app' });
     sent++;
     await new Promise((r) => setTimeout(r, 60));
   }
   await db.from('tg_weekly_log').update({ sent }).eq('week', w.from);
+  return { sent };
+}
+
+async function onTrialEnd() {
+  const today = week().today;
+  const { data: subs } = await db.from('subscriptions').select('user_id,trial,paid_until').gte('paid_until', today);
+  const byUser = new Map<string, any[]>();
+  for (const s of subs ?? []) byUser.set(s.user_id, [...(byUser.get(s.user_id) ?? []), s]);
+  // trial ends today and nothing is paid
+  const ids = [...byUser].filter(([, ss]) => ss.every((s) => s.trial) && ss.some((s) => s.paid_until === today)).map(([id]) => id);
+  if (!ids.length) return { sent: 0 };
+  const { data: people } = await db.from('profiles').select('id,full_name,tg_chat_id').in('id', ids).not('tg_chat_id', 'is', null).is('trial_reminded_at', null);
+  let sent = 0;
+  for (const p of people ?? []) {
+    await send(p.tg_chat_id, `⏰ <b>Тегін сынақ бүгін аяқталады</b>\n\nЕртеңнен бастап презентация мен жұмыс парағы жабылады. ҚМЖ тегін болып қала береді.\n\nЖазылым бір сыныпқа: айына <b>1 490 ₸</b> немесе жылына <b>9 990 ₸</b>.`, { text: 'Жазылымды рәсімдеу', url: SITE + '/app' });
+    await db.from('profiles').update({ trial_reminded_at: new Date().toISOString() }).eq('id', p.id);
+    sent++;
+    await new Promise((r) => setTimeout(r, 60));
+  }
   return { sent };
 }
 
@@ -213,6 +233,7 @@ Deno.serve(async (req) => {
     if (b?.type === 'request' && typeof b.id === 'string') return json(await onRequest(b.id));
     if (b?.type === 'decided' && typeof b.id === 'string') return json(await onDecided(b.id));
     if (b?.type === 'weekly') return json(await onWeekly());
+    if (b?.type === 'trial_end') return json(await onTrialEnd());
     return json({ error: 'unknown' }, 400);
   } catch (e) {
     console.error(e);
