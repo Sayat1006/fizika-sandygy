@@ -40,7 +40,8 @@ function personalizeKmzh(buf, { teacher, date }) {
     const doc = entries.find((e) => e.name === 'word/document.xml');
     if (!doc) return buf;
     let xml = entryData(doc).toString('utf8');
-    xml = fillNextCell(xml, 'Педагогтың аты-жөні:', teacher);
+    // ескі үлгі «Педагогтың аты-жөні:», жаңа үлгі (130-бұйрық) «Педагогтің тегі, аты, әкесінің аты»
+    xml = xml.includes('Педагогтің тегі, аты') ? fillNextCell(xml, 'Педагогтің тегі, аты', teacher) : fillNextCell(xml, 'Педагогтың аты-жөні:', teacher);
     xml = fillNextCell(xml, 'Күні:', date);
     return writeZip(entries.map((e) => (e === doc ? { name: e.name, data: Buffer.from(xml, 'utf8') } : e)));
   } catch (e) {
