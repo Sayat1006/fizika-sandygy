@@ -14,7 +14,7 @@ npm test           # физикалық формулалар мен симуля
 npm run build      # typecheck + ../public/lab ішіне өндірістік жинақ
 ```
 
-**Орналастыру:** бөлек жоба керек емес. Түбірдегі `vercel.json` жинақ кезінде `npm --prefix lab ci && npm --prefix lab run build` орындайды, ал `/lab/*` сұраулары `lab/index.html`-ге бағытталады.
+**Орналастыру:** бөлек жоба керек емес. Түбірдегі `vercel.json` жинақ кезінде `npm --prefix lab ci && npm --prefix lab run build` орындайды, ал `/lab/*` сұраулары `/lab` бетіне бағытталады (`cleanUrls` қосулы болғандықтан `index.html` деп жазуға болмайды).
 
 ## Қазір жұмыс істейтін тәжірибелер
 
