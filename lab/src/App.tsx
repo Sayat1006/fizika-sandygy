@@ -45,7 +45,7 @@ function Shell() {
       <a className="skip" href="#main">Негізгі мазмұнға өту</a>
       <header className="topbar no-print">
         <NavLink to="/" className="brand" aria-label="PHYSICS LAB 3D — басты бет">
-          <svg viewBox="0 0 32 32" aria-hidden><rect width="32" height="32" rx="8" fill="var(--accent)" /><circle cx="16" cy="16" r="3" fill="#fff" /><ellipse cx="16" cy="16" rx="11" ry="4.5" fill="none" stroke="#fff" strokeWidth="1.6" transform="rotate(-30 16 16)" /><ellipse cx="16" cy="16" rx="11" ry="4.5" fill="none" stroke="#fff" strokeWidth="1.6" transform="rotate(30 16 16)" /></svg>
+          <svg viewBox="0 0 32 32" aria-hidden><rect width="32" height="32" rx="8" fill="var(--text)" /><g stroke="var(--bg)" fill="var(--bg)"><circle cx="16" cy="16" r="3" /><ellipse cx="16" cy="16" rx="11" ry="4.5" fill="none" strokeWidth="1.6" transform="rotate(-30 16 16)" /><ellipse cx="16" cy="16" rx="11" ry="4.5" fill="none" strokeWidth="1.6" transform="rotate(30 16 16)" /></g></svg>
           <span>PHYSICS LAB <b>3D</b></span>
         </NavLink>
         <nav className="mainnav" aria-label="Негізгі навигация">
