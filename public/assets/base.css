@@ -77,4 +77,22 @@ img { max-width: 100%; }
 footer { background: var(--bg-2); color: var(--fg-3); font-size: 12px; }
 footer .wrap { padding-block: 22px; display: flex; flex-wrap: wrap; gap: 8px 24px; justify-content: space-between; }
 
+/* ───── Қозғалыс жүйесі (ортақ) ───── */
+:root { --out: cubic-bezier(.2, .9, .25, 1); }
+/* Бет ашылғанда мазмұн жұмсақ пайда болады (тек мөлдірлік — орналасуға әсер етпейді) */
+main { animation: page-in .5s var(--out) both; }
+@keyframes page-in { from { opacity: 0; } }
+/* Көрінгенде көтеріліп шығу: motion.js .is-in қосады; JS жоқ болса мазмұн жасырылмайды */
+.js-motion [data-reveal] { opacity: 0; transform: translateY(18px); filter: blur(6px); transition: opacity .7s var(--out), transform .7s var(--out), filter .7s var(--out); will-change: opacity, transform; }
+.js-motion [data-reveal].is-in { opacity: 1; transform: none; filter: none; }
+/* Мәтіннің бұлдырап ауысуы */
+[data-swap] { display: inline-block; transition: opacity .26s var(--ease), filter .26s var(--ease), transform .26s var(--ease); }
+[data-swap].is-out { opacity: 0; filter: blur(8px); transform: translateY(6px); }
+/* Батырмалардың жауабы */
+.pill { transition: background .2s var(--ease), opacity .2s var(--ease), transform .25s var(--out), box-shadow .25s var(--out); }
+.pill:not(:disabled):hover { transform: translateY(-1px); }
+.pill:not(:disabled):active { transform: scale(.97); transition-duration: .08s; }
+.brand svg { transition: transform .6s var(--out); }
+.brand:hover svg { transform: rotate(-8deg) scale(1.06); }
+
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition-duration: .01ms !important; animation: none !important; } }

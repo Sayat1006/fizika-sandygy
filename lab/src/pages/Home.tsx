@@ -6,7 +6,7 @@ import { useT } from '../lib/i18n';
 import { webglAvailable } from '../lib/webgl';
 import { ExperimentCard, available, dateKk, useProgress } from './shared';
 
-const HeroScene = lazy(() => import('../three/HeroScene'));
+const MorphHero = lazy(() => import('../three/MorphHero'));
 
 const HOW = [
   ['Таңда', 'Сыныбыңды, тақырыпты және зертханалық жұмысты таңда.'],
@@ -26,7 +26,7 @@ export default function Home() {
         <div className="hero-scene" aria-hidden>
           {webglAvailable() && (
             <Suspense fallback={null}>
-              <HeroScene />
+              <MorphHero />
             </Suspense>
           )}
         </div>

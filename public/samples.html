@@ -26,6 +26,7 @@
 <link rel="preload" href="/assets/fonts/nunito-cyrillic-ext-800-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/assets/fonts.css">
 <link rel="stylesheet" href="/assets/base.css">
+<script src="/assets/motion.js"></script>
 <style>
 .nav .links { display: flex; gap: 24px; margin-left: 12px; }
 .nav .links a { color: var(--fg-2); font-size: 13.5px; }
@@ -93,7 +94,7 @@
 </header>
 
 <main class="wrap">
-  <section class="head">
+  <section class="head" data-reveal>
     <span class="eyebrow">Тіркелусіз · Тегін</span>
     <h1>Алдымен көріп алыңыз.</h1>
     <p>Әр сыныптан бір сабақтың толық ҚМЖ-сы, презентациясы мен жұмыс парағы. Қарап шығыңыз, жүктеп алып, сабағыңызда қолданып көріңіз.</p>
@@ -112,7 +113,7 @@
     <div id="view"></div>
   </section>
 
-  <section class="cta">
+  <section class="cta" data-reveal>
     <h2>Ұнады ма? ҚМЖ-ның бәрі тегін.</h2>
     <p id="cta-p">Тіркелсеңіз, кез келген тақырыптың ҚМЖ-сын тегін жүктейсіз. Презентация мен жұмыс парағы жазылыммен ашылады, алғашқы 3 күн олар да тегін.</p>
     <div class="row"><a class="pill lg" href="/app" style="font-size:17px;padding:12px 24px;min-height:48px">Тіркеліп, ҚМЖ алу</a><a class="more" href="/#price">Бағасы ›</a></div>
