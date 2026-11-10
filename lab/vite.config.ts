@@ -6,5 +6,6 @@ import react from '@vitejs/plugin-react';
 export default defineConfig({
   base: '/lab/',
   plugins: [react()],
+  server: { fs: { allow: ['..'] } }, // public/assets/morph.js ортақ файлын оқу үшін
   build: { outDir: '../public/lab', emptyOutDir: true, chunkSizeWarningLimit: 1200 },
 });

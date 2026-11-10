@@ -243,7 +243,7 @@ export default function ExperimentPage() {
         ))}
       </nav>
 
-      <section className="exp-body" aria-live="polite">
+      <section className="exp-body" aria-live="polite" key={step}>
         {step !== 3 && <h2>{step + 1}. {STEPS[step]}</h2>}
         {step === 0 && <Intro def={def} />}
         {step === 1 && <Theory def={def} />}

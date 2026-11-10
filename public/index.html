@@ -26,6 +26,7 @@
 <link rel="preload" href="/assets/fonts/nunito-cyrillic-ext-800-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/assets/fonts.css">
 <link rel="stylesheet" href="/assets/base.css">
+<script src="/assets/motion.js"></script>
 <style>
 /* Layout: one calm screen — text left, atom right; a single three-step line beneath. */
 html, body { height: 100%; }
@@ -58,6 +59,9 @@ h1 { font-size: clamp(42px, 6.6vw, 84px); font-weight: 800; line-height: 1.02; l
 .free { font-size: 14px; color: var(--fg-3); }
 .labcard { display: flex; align-items: center; gap: 12px; width: 100%; max-width: 420px; padding: 12px 16px; border-radius: 16px; background: var(--bg-2); color: var(--fg); text-align: left; transition: background .2s var(--ease); }
 .labcard:hover { text-decoration: none; background: color-mix(in srgb, var(--accent) 10%, var(--bg-2)); }
+.labcard .ic, .labcard .go { transition: transform .5s var(--out); }
+.labcard:hover .ic { transform: rotate(-10deg) scale(1.06); }
+.labcard:hover .go { transform: translateX(4px); }
 .labcard .ic { flex: none; width: 40px; height: 40px; border-radius: 12px; background: var(--accent); color: var(--on-accent); display: grid; place-items: center; }
 .labcard .ic svg { width: 22px; height: 22px; }
 .labcard .tx { display: grid; min-width: 0; }
@@ -66,7 +70,11 @@ h1 { font-size: clamp(42px, 6.6vw, 84px); font-weight: 800; line-height: 1.02; l
 .labcard .go { margin-left: auto; font-size: 22px; color: var(--fg-3); }
 
 .stage { position: relative; aspect-ratio: 1 / 1; width: 100%; max-width: 520px; justify-self: center; }
-#atom { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+#atom { position: absolute; inset: 0; width: 100%; height: 100%; display: block; cursor: pointer; }
+.shape { position: absolute; left: 0; right: 0; bottom: -4px; text-align: center; font: 600 13px var(--text); letter-spacing: .08em; text-transform: uppercase; color: var(--fg-3); pointer-events: none; }
+.dots { position: absolute; left: 0; right: 0; bottom: -20px; display: flex; justify-content: center; gap: 6px; pointer-events: none; }
+.dots i { width: 5px; height: 5px; border-radius: 99px; background: var(--line); transition: width .5s var(--out), background .5s var(--out); }
+.dots i.on { width: 18px; background: var(--accent); }
 .atom-fallback { position: absolute; inset: 0; display: grid; place-items: center; }
 .atom-fallback svg { width: 70%; height: auto; color: var(--fg-3); }
 
@@ -130,24 +138,27 @@ footer .wrap > span:last-child { display: flex; flex-wrap: wrap; gap: 4px; }
       </a>
       <p class="free" data-i="free"></p>
     </div>
-    <div class="stage" aria-hidden="true">
-      <canvas id="atom"></canvas>
-      <div class="atom-fallback" id="atom-fallback" hidden>
+    <div class="stage">
+      <canvas id="atom" aria-hidden="true"></canvas>
+      <p class="shape" aria-hidden="true"><span id="shape" data-swap></span></p>
+      <div class="dots" id="dots" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
+      <div class="atom-fallback" id="atom-fallback" aria-hidden="true" hidden>
         <svg viewBox="0 0 200 200" fill="none" stroke="currentColor" stroke-width="1.4"><ellipse cx="100" cy="100" rx="88" ry="32"/><ellipse cx="100" cy="100" rx="88" ry="32" transform="rotate(60 100 100)"/><ellipse cx="100" cy="100" rx="88" ry="32" transform="rotate(120 100 100)"/><circle cx="100" cy="100" r="14" fill="var(--accent)" stroke="none"/></svg>
       </div>
     </div>
   </section>
 
   <section class="steps" aria-label="Қалай жұмыс істейді">
-    <div class="step"><span class="n">1</span><b data-i="s1"></b><span data-i="s1p"></span></div>
-    <div class="step"><span class="n">2</span><b data-i="s2"></b><span id="s2p"></span></div>
-    <div class="step"><span class="n">3</span><b data-i="s3"></b><span id="s3p"></span></div>
+    <div class="step" data-reveal="0"><span class="n">1</span><b data-i="s1"></b><span data-i="s1p"></span></div>
+    <div class="step" data-reveal="1"><span class="n">2</span><b data-i="s2"></b><span id="s2p"></span></div>
+    <div class="step" data-reveal="2"><span class="n">3</span><b data-i="s3"></b><span id="s3p"></span></div>
   </section>
 </main>
 
 <footer><div class="wrap"><span>© 2026 Сабақтас</span><span><span data-i="ask"></span> <a id="wa-link" target="_blank" rel="noopener">WhatsApp</a> · <a id="tg-link" target="_blank" rel="noopener">Telegram</a> · <a href="/lab" data-i="lab"></a> · <a href="/oferta">Оферта</a> · <a href="/privacy">Құпиялылық</a></span></div></footer>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" defer></script>
+<script src="/assets/morph.js" defer></script>
 <script src="/assets/config.js"></script>
 <script>
 const C = window.FS_CONFIG;
@@ -160,7 +171,8 @@ const T = {
     s1: 'Үлгіні көріңіз', s1p: 'Әр сыныптың бір сабағы тегін.',
     s2: 'ҚМЖ-ны тегін алыңыз', s2p: () => 'Тіркеліп, керек тақырыпты таңдаңыз.',
     s3: 'Слайд пен парақ', s3p: (m, y) => `Жазылым: айына ${m} немесе жылына ${y}.`,
-    ask: 'Сұрақ болса:'
+    ask: 'Сұрақ болса:',
+    shapes: { atom: 'Атом', wave: 'Толқын', spring: 'Серіппе', field: 'Магнит өрісі', planet: 'Ғаламшар' }
   },
   ru: {
     login: 'Войти', lab: '3D лаборатория', labT: '3D виртуальная лаборатория', labP: 'Ученикам: опыты, измерения и отчёт', eyebrow: 'Физика · 7–11 классы',
@@ -170,10 +182,11 @@ const T = {
     s1: 'Посмотрите образец', s1p: 'Один урок каждого класса бесплатно.',
     s2: 'Берите ҚМЖ бесплатно', s2p: () => 'Зарегистрируйтесь и выберите тему.',
     s3: 'Презентации и листы', s3p: (m, y) => `Подписка: ${m} в месяц или ${y} в год.`,
-    ask: 'Вопросы:'
+    ask: 'Вопросы:',
+    shapes: { atom: 'Атом', wave: 'Волна', spring: 'Пружина', field: 'Магнитное поле', planet: 'Планета' }
   }
 };
-let lang = 'kk';
+let lang = 'kk', shapeName = '';
 const $ = id => document.getElementById(id);
 const fmt = n => n.toLocaleString('ru-RU').replace(/ /g, ' ') + ' ₸';
 function render() {
@@ -183,6 +196,7 @@ function render() {
   $('s2p').textContent = t.s2p(fmt(C.prices.month), fmt(C.prices.year));
   $('s3p').textContent = t.s3p(fmt(C.prices.month), fmt(C.prices.year));
   document.querySelectorAll('.seg button').forEach(b => b.setAttribute('aria-pressed', b.dataset.lang === lang));
+  if (shapeName) $('shape').textContent = t.shapes[shapeName];
   $('wa-link').href = 'https://wa.me/' + C.whatsapp; $('tg-link').href = 'https://t.me/' + C.telegram;
 }
 document.addEventListener('click', e => {
@@ -193,45 +207,15 @@ try { const l = localStorage.getItem('fs-lang'); if (l === 'ru' || l === 'kk') l
 render();
 
 window.addEventListener('load', function () {
-  const canvas = $('atom'), fb = $('atom-fallback');
-  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  let renderer;
-  try { if (!window.THREE) throw 0; renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true }); }
-  catch (_) { canvas.hidden = true; fb.hidden = false; return; }
-  renderer.setPixelRatio(Math.min(devicePixelRatio || 1, innerWidth < 700 ? 1.5 : 2));
-  renderer.outputEncoding = THREE.sRGBEncoding;
-  const scene = new THREE.Scene();
-  const cam = new THREE.PerspectiveCamera(32, 1, 0.1, 100); cam.position.set(0, 0, 10.5);
-  scene.add(new THREE.HemisphereLight(0xffffff, 0xb8c4d6, 0.9));
-  const key = new THREE.DirectionalLight(0xffffff, 0.9); key.position.set(4, 6, 8); scene.add(key);
-  const rim = new THREE.DirectionalLight(0x9ccaff, 0.5); rim.position.set(-6, -2, -4); scene.add(rim);
-  const group = new THREE.Group(); scene.add(group);
-  group.add(new THREE.Mesh(new THREE.SphereGeometry(0.62, 64, 64), new THREE.MeshPhysicalMaterial({ color: 0x0071e3, roughness: 0.18, metalness: 0.05, clearcoat: 1, clearcoatRoughness: 0.12 })));
-  const ringMat = new THREE.MeshPhysicalMaterial({ color: 0xc9cdd6, roughness: 0.25, metalness: 0.6, transparent: true, opacity: 0.85 });
-  const eMat = new THREE.MeshPhysicalMaterial({ color: 0xffffff, roughness: 0.2, metalness: 0.1, clearcoat: 1, emissive: 0x0a2a55, emissiveIntensity: 0.25 });
-  const R = 2.7, orbits = [];
-  for (let i = 0; i < 3; i++) {
-    const pivot = new THREE.Group(); pivot.rotation.order = 'ZYX'; pivot.rotation.z = i * Math.PI / 3; pivot.rotation.x = 1.25;
-    pivot.add(new THREE.Mesh(new THREE.TorusGeometry(R, 0.022, 16, 200), ringMat));
-    const e = new THREE.Mesh(new THREE.SphereGeometry(0.15, 32, 32), eMat); pivot.add(e); group.add(pivot);
-    orbits.push({ e, phase: i * 2.1, speed: 0.55 + i * 0.12 });
-  }
-  group.rotation.set(0.25, -0.35, 0);
-  function size() { const w = canvas.clientWidth, h = canvas.clientHeight; if (!w || !h) return; renderer.setSize(w, h, false); cam.aspect = w / h; cam.updateProjectionMatrix(); }
-  size(); addEventListener('resize', size);
-  let tx = 0, ty = 0, mx = 0, my = 0;
-  addEventListener('pointermove', e => { tx = (e.clientX / innerWidth - 0.5) * 0.4; ty = (e.clientY / innerHeight - 0.5) * 0.3; }, { passive: true });
-  let visible = true, running = false, last = performance.now(), t = 0;
-  new IntersectionObserver(es => { visible = es[0].isIntersecting; if (visible && !running) { last = performance.now(); loop(); } }).observe(canvas);
-  function frame(dt) {
-    t += dt;
-    orbits.forEach(o => { const a = o.phase + t * o.speed; o.e.position.set(Math.cos(a) * R, Math.sin(a) * R, 0); });
-    mx += (tx - mx) * 0.05; my += (ty - my) * 0.05;
-    group.rotation.y = -0.35 + t * 0.12 + mx; group.rotation.x = 0.25 + my; group.position.y = Math.sin(t * 0.8) * 0.08;
-    renderer.render(scene, cam);
-  }
-  function loop() { if (!visible || reduce) { running = false; return; } running = true; const now = performance.now(); frame(Math.min((now - last) / 1000, 0.05)); last = now; requestAnimationFrame(loop); }
-  frame(0.6); if (!reduce) loop();
+  const canvas = $('atom'), fb = $('atom-fallback'), dots = $('dots').children;
+  const morph = window.FSMorph && FSMorph.mount(canvas, {
+    onShape(name, i) {
+      shapeName = name;
+      FSMotion.swap($('shape'), T[lang].shapes[name]);
+      for (let k = 0; k < dots.length; k++) dots[k].classList.toggle('on', k === i);
+    }
+  });
+  if (!morph) { canvas.hidden = true; fb.hidden = false; $('dots').hidden = true; }
 });
 </script>
 </body>

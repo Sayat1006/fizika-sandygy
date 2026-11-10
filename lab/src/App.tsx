@@ -70,6 +70,7 @@ function Shell() {
       </header>
       <main id="main">
         <Suspense fallback={<div className="page narrow"><p className="empty">Жүктелуде…</p></div>}>
+          <div className="route" key={pathname}>
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/labs" element={<Labs />} />
@@ -82,6 +83,7 @@ function Shell() {
             <Route path="/guide" element={<Guide />} />
             <Route path="*" element={<div className="page narrow"><h1>Бет табылмады</h1><p><NavLink to="/">Басты бетке оралу</NavLink></p></div>} />
           </Routes>
+          </div>
         </Suspense>
       </main>
       <footer className="site-footer no-print">
