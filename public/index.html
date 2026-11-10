@@ -33,6 +33,9 @@ body { display: flex; flex-direction: column; }
 main { flex: 1; display: flex; flex-direction: column; justify-content: center; }
 .nav { position: static; background: transparent; backdrop-filter: none; -webkit-backdrop-filter: none; border-bottom: 0; }
 .nav .wrap { height: 64px; }
+.navlink { font-size: 14px; font-weight: 600; color: var(--fg-2); white-space: nowrap; }
+.navlink:hover { color: var(--fg); text-decoration: none; }
+@media (max-width: 560px) { .navlink { display: none; } }
 .seg { display: inline-flex; background: var(--bg-2); border-radius: 999px; padding: 2px; }
 .seg button { border: 0; background: transparent; color: var(--fg-2); font: 600 12px var(--text); padding: 5px 10px; border-radius: 999px; cursor: pointer; min-height: 28px; transition: background .2s var(--ease), color .2s var(--ease); }
 .seg button[aria-pressed="true"] { background: var(--bg); color: var(--fg); box-shadow: 0 1px 3px rgba(0, 0, 0, .12); }
@@ -91,6 +94,7 @@ footer .wrap > span:last-child { display: flex; flex-wrap: wrap; gap: 4px; }
         <button id="lang-kk" type="button" data-lang="kk" aria-pressed="true">ҚАЗ</button>
         <button id="lang-ru" type="button" data-lang="ru" aria-pressed="false">РУС</button>
       </div>
+      <a class="navlink" href="/lab" data-i="lab"></a>
       <a class="pill sm" href="/app" data-i="login"></a>
     </div>
   </div>
@@ -123,7 +127,7 @@ footer .wrap > span:last-child { display: flex; flex-wrap: wrap; gap: 4px; }
   </section>
 </main>
 
-<footer><div class="wrap"><span>© 2026 Сабақтас</span><span><span data-i="ask"></span> <a id="wa-link" target="_blank" rel="noopener">WhatsApp</a> · <a id="tg-link" target="_blank" rel="noopener">Telegram</a> · <a href="/oferta">Оферта</a> · <a href="/privacy">Құпиялылық</a></span></div></footer>
+<footer><div class="wrap"><span>© 2026 Сабақтас</span><span><span data-i="ask"></span> <a id="wa-link" target="_blank" rel="noopener">WhatsApp</a> · <a id="tg-link" target="_blank" rel="noopener">Telegram</a> · <a href="/lab" data-i="lab"></a> · <a href="/oferta">Оферта</a> · <a href="/privacy">Құпиялылық</a></span></div></footer>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" defer></script>
 <script src="/assets/config.js"></script>
@@ -131,7 +135,7 @@ footer .wrap > span:last-child { display: flex; flex-wrap: wrap; gap: 4px; }
 const C = window.FS_CONFIG;
 const T = {
   kk: {
-    login: 'Кіру', eyebrow: 'Физика · 7–11-сынып',
+    login: 'Кіру', lab: '3D зертхана', eyebrow: 'Физика · 7–11-сынып',
     h1: 'ҚМЖ — тегін.',
     sub: 'Кез келген тақырыптың ҚМЖ-сын тегін жүктеңіз. Презентация мен жұмыс парағы жазылыммен.',
     cta: 'Алдымен үлгіні көру', signup: 'Тегін ҚМЖ алу', free: 'Тіркелу 1 минут. Карта керек емес.',
@@ -141,7 +145,7 @@ const T = {
     ask: 'Сұрақ болса:'
   },
   ru: {
-    login: 'Войти', eyebrow: 'Физика · 7–11 классы',
+    login: 'Войти', lab: '3D лаборатория', eyebrow: 'Физика · 7–11 классы',
     h1: 'ҚМЖ — бесплатно.',
     sub: 'ҚМЖ по любой теме скачивайте бесплатно. Презентации и рабочие листы — по подписке.',
     cta: 'Сначала посмотреть образец', signup: 'Получить ҚМЖ бесплатно', free: 'Регистрация за 1 минуту. Карта не нужна.',

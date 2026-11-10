@@ -1,4 +1,5 @@
 {
+  "buildCommand": "npm --prefix lab ci && npm --prefix lab run build",
   "outputDirectory": "public",
   "regions": [
     "fra1"
@@ -24,5 +25,11 @@
       ]
     }
   ],
-  "cleanUrls": true
+  "cleanUrls": true,
+  "rewrites": [
+    {
+      "source": "/lab/:path*",
+      "destination": "/lab"
+    }
+  ]
 }

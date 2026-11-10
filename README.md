@@ -12,6 +12,7 @@
 | `public/assets/config.js` | **Kaspi, WhatsApp, Telegram, бағалар** және апта ережесі |
 | `public/lessons.json` | Сабақтар тізімі мен күндері (файлсыз) |
 | `api/download.js` | ҚМЖ — тегін (кірген мұғалімге); презентация мен парақ — жазылыммен; әр жүктеуді тіркейді; бір файлға 5 рет шек |
+| `lab/` → `/lab` | **PHYSICS LAB 3D** — оқушыларға арналған виртуалды физика зертханасы (Vite + React + Three.js). Vercel жинақ кезінде `public/lab/` ішіне құрастырады (`vercel.json` → `buildCommand`); жинақ git-ке салынбайды. Толығырақ: `lab/README.md` |
 | `public/samples.html` | Тегін үлгілер: тіркелусіз көру және жүктеу |
 | `public/oferta.html`, `public/privacy.html` | Оферта және құпиялылық саясаты (жоба, деректемелерді толтыру керек) |
 | `materials/` | ҚМЖ (.docx), презентациялар (.pptx), жұмыс парақтары (.pdf). Сырттан тікелей ашылмайды, тек `api/download` арқылы |
