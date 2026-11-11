@@ -405,3 +405,9 @@ input[type='range'] { width: 100%; accent-color: var(--accent); height: 24px; ma
   .avoid-break, .table-wrap { break-inside: avoid; }
   .report .table-wrap { border-color: #999; }
 }
+
+/* ── Тақтаға ендіру (?embed=1): тек зертхананың өзі ── */
+.embed .topbar, .embed .site-footer, .embed .exp-head, .embed .stepper, .embed .exp-nav, .embed .lab-console .table-wrap { display: none !important; }
+.embed main { min-height: 0; }
+.embed .exp { padding: 12px; max-width: none; }
+.embed .lab-view, .embed .lab-panel { height: calc(100vh - 150px); max-height: none; }

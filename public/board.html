@@ -1,0 +1,456 @@
+<!doctype html>
+<html lang="kk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Тақта · Сабақтас</title>
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#000000">
+<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/assets/fonts.css">
+<link rel="stylesheet" href="/assets/base.css">
+<style>
+/* Тақта: интерактивті панельге арналған толық экранды сабақ режимі.
+   Қараңғы жиек — слайдқа назар аудару үшін; барлық батырма кемінде 52 px (саусақ пен стилус). */
+:root { --chrome: #0B0B0C; --chrome-2: #1C1C1E; --chrome-3: #2C2C2E; --ink-fg: #F5F5F7; --ink-fg-2: #A1A1A6; --hit: 52px; }
+html, body { height: 100%; overflow: hidden; background: var(--chrome); color: var(--ink-fg); overscroll-behavior: none; -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; }
+button { font: inherit; color: inherit; }
+.app { display: grid; grid-template-rows: auto 1fr auto auto; height: 100dvh; }
+
+/* жоғарғы жолақ */
+.top { display: flex; align-items: center; gap: 14px; padding: 10px 14px; padding-top: max(10px, env(safe-area-inset-top)); }
+.ib { width: var(--hit); height: var(--hit); flex: none; display: grid; place-items: center; border: 0; border-radius: 16px; background: transparent; color: var(--ink-fg); cursor: pointer; transition: background .2s, transform .2s; text-decoration: none; }
+.ib:hover { background: var(--chrome-2); text-decoration: none; }
+.ib:active { transform: scale(.94); }
+.ib svg { width: 24px; height: 24px; }
+.ib[aria-pressed="true"] { background: var(--ink-fg); color: var(--chrome); }
+.ttl { min-width: 0; flex: 1; }
+.ttl small { display: block; color: var(--ink-fg-2); font-size: 13px; font-weight: 500; }
+.ttl b { display: block; font-size: 18px; font-weight: 600; letter-spacing: -0.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.clock { display: flex; align-items: center; gap: 10px; padding: 6px 8px 6px 14px; border-radius: 16px; background: var(--chrome-2); }
+.clock span { color: var(--ink-fg-2); font-size: 14px; white-space: nowrap; max-width: 22vw; overflow: hidden; text-overflow: ellipsis; }
+.clock b { font: 600 26px/1 var(--text); font-variant-numeric: tabular-nums; letter-spacing: -0.02em; min-width: 3.4em; text-align: right; }
+.clock.over b { color: #FF9F0A; }
+.clock .ib { width: 44px; height: 44px; border-radius: 12px; }
+
+/* сахна */
+.stage { position: relative; min-height: 0; margin: 0 14px; border-radius: 18px; overflow: hidden; background: #000; touch-action: none; }
+.view { position: absolute; inset: 0; display: grid; place-items: center; }
+.view img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; display: block; -webkit-user-drag: none; }
+.view.white { background: #fff; }
+.view iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: #fff; }
+.view .msg { max-width: 34ch; text-align: center; color: var(--ink-fg-2); display: grid; gap: 14px; justify-items: center; padding: 24px; }
+.view .msg b { color: var(--ink-fg); font-size: 22px; }
+.view .msg .pill { background: var(--ink-fg); color: var(--chrome); }
+#ink { position: absolute; inset: 0; width: 100%; height: 100%; touch-action: none; }
+#ink.off { pointer-events: none; }
+.nav { position: absolute; top: 50%; transform: translateY(-50%); width: 64px; height: 120px; border: 0; background: transparent; color: rgba(255, 255, 255, .0); cursor: pointer; display: grid; place-items: center; transition: color .2s, background .2s; z-index: 2; }
+.nav svg { width: 30px; height: 30px; }
+.stage:hover .nav, .nav:focus-visible { color: rgba(0, 0, 0, .35); }
+.nav:hover { background: rgba(0, 0, 0, .06); color: rgba(0, 0, 0, .6); }
+.nav.prev { left: 0; border-radius: 0 18px 18px 0; } .nav.next { right: 0; border-radius: 18px 0 0 18px; }
+.nav[hidden] { display: none; }
+.pno { position: absolute; right: 14px; bottom: 12px; z-index: 2; padding: 4px 10px; border-radius: 999px; background: rgba(0, 0, 0, .55); color: #fff; font: 600 13px var(--text); font-variant-numeric: tabular-nums; pointer-events: none; }
+
+/* мұғалім жазбасы */
+.notes { position: absolute; top: 12px; right: 12px; bottom: 12px; width: min(420px, 46%); z-index: 3; overflow: auto; padding: 18px 20px; border-radius: 16px; background: rgba(28, 28, 30, .94); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); color: var(--ink-fg); font-size: 15px; line-height: 1.45; -webkit-user-select: text; user-select: text; transform: translateX(calc(100% + 24px)); transition: transform .45s var(--out); }
+.notes.open { transform: none; }
+.notes h3 { font-size: 13px; color: var(--ink-fg-2); font-weight: 600; margin: 14px 0 6px; }
+.notes h3:first-child { margin-top: 0; }
+.notes p { margin: 0 0 6px; }
+
+/* құралдар */
+.tools { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 14px 6px; flex-wrap: wrap; }
+.grp { display: flex; align-items: center; gap: 4px; padding: 4px; border-radius: 18px; background: var(--chrome-2); }
+.src button { height: 44px; padding: 0 16px; border: 0; border-radius: 14px; background: none; color: var(--ink-fg-2); font-weight: 600; font-size: 15px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; transition: background .2s, color .2s; }
+.src button svg { width: 20px; height: 20px; }
+.src button[aria-pressed="true"] { background: var(--ink-fg); color: var(--chrome); }
+.src button[hidden] { display: none; }
+.pen .ib { width: 48px; height: 48px; border-radius: 14px; }
+.dot { width: 22px; height: 22px; border-radius: 50%; box-shadow: inset 0 0 0 2px rgba(255, 255, 255, .25); }
+.pen .ib[aria-pressed="true"] .dot { box-shadow: 0 0 0 3px var(--chrome), 0 0 0 5px var(--ink-fg); }
+.pen .ib.col[aria-pressed="true"] { background: transparent; }
+
+/* сабақ кезеңдері */
+.stages { display: flex; gap: 6px; padding: 6px 14px; padding-bottom: max(12px, env(safe-area-inset-bottom)); overflow-x: auto; scrollbar-width: none; }
+.stages::-webkit-scrollbar { display: none; }
+.st { position: relative; flex: 1 0 150px; min-height: 56px; border: 0; border-radius: 14px; background: var(--chrome-2); color: var(--ink-fg-2); text-align: left; padding: 9px 14px; cursor: pointer; overflow: hidden; display: grid; align-content: center; gap: 2px; }
+.st b { position: relative; font-size: 14.5px; font-weight: 600; color: var(--ink-fg); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.st small { position: relative; font-size: 12.5px; font-variant-numeric: tabular-nums; }
+.st i { position: absolute; inset: 0 auto 0 0; width: 0; background: var(--chrome-3); transition: width .9s linear; }
+.st.done { opacity: .55; }
+.st.on { background: var(--chrome-3); box-shadow: inset 0 0 0 2px var(--ink-fg); }
+.st.on i { background: color-mix(in srgb, var(--accent) 38%, var(--chrome-3)); }
+
+/* терезелер: кездейсоқ оқушы, таймер */
+dialog.pop { border: 0; border-radius: 26px; padding: 26px; width: min(460px, 92vw); background: var(--chrome-2); color: var(--ink-fg); text-align: center; }
+dialog.pop::backdrop { background: rgba(0, 0, 0, .6); }
+.pop h2 { font-size: 17px; font-weight: 600; color: var(--ink-fg-2); }
+.big { font: 700 clamp(96px, 16vw, 168px)/1 var(--text); letter-spacing: -0.04em; font-variant-numeric: tabular-nums; margin: 14px 0 6px; }
+.big.roll { animation: roll .12s linear infinite; }
+@keyframes roll { 50% { opacity: .55; transform: translateY(4px); } }
+.pop .row { display: flex; justify-content: center; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
+.pop .pill { min-height: 52px; padding: 0 24px; font-size: 17px; }
+.pop .pill.ghost { background: var(--chrome-3); color: var(--ink-fg); box-shadow: none; }
+.pop label { color: var(--ink-fg-2); font-size: 15px; display: inline-flex; align-items: center; gap: 10px; }
+.pop input { width: 84px; height: 48px; border-radius: 12px; border: 0; background: var(--chrome-3); color: var(--ink-fg); font: 600 20px var(--text); text-align: center; }
+.pop small { color: var(--ink-fg-2); }
+.chips { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-top: 14px; }
+.chips button { min-width: 72px; height: 52px; border: 0; border-radius: 14px; background: var(--chrome-3); font: 600 17px var(--text); cursor: pointer; }
+.tbig { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; background: rgba(0, 0, 0, .86); }
+.tbig[hidden] { display: none; }
+.tbig .big { font-size: min(34vw, 46vh); margin: 0; }
+.tbig.end .big { color: #FF9F0A; }
+.tbig .row { position: absolute; bottom: 7vh; left: 0; right: 0; display: flex; justify-content: center; gap: 12px; }
+.tbig .pill { min-height: 56px; padding: 0 28px; font-size: 18px; background: var(--ink-fg); color: var(--chrome); }
+.tbig .pill.ghost { background: var(--chrome-3); color: var(--ink-fg); box-shadow: none; }
+
+.load { position: fixed; inset: 0; display: grid; place-items: center; background: var(--chrome); z-index: 60; color: var(--ink-fg-2); }
+.load[hidden] { display: none; }
+
+@media (max-width: 760px) { .clock span { display: none; } .src button span { display: none; } .st { flex-basis: 120px; } }
+@media (prefers-reduced-motion: reduce) { .notes, .st i { transition: none; } .big.roll { animation: none; } }
+</style>
+</head>
+<body>
+<div class="load" id="load">Сабақ жүктелуде…</div>
+
+<div class="app">
+  <header class="top">
+    <a class="ib" href="/app" aria-label="Кабинетке оралу"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></a>
+    <div class="ttl"><small id="meta"></small><b id="topic"></b></div>
+    <div class="clock" id="clock">
+      <span id="st-name"></span><b id="st-time">0:00</b>
+      <button class="ib" id="play" type="button" aria-label="Уақытты бастау"></button>
+    </div>
+    <button class="ib" id="fs" type="button" aria-label="Толық экран"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
+  </header>
+
+  <main class="stage" id="stage">
+    <div class="view" id="view"></div>
+    <canvas id="ink" class="off"></canvas>
+    <button class="nav prev" id="prev" type="button" aria-label="Алдыңғы"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button>
+    <button class="nav next" id="next" type="button" aria-label="Келесі"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg></button>
+    <div class="pno" id="pno" hidden></div>
+    <aside class="notes" id="notes" aria-label="Мұғалім жазбасы"></aside>
+  </main>
+
+  <div class="tools">
+    <div class="grp src" id="src" role="group" aria-label="Не көрсету">
+      <button type="button" data-src="pres"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M12 16v4M8 20h8"/></svg><span>Слайд</span></button>
+      <button type="button" data-src="ws"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4h6v3H9zM6 6h12v15H6z"/><path d="m9 13 2 2 4-4"/></svg><span>Парақ</span></button>
+      <button type="button" data-src="board"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M7 14l3-4 3 3 4-5"/></svg><span>Ақ тақта</span></button>
+      <button type="button" data-src="lab" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6M10 3v6l-5 9a2 2 0 0 0 2 3h10a2 2 0 0 0 2-3l-5-9V3"/></svg><span>3D тәжірибе</span></button>
+    </div>
+    <div class="grp pen" id="pen" role="group" aria-label="Қалам">
+      <button class="ib" type="button" data-tool="hand" aria-label="Басқару (сызбау)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3l14 8-6 2-3 6z"/></svg></button>
+      <button class="ib col" type="button" data-tool="pen" data-color="#111111" aria-label="Қара қалам"><span class="dot" style="background:#111"></span></button>
+      <button class="ib col" type="button" data-tool="pen" data-color="#0A84FF" aria-label="Көк қалам"><span class="dot" style="background:#0A84FF"></span></button>
+      <button class="ib col" type="button" data-tool="pen" data-color="#FF3B30" aria-label="Қызыл қалам"><span class="dot" style="background:#FF3B30"></span></button>
+      <button class="ib" type="button" data-tool="hl" aria-label="Маркер"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 4l5 5-9 9H6v-5z"/><path d="M4 21h16" stroke="#FFD60A" stroke-width="3"/></svg></button>
+      <button class="ib" type="button" data-tool="erase" aria-label="Өшіргіш"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3l5 5-11 11H5l-2-2z"/><path d="M9 21h12"/></svg></button>
+      <button class="ib" type="button" id="undo" aria-label="Болдырмау"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/></svg></button>
+      <button class="ib" type="button" id="clear" aria-label="Бетті тазалау"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg></button>
+    </div>
+    <div class="grp" role="group" aria-label="Сынып құралдары">
+      <button class="ib" type="button" id="b-notes" aria-pressed="false" aria-label="Мұғалім жазбасы"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h14v16H5z"/><path d="M9 8h6M9 12h6M9 16h4"/></svg></button>
+      <button class="ib" type="button" id="b-pick" aria-label="Кездейсоқ оқушы"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="4"/><circle cx="8.5" cy="8.5" r="1.3" fill="currentColor"/><circle cx="15.5" cy="15.5" r="1.3" fill="currentColor"/><circle cx="12" cy="12" r="1.3" fill="currentColor"/></svg></button>
+      <button class="ib" type="button" id="b-timer" aria-label="Таймер"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2.5M9 2h6"/></svg></button>
+    </div>
+  </div>
+
+  <nav class="stages" id="stages" aria-label="Сабақ кезеңдері"></nav>
+</div>
+
+<dialog class="pop" id="d-pick">
+  <h2>Кездейсоқ оқушы</h2>
+  <div class="big" id="pick-n">?</div>
+  <small id="pick-left"></small>
+  <div class="row"><label>Сыныпта <input id="pick-size" type="number" min="2" max="45" inputmode="numeric"> оқушы</label></div>
+  <div class="row"><button class="pill" type="button" id="pick-go">Таңдау</button><button class="pill ghost" type="button" data-close>Жабу</button></div>
+</dialog>
+
+<dialog class="pop" id="d-timer">
+  <h2>Таймер</h2>
+  <div class="chips" id="t-chips"><button type="button" data-m="1">1 мин</button><button type="button" data-m="2">2 мин</button><button type="button" data-m="3">3 мин</button><button type="button" data-m="5">5 мин</button><button type="button" data-m="10">10 мин</button></div>
+  <div class="row"><button class="pill ghost" type="button" data-close>Жабу</button></div>
+</dialog>
+<div class="tbig" id="tbig" hidden><div class="big" id="tbig-n">0:00</div><div class="row"><button class="pill ghost" type="button" id="tbig-add">+1 мин</button><button class="pill" type="button" id="tbig-x">Жабу</button></div></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="/assets/config.js"></script>
+<script>
+'use strict';
+const C = window.FS_CONFIG, $ = id => document.getElementById(id);
+const sb = supabase.createClient(C.supabaseUrl, C.supabaseKey);
+const qs = new URLSearchParams(location.search), V = qs.get('v') || '', N = parseInt(qs.get('n'), 10);
+const grade = parseInt(V, 10);
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const IC = {
+  play: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>',
+  pause: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 5h4v14H7zM13 5h4v14h-4z"/></svg>',
+};
+const mmss = s => { const a = Math.abs(Math.round(s)); return (s < 0 ? '+' : '') + Math.floor(a / 60) + ':' + String(a % 60).padStart(2, '0'); };
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const store = { get(k, d) { try { const v = localStorage.getItem(k); return v === null ? d : v; } catch (_) { return d; } }, set(k, v) { try { localStorage.setItem(k, v); } catch (_) {} } };
+
+/* ───────── күй ───────── */
+const S = {
+  token: '', lesson: null, lab: null,
+  pages: { pres: [], ws: [] }, idx: { pres: 0, ws: 0, board: 0, lab: 0 },
+  src: 'pres', tool: 'hand', color: '#111111',
+  stages: [], cur: 0, left: 0, running: false,
+};
+const INK = new Map();            // бет кілті → сызықтар [{t, c, w, p:[[x,y],…]}] (бет өлшеміне қатысты 0…1)
+const keyOf = () => `${S.src}:${S.idx[S.src]}`;
+
+/* ───────── жүктеу ───────── */
+async function api(kind, view) {
+  const r = await fetch(`/api/download?v=${encodeURIComponent(V)}&n=${N}&kind=${kind}${view ? '&view=1' : ''}`, { headers: { Authorization: 'Bearer ' + S.token } });
+  return { ok: r.ok, status: r.status, j: r.headers.get('content-type')?.includes('json') ? await r.json() : null };
+}
+function fatal(title, text, href, label) {
+  $('load').hidden = true;
+  $('view').className = 'view';
+  $('view').innerHTML = `<div class="msg"><b>${esc(title)}</b><span>${esc(text)}</span>${href ? `<a class="pill" href="${href}">${esc(label)}</a>` : ''}</div>`;
+  ['prev', 'next'].forEach(id => $(id).hidden = true);
+}
+async function boot() {
+  if (!V || !(N > 0)) return fatal('Сабақ таңдалмаған', 'Кабинеттен тақырыпты ашып, «Тақтада ашу» батырмасын басыңыз.', '/app', 'Кабинетке');
+  const { data } = await sb.auth.getSession();
+  if (!data.session) return fatal('Кабинетке кіріңіз', 'Тақта кабинетке кірген мұғалімге ашылады.', '/app', 'Кіру');
+  S.token = data.session.access_token;
+  const lessons = await fetch('/lessons.json').then(r => r.json()).catch(() => []);
+  S.lesson = lessons.find(l => l.v === V && l.n === N) || lessons.find(l => grade < 10 && l.grade === grade && l.n === N);
+  if (!S.lesson) return fatal('Сабақ табылмады', 'Кабинетке оралып, тақырыпты қайта таңдаңыз.', '/app', 'Кабинетке');
+  $('topic').textContent = S.lesson.topic;
+  $('meta').textContent = `${grade}-сынып · №${S.lesson.disp}`;
+  document.title = `${S.lesson.topic} · Тақта`;
+  S.lab = window.FS_LABOF({ ...S.lesson, v: V });
+
+  const [plan, pres, ws] = await Promise.all([api('plan'), S.lesson.pres ? api('pres', 1) : null, S.lesson.ws ? api('ws', 1) : null]);
+  if (plan.status === 402) return fatal('Тақта жазылыммен ашылады', `${grade}-сыныпқа жазылым немесе тегін сынақ мерзімі керек.`, '/app', 'Жазылымды рәсімдеу');
+  if (plan.status === 401) return fatal('Сессия аяқталды', 'Кабинетке қайта кіріңіз.', '/app', 'Кіру');
+  S.stages = (plan.ok && plan.j.stages) || [];
+  if (pres && pres.ok) S.pages.pres = pres.j.pages;
+  if (ws && ws.ok) S.pages.ws = ws.j.pages;
+
+  // интернет нашар болса да слайдтар кідірмеуі үшін бәрін алдын ала жүктеп қоямыз
+  [...S.pages.pres, ...S.pages.ws].forEach(u => { const i = new Image(); i.decoding = 'async'; i.src = u; });
+
+  document.querySelector('[data-src="pres"]').hidden = !S.pages.pres.length;
+  document.querySelector('[data-src="ws"]').hidden = !S.pages.ws.length;
+  document.querySelector('[data-src="lab"]').hidden = !(S.lab && S.lab.exp);
+  S.src = S.pages.pres.length ? 'pres' : 'board';
+  setStage(0, false);
+  renderStages(); show(); setTool('hand');
+  $('load').hidden = true;
+  try { await navigator.wakeLock?.request('screen'); } catch (_) {}   // тақтаның экраны сөніп қалмасын
+}
+
+/* ───────── көрсету ───────── */
+function show() {
+  const v = $('view'), pages = S.pages[S.src] || [];
+  document.querySelectorAll('#src [data-src]').forEach(b => b.setAttribute('aria-pressed', b.dataset.src === S.src));
+  const paged = S.src === 'pres' || S.src === 'ws';
+  $('prev').hidden = $('next').hidden = !paged;
+  $('pno').hidden = !paged;
+  if (S.src === 'lab') {
+    if (!v.querySelector('iframe')) { v.className = 'view'; v.innerHTML = `<iframe src="/lab/experiments/${S.lab.exp}?embed=1" title="3D тәжірибе" allow="fullscreen"></iframe>`; }
+  } else if (S.src === 'board') {
+    v.className = 'view white'; v.innerHTML = '';
+  } else {
+    const i = S.idx[S.src];
+    v.className = 'view';
+    v.innerHTML = `<img id="pg" src="${pages[i]}" alt="${S.src === 'pres' ? 'Слайд' : 'Бет'} ${i + 1}" draggable="false">`;
+    $('pg').addEventListener('load', redraw, { once: true });
+    $('pno').textContent = `${i + 1} / ${pages.length}`;
+    $('prev').disabled = i === 0; $('next').disabled = i === pages.length - 1;
+  }
+  redraw();
+}
+function go(d) {
+  if (S.src !== 'pres' && S.src !== 'ws') return;
+  const n = Math.max(0, Math.min(S.pages[S.src].length - 1, S.idx[S.src] + d));
+  if (n === S.idx[S.src]) return;
+  S.idx[S.src] = n; show();
+}
+$('prev').onclick = () => go(-1); $('next').onclick = () => go(1);
+$('src').addEventListener('click', e => { const b = e.target.closest('[data-src]'); if (!b || b.dataset.src === S.src) return; S.src = b.dataset.src; show(); if (S.src === 'lab') setTool('hand'); });
+addEventListener('keydown', e => {
+  if (e.target.closest('input, dialog')) return;
+  // пульттер мен пернетақта: → / PageDown / бос орын — келесі, ← / PageUp — алдыңғы
+  if (['ArrowRight', 'PageDown', ' '].includes(e.key)) { e.preventDefault(); go(1); }
+  else if (['ArrowLeft', 'PageUp'].includes(e.key)) { e.preventDefault(); go(-1); }
+  else if (e.key === 'f') toggleFs();
+});
+
+/* ───────── қалам қабаты ───────── */
+const cv = $('ink'), ctx = cv.getContext('2d');
+let drawing = null;
+const activePointers = new Set();
+// Сызық беттің өзіне (слайд суретіне) байланады: бет өлшемі өзгерсе де орнында қалады
+function box() {
+  const st = $('stage').getBoundingClientRect(), img = $('pg');
+  if (img && img.naturalWidth && (S.src === 'pres' || S.src === 'ws')) {
+    // object-fit: contain — суреттің нақты көрінетін бөлігін есептейміз
+    const r = img.getBoundingClientRect(), k = Math.min(r.width / img.naturalWidth, r.height / img.naturalHeight);
+    const w = img.naturalWidth * k, h = img.naturalHeight * k;
+    return { x: r.left - st.left + (r.width - w) / 2, y: r.top - st.top + (r.height - h) / 2, w, h };
+  }
+  return { x: 0, y: 0, w: st.width, h: st.height };
+}
+function fit() {
+  const r = $('stage').getBoundingClientRect(), d = Math.min(devicePixelRatio || 1, 2);
+  cv.width = Math.round(r.width * d); cv.height = Math.round(r.height * d);
+  ctx.setTransform(d, 0, 0, d, 0, 0);
+  redraw();
+}
+function strokeStyle(s, b) {
+  ctx.lineCap = ctx.lineJoin = 'round';
+  ctx.globalCompositeOperation = s.t === 'hl' ? 'multiply' : 'source-over';
+  ctx.globalAlpha = s.t === 'hl' ? 0.35 : 1;
+  ctx.strokeStyle = s.c;
+  ctx.lineWidth = s.w * b.w;
+}
+function path(s, b) {
+  const p = s.p; if (!p.length) return;
+  ctx.beginPath(); ctx.moveTo(b.x + p[0][0] * b.w, b.y + p[0][1] * b.h);
+  if (p.length === 1) ctx.lineTo(b.x + p[0][0] * b.w + 0.1, b.y + p[0][1] * b.h);
+  for (let i = 1; i < p.length - 1; i++) {   // тегіс сызық: нүктелер арасындағы орта нүкте арқылы
+    const mx = (p[i][0] + p[i + 1][0]) / 2, my = (p[i][1] + p[i + 1][1]) / 2;
+    ctx.quadraticCurveTo(b.x + p[i][0] * b.w, b.y + p[i][1] * b.h, b.x + mx * b.w, b.y + my * b.h);
+  }
+  if (p.length > 1) { const l = p[p.length - 1]; ctx.lineTo(b.x + l[0] * b.w, b.y + l[1] * b.h); }
+  ctx.stroke();
+}
+function redraw() {
+  const r = $('stage').getBoundingClientRect();
+  ctx.clearRect(0, 0, r.width, r.height);
+  const b = box();
+  for (const s of INK.get(keyOf()) || []) { strokeStyle(s, b); path(s, b); }
+  if (drawing) { strokeStyle(drawing, b); path(drawing, b); }
+  ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
+}
+function at(e) { const st = $('stage').getBoundingClientRect(), b = box(); return [(e.clientX - st.left - b.x) / b.w, (e.clientY - st.top - b.y) / b.h]; }
+function eraseAt(pt) {
+  const list = INK.get(keyOf()); if (!list) return;
+  const b = box(), R = 18 / b.w;
+  const keep = list.filter(s => !s.p.some(q => Math.hypot(q[0] - pt[0], (q[1] - pt[1]) * b.h / b.w) < R + s.w / 2));
+  if (keep.length !== list.length) { INK.set(keyOf(), keep); redraw(); }
+}
+cv.addEventListener('pointerdown', e => {
+  activePointers.add(e.pointerId);
+  if (activePointers.size > 1) { drawing = null; redraw(); return; }   // екі саусақ — сызбаймыз
+  cv.setPointerCapture(e.pointerId);
+  const pt = at(e);
+  if (S.tool === 'erase') { eraseAt(pt); return; }
+  const b = box();
+  drawing = { t: S.tool, c: S.tool === 'hl' ? '#FFD60A' : S.color, w: (S.tool === 'hl' ? 22 : 3.2) / b.w, p: [pt] };
+  redraw();
+});
+cv.addEventListener('pointermove', e => {
+  if (!activePointers.has(e.pointerId) || activePointers.size > 1) return;
+  const evs = e.getCoalescedEvents ? e.getCoalescedEvents() : [e];
+  if (S.tool === 'erase') { evs.forEach(x => eraseAt(at(x))); return; }
+  if (!drawing) return;
+  evs.forEach(x => drawing.p.push(at(x)));
+  redraw();
+});
+function endStroke(e) {
+  activePointers.delete(e.pointerId);
+  if (!drawing) return;
+  const k = keyOf(); INK.set(k, [...(INK.get(k) || []), drawing]); drawing = null; redraw();
+}
+cv.addEventListener('pointerup', endStroke); cv.addEventListener('pointercancel', endStroke);
+new ResizeObserver(fit).observe($('stage'));
+
+// «Басқару» режимінде слайдты саусақпен сырғыту
+let swipe = null;
+$('stage').addEventListener('pointerdown', e => { if (S.tool === 'hand' && !e.target.closest('button, iframe, .notes')) swipe = { x: e.clientX, y: e.clientY }; });
+$('stage').addEventListener('pointerup', e => {
+  if (!swipe) return; const dx = e.clientX - swipe.x, dy = e.clientY - swipe.y; swipe = null;
+  if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.4) go(dx < 0 ? 1 : -1);
+});
+
+function setTool(t, color) {
+  S.tool = t; if (color) S.color = color;
+  cv.classList.toggle('off', t === 'hand');
+  document.querySelectorAll('#pen [data-tool]').forEach(b => b.setAttribute('aria-pressed', b.dataset.tool === t && (t !== 'pen' || b.dataset.color === S.color)));
+}
+$('pen').addEventListener('click', e => {
+  const b = e.target.closest('[data-tool]'); if (!b) return;
+  if (S.src === 'lab' && b.dataset.tool !== 'hand') { S.src = 'board'; show(); }   // 3D тәжірибенің үстінен сызбаймыз — ақ тақтаға ауысады
+  setTool(b.dataset.tool, b.dataset.color);
+});
+$('undo').onclick = () => { const l = INK.get(keyOf()); if (l && l.length) { l.pop(); redraw(); } };
+$('clear').onclick = () => { INK.delete(keyOf()); redraw(); };
+
+/* ───────── сабақ кезеңдері және уақыт ───────── */
+function setStage(i, start) {
+  S.cur = i; S.left = (S.stages[i]?.min || 0) * 60;
+  if (start !== undefined) S.running = start;
+  renderStages(); renderNotes(); tick(0);
+}
+function renderStages() {
+  $('stages').innerHTML = S.stages.map((s, i) => `<button class="st${i === S.cur ? ' on' : ''}${i < S.cur ? ' done' : ''}" type="button" data-st="${i}"><i></i><b>${esc(s.sub || s.stage)}</b><small>${esc(s.stage)} · ${s.min} мин</small></button>`).join('');
+  $('stages').hidden = !S.stages.length;
+  const on = $('stages').querySelector('.st.on'); if (on) on.scrollIntoView({ block: 'nearest', inline: 'center', behavior: reduce ? 'auto' : 'smooth' });
+}
+function renderNotes() {
+  const s = S.stages[S.cur];
+  $('notes').innerHTML = s ? `<h3>${esc(s.stage)} · ${s.min} мин</h3><p><b>${esc(s.sub)}</b></p><h3>Мұғалімнің әрекеті</h3>${s.teacher.map(t => `<p>${esc(t)}</p>`).join('')}<h3>Оқушының әрекеті</h3>${s.student.map(t => `<p>${esc(t)}</p>`).join('')}` : '<p>Бұл сабақтың сценарийі жоқ.</p>';
+}
+$('stages').addEventListener('click', e => { const b = e.target.closest('[data-st]'); if (b) setStage(+b.dataset.st); });
+function tick(dt) {
+  const s = S.stages[S.cur];
+  if (S.running && s) S.left -= dt;
+  $('st-name').textContent = s ? (s.sub || s.stage) : 'Сабақ';
+  $('st-time').textContent = mmss(s ? S.left : 0);
+  $('clock').classList.toggle('over', !!s && S.left < 0);
+  $('play').innerHTML = S.running ? IC.pause : IC.play;
+  $('play').setAttribute('aria-label', S.running ? 'Уақытты тоқтату' : 'Уақытты бастау');
+  const bar = $('stages').querySelector('.st.on i');
+  if (bar && s) bar.style.width = Math.min(100, (1 - S.left / (s.min * 60)) * 100) + '%';
+}
+let last = performance.now();
+setInterval(() => { const now = performance.now(); tick((now - last) / 1000); last = now; }, 250);
+$('play').onclick = () => { S.running = !S.running; tick(0); };
+
+/* ───────── мұғалім жазбасы, толық экран ───────── */
+$('b-notes').onclick = () => { const o = !$('notes').classList.contains('open'); $('notes').classList.toggle('open', o); $('b-notes').setAttribute('aria-pressed', o); };
+function toggleFs() { if (document.fullscreenElement) document.exitFullscreen?.(); else document.documentElement.requestFullscreen?.().catch(() => {}); }
+$('fs').onclick = toggleFs;
+document.addEventListener('fullscreenchange', () => $('fs').setAttribute('aria-pressed', !!document.fullscreenElement));
+
+/* ───────── кездейсоқ оқушы: барлығы шыққанша қайталанбайды ───────── */
+const pickKey = `fs-pick-${grade}`;
+let bag = [];
+function refill() { const n = Math.max(2, Math.min(45, +$('pick-size').value || 25)); bag = Array.from({ length: n }, (_, i) => i + 1); $('pick-left').textContent = `Қалды: ${bag.length}`; }
+$('b-pick').onclick = () => { $('pick-size').value = store.get(pickKey, '25'); if (!bag.length) refill(); $('pick-left').textContent = `Қалды: ${bag.length}`; $('d-pick').showModal(); };
+$('pick-size').onchange = () => { store.set(pickKey, $('pick-size').value); refill(); $('pick-n').textContent = '?'; };
+$('pick-go').onclick = () => {
+  if (!bag.length) refill();
+  const el = $('pick-n'), pick = bag.splice(Math.floor(Math.random() * bag.length), 1)[0];
+  if (reduce) { el.textContent = pick; $('pick-left').textContent = `Қалды: ${bag.length}`; return; }
+  el.classList.add('roll'); let k = 0;
+  const t = setInterval(() => { el.textContent = 1 + Math.floor(Math.random() * (+$('pick-size').value || 25)); if (++k > 12) { clearInterval(t); el.classList.remove('roll'); el.textContent = pick; $('pick-left').textContent = `Қалды: ${bag.length}`; } }, 70);
+};
+
+/* ───────── таймер ───────── */
+let tEnd = 0, tTick = 0;
+$('b-timer').onclick = () => $('d-timer').showModal();
+$('t-chips').addEventListener('click', e => { const b = e.target.closest('[data-m]'); if (!b) return; $('d-timer').close(); startTimer(+b.dataset.m * 60); });
+function startTimer(sec) {
+  tEnd = Date.now() + sec * 1000; $('tbig').hidden = false; $('tbig').classList.remove('end');
+  clearInterval(tTick); const f = () => { const l = (tEnd - Date.now()) / 1000; $('tbig-n').textContent = mmss(Math.max(0, Math.ceil(l))); if (l <= 0) { $('tbig').classList.add('end'); clearInterval(tTick); } };
+  f(); tTick = setInterval(f, 200);
+}
+$('tbig-add').onclick = () => { if ($('tbig').classList.contains('end')) startTimer(60); else tEnd += 60000; };
+$('tbig-x').onclick = () => { clearInterval(tTick); $('tbig').hidden = true; };
+document.addEventListener('click', e => { if (e.target.matches('[data-close]')) e.target.closest('dialog').close(); });
+
+boot().catch(e => { console.error(e); fatal('Қате орын алды', 'Бетті жаңартып көріңіз.', location.href, 'Жаңарту'); });
+</script>
+</body>
+</html>

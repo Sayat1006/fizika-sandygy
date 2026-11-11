@@ -179,8 +179,8 @@ async function onWeekly() {
       });
     }).join('\n\n');
     if (!blocks) continue;
-    const head = `📚 <b>Осы аптаның сабақтары</b> (${dm(w.from)}–${dm(w.to)})\nҚМЖ, презентация мен жұмыс парағы кабинетте ашық.\n\n`;
-    const tail = paid.length ? '' : '\n\nТегін сынақ аяқталған соң слайд пен парақ жабылады, ҚМЖ тегін болып қала береді.';
+    const head = `📚 <b>Осы аптаның сабақтары</b> (${dm(w.from)}–${dm(w.to)})\nҚМЖ, презентация, жұмыс парағы және тақта кабинетте ашық.\n\n`;
+    const tail = paid.length ? '' : '\n\nТегін сынақ аяқталған соң материалдар мен тақта жазылыммен ашылады.';
     await send(p.tg_chat_id, head + blocks + tail, { text: 'Кабинетті ашу', url: SITE + '/app' });
     sent++;
     await new Promise((r) => setTimeout(r, 60));
@@ -200,7 +200,7 @@ async function onTrialEnd() {
   const { data: people } = await db.from('profiles').select('id,full_name,tg_chat_id').in('id', ids).not('tg_chat_id', 'is', null).is('trial_reminded_at', null);
   let sent = 0;
   for (const p of people ?? []) {
-    await send(p.tg_chat_id, `⏰ <b>Тегін сынақ бүгін аяқталады</b>\n\nЕртеңнен бастап презентация мен жұмыс парағы жабылады. ҚМЖ тегін болып қала береді.\n\nЖазылым бір сыныпқа: айына <b>1 490 ₸</b> немесе жылына <b>9 990 ₸</b>.`, { text: 'Жазылымды рәсімдеу', url: SITE + '/app' });
+    await send(p.tg_chat_id, `⏰ <b>Тегін сынақ бүгін аяқталады</b>\n\nЕртеңнен бастап ҚМЖ, презентация, жұмыс парағы және тақта жазылыммен ашылады.\n\nЖазылым бір сыныпқа: айына <b>1 490 ₸</b> немесе жылына <b>9 990 ₸</b>.`, { text: 'Жазылымды рәсімдеу', url: SITE + '/app' });
     await db.from('profiles').update({ trial_reminded_at: new Date().toISOString() }).eq('id', p.id);
     sent++;
     await new Promise((r) => setTimeout(r, 60));

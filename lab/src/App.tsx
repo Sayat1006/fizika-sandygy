@@ -33,6 +33,7 @@ function Shell() {
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
+    document.documentElement.classList.toggle('embed', new URLSearchParams(window.location.search).has('embed'));
     document.documentElement.style.fontSize = `${textScale * 100}%`;
     document.documentElement.lang = lang;
   }, [theme, textScale, lang]);

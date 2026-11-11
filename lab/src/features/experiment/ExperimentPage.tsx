@@ -201,7 +201,9 @@ export default function ExperimentPage() {
   const resetSession = useApp((s) => s.resetSession);
   const session = useMemo(() => stored ?? newSession(id), [stored, id]);
   const a = useMemo(() => (def ? analyze(def, session.rows) : null), [def, session.rows]);
-  const step = Math.min(session.step, STEPS.length - 1);
+  // Тақтаға ендірілгенде (?embed=1) бірден тәжірибе қадамы ашылады
+  const embed = new URLSearchParams(window.location.search).has('embed');
+  const step = embed ? 3 : Math.min(session.step, STEPS.length - 1);
 
   useEffect(() => {
     window.scrollTo({ top: 0 });
