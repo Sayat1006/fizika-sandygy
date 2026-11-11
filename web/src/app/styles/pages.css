@@ -84,3 +84,35 @@
 .tbl td { padding: 12px 14px; border-top: 1px solid var(--line); vertical-align: top; }
 .tbl td small { display: block; color: var(--fg-3); font-size: 12.5px; }
 .tbl tr.flag td { background: var(--warn-bg); }
+
+/* — оқушының телефоны: /s — */
+.join { min-height: 100dvh; display: flex; flex-direction: column; background: var(--bg-2); }
+.join__top { display: flex; align-items: center; gap: 8px; padding: calc(12px + env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) 12px max(16px, env(safe-area-inset-left)); font: 600 16px var(--font-display); }
+.join__top svg { width: 22px; height: 22px; }
+.join__top b { margin-left: auto; font-size: 14px; font-weight: 600; color: var(--fg-2); }
+.join__main { flex: 1; display: grid; align-content: center; justify-items: center; padding: 16px max(16px, env(safe-area-inset-right)) calc(24px + env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left)); }
+.join__card { width: min(460px, 100%); padding: 28px 22px; border-radius: var(--r-xl); background: var(--bg); box-shadow: var(--shadow-2); }
+.join__card h1 { font-size: 28px; }
+.join__code { font: 700 32px var(--font-display); letter-spacing: 0.3em; text-align: center; font-variant-numeric: tabular-nums; }
+.join__wait { display: grid; gap: 12px; justify-items: center; text-align: center; padding-block: 44px; }
+.join__wait h2 { font-size: 24px; }
+.join__pulse { width: 64px; height: 64px; border-radius: 50%; background: var(--accent); animation: join-pulse 1.6s ease-in-out infinite; }
+@keyframes join-pulse { 50% { transform: scale(0.8); opacity: 0.5; } }
+.join__spin { width: 36px; height: 36px; border-radius: 50%; border: 4px solid var(--bg-3); border-top-color: var(--accent); animation: spin 0.8s linear infinite; }
+.join__q { display: grid; gap: 18px; animation: rise var(--d-3) var(--out); }
+.join__qtext { font: 600 22px/1.3 var(--font-display); }
+.join__opts { display: grid; gap: 10px; }
+.join__opts--grid { grid-template-columns: 1fr 1fr; }
+.join__opt { min-height: 64px; padding: 12px 16px; border: 2px solid var(--line); border-radius: var(--r-l); background: var(--bg); color: var(--fg); font: 700 20px var(--font); cursor: pointer; transition: background var(--d-1), border-color var(--d-1), transform var(--d-2) var(--out); }
+.join__opt:active { transform: scale(0.97); }
+.join__opt--on { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, var(--bg)); }
+.join__opt--ok { border-color: var(--ok); background: var(--ok-bg); color: var(--ok); }
+.join__opt--bad { border-color: var(--err); background: var(--err-bg); color: var(--err); }
+.join__opt:disabled { cursor: default; }
+.join__text { font-size: 20px; min-height: 56px; }
+.join__sent { color: var(--ok); font-weight: 600; text-align: center; }
+.join__res { display: grid; gap: 4px; padding: 16px; border-radius: var(--r-l); background: var(--bg-2); text-align: center; font: 700 20px var(--font-display); }
+.join__res span { font: 500 16px var(--font); color: var(--fg-2); }
+.join__res--ok { background: var(--ok-bg); color: var(--ok); }
+.join__res--bad { background: var(--err-bg); color: var(--err); }
+@media (prefers-reduced-motion: reduce) { .join__pulse, .join__spin { animation: none; } }
