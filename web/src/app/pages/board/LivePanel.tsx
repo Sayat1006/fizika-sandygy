@@ -3,14 +3,15 @@ import type { RealtimeChannel } from '@supabase/supabase-js';
 import QRCode from 'qrcode';
 import type { Slide } from '../../deck/types';
 import {
-  QUICK, endSession, fromSlide, isCorrect, joinUrl, loadRoom, myOpenSession, norm, setQuestion, startSession, teacherChannel,
-  type Answer, type LiveQuestion, type LiveSession, type Participant,
+  QUICK, endSession, fromDeck, fromSlide, isCorrect, joinUrl, loadRoom, myOpenSession, norm, setQuestion, startSession, teacherChannel,
+  type Answer, type LiveQuestion, type LiveSession, type Participant, type SlideQ,
 } from '../../lib/live';
 
 /** Тақтадағы «Сынып» панелі: оқушылар телефоннан қосылады, мұғалім сұрақ жібереді, нәтиже бірден көрінеді */
-export default function LivePanel({ open, onClose, slide, title, onNames }: {
-  open: boolean; onClose: () => void; slide: Slide | null; title: string; onNames: (n: string[]) => void;
+export default function LivePanel({ open, onClose, slides, at, title, onNames }: {
+  open: boolean; onClose: () => void; slides: Slide[] | null; at: number; title: string; onNames: (n: string[]) => void;
 }) {
+  const [all, setAll] = useState(false);
   const [s, setS] = useState<LiveSession | null>(null);
   const [people, setPeople] = useState<Participant[]>([]);
   const [answers, setAnswers] = useState<Answer[]>([]);
@@ -51,7 +52,10 @@ export default function LivePanel({ open, onClose, slide, title, onNames }: {
   };
   const q = s?.question || null;
   const mine = useMemo(() => (q ? answers.filter((a) => a.qid === q.id) : []), [answers, q]);
-  const items = useMemo(() => fromSlide(slide), [slide]);
+  const items = useMemo(() => fromSlide(slides?.[at] || null), [slides, at]);
+  const lesson = useMemo(() => (slides ? fromDeck(slides).filter((x) => x.at !== at) : []), [slides, at]);
+  const showAll = all || items.length === 0;
+  const send = ({ tag: _t, ...x }: SlideQ) => put({ ...x, open: true, reveal: false });
 
   return (
     <>
@@ -76,7 +80,11 @@ export default function LivePanel({ open, onClose, slide, title, onNames }: {
           {q ? <Results q={q} answers={mine} people={people} onPut={put} />
             : <div className="bd-live__ask">
               {items.length > 0 && <><small>Осы слайдтан</small>
-                <div className="bd-live__list">{items.map((x, k) => <button key={k} type="button" onClick={() => put({ ...x, open: true, reveal: false })}><i>{k + 1}</i>{x.text}</button>)}</div></>}
+                <div className="bd-live__list">{items.map((x, k) => <QBtn key={k} q={x} n={k + 1} onSend={send} />)}</div></>}
+              {lesson.length > 0 && <>
+                <button type="button" className="bd-live__more" aria-expanded={showAll} onClick={() => setAll(!showAll)}>Сабақтың барлық сұрақтары ({lesson.length}) <span>{showAll ? '▲' : '▼'}</span></button>
+                {showAll && <div className="bd-live__list">{lesson.map((x, k) => <QBtn key={k} q={x.q} n={x.at + 1} slide onSend={send} />)}</div>}
+              </>}
               <small>Жылдам сұрақ</small>
               <div className="bd-live__quick">{QUICK.map((x) => <button key={x.label} type="button" onClick={() => put({ ...x.make(), open: true, reveal: false })}>{x.label}</button>)}</div>
             </div>}
@@ -92,6 +100,15 @@ export default function LivePanel({ open, onClose, slide, title, onNames }: {
         </div>
       )}
     </>
+  );
+}
+
+function QBtn({ q, n, slide, onSend }: { q: SlideQ; n: number; slide?: boolean; onSend: (q: SlideQ) => void }) {
+  return (
+    <button type="button" onClick={() => onSend(q)} title={q.correct ? `Жауабы: ${q.correct}` : undefined}>
+      <i className={slide ? 'bd-live__sn' : ''}>{slide ? n : q.tag && q.tag.length === 1 && /[ABC]/.test(q.tag) ? q.tag : n}</i>
+      <span>{q.text}{q.options && <em> · {q.options.join(' / ')}</em>}{slide && q.tag && /^[ABC]$/.test(q.tag) && <em> · {q.tag} деңгей</em>}</span>
+    </button>
   );
 }
 
