@@ -5,7 +5,7 @@ import { dm, lessonDeck, viewPages, type Lesson, type ViewPages } from '../../li
 import { useAccount } from '../../lib/account';
 import { stepsOf, type DeckData, type Slide } from '../../deck/types';
 import { markSeen } from '../../lib/seen';
-import { IcLock } from '../../ui/icons';
+import { IcChevronL, IcChevronR, IcLock, IcPause, IcPlay } from '../../ui/icons';
 import { Segmented } from '../../ui/kit';
 import LessonActions from './LessonActions';
 
@@ -103,9 +103,9 @@ function DeckPlayer({ deck }: { deck: DeckData }) {
         <Suspense fallback={<i className="pane__spin" />}><Deck data={deck} index={at} step={stepsOf(deck.slides[at])} theme={th} /></Suspense>
       </div>
       <div className="player__bar">
-        <button type="button" className="player__b" onClick={() => { setPlay(false); go(at - 1); }} aria-label="Алдыңғы слайд">‹</button>
-        <button type="button" className="player__b player__b--play" onClick={() => setPlay(!play)} aria-label={play ? 'Тоқтату' : 'Ойнату'}>{play ? '❚❚' : '▶'}</button>
-        <button type="button" className="player__b" onClick={() => { setPlay(false); go(at + 1); }} aria-label="Келесі слайд">›</button>
+        <button type="button" className="player__b" onClick={() => { setPlay(false); go(at - 1); }} aria-label="Алдыңғы слайд"><IcChevronL /></button>
+        <button type="button" className="player__b player__b--play" onClick={() => setPlay(!play)} aria-label={play ? 'Тоқтату' : 'Ойнату'}>{play ? <IcPause /> : <IcPlay />}</button>
+        <button type="button" className="player__b" onClick={() => { setPlay(false); go(at + 1); }} aria-label="Келесі слайд"><IcChevronR /></button>
         <span className="player__n tabular">{at + 1} / {n}</span>
         <i className="player__prog"><em style={{ width: `${((at + 1) / n) * 100}%` }} /></i>
       </div>

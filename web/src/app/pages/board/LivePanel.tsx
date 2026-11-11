@@ -6,6 +6,7 @@ import {
   QUICK, endSession, fromDeck, fromSlide, quizOf, isCorrect, joinUrl, loadRoom, myOpenSession, norm, setQuestion, startSession, teacherChannel,
   type Answer, type LiveQuestion, type LiveSession, type Participant, type SlideQ,
 } from '../../lib/live';
+import { IcChevronD, IcClose } from '../../ui/icons';
 
 /** Тақтадағы «Сынып» панелі: оқушылар телефоннан қосылады, мұғалім сұрақ жібереді, нәтиже бірден көрінеді */
 export default function LivePanel({ open, onClose, deck, at, title, onNames }: {
@@ -69,7 +70,7 @@ export default function LivePanel({ open, onClose, deck, at, title, onNames }: {
   return (
     <>
       <aside className={`bd-live${open ? ' bd-live--open' : ''}`} aria-label="Сынып панелі" aria-hidden={!open}>
-        <div className="bd-live__head"><b>Сынып</b><button className="bd-x" type="button" onClick={onClose} aria-label="Жабу">×</button></div>
+        <div className="bd-live__head"><b>Сынып</b><button className="bd-x" type="button" onClick={onClose} aria-label="Жабу"><IcClose /></button></div>
         {!s ? (
           <div className="bd-live__intro">
             <p>Оқушылар телефоннан қосылып, сұрақтарға жауап береді. Тіркелу керек емес — тақтадағы кодты енгізсе болғаны.</p>
@@ -94,7 +95,7 @@ export default function LivePanel({ open, onClose, deck, at, title, onNames }: {
               {quiz.length > 0 && <><small>Сабақтың тесті · A / B / C / D</small>
                 <div className="bd-live__list">{quiz.map((x, k) => <QBtn key={k} q={x} n={k + 1} onSend={send} />)}</div></>}
               {lesson.length > 0 && <>
-                <button type="button" className="bd-live__more" aria-expanded={showAll} onClick={() => setAll(!showAll)}>Сабақтың барлық сұрақтары ({lesson.length}) <span>{showAll ? '▲' : '▼'}</span></button>
+                <button type="button" className="bd-live__more" aria-expanded={showAll} onClick={() => setAll(!showAll)}>Сабақтың барлық сұрақтары ({lesson.length}) <IcChevronD className={showAll ? 'up' : ''} /></button>
                 {showAll && <div className="bd-live__list">{lesson.map((x, k) => <QBtn key={k} q={x.q} n={x.at + 1} slide onSend={send} />)}</div>}
               </>}
               <small>Жылдам сұрақ</small>

@@ -47,15 +47,13 @@ export default function Samples() {
                 <span className="t-small">{cur.grade}-сынып{cur.v && VARIANT[cur.v]?.dir ? ' · ' + VARIANT[cur.v].short : ''} · №{cur.disp} сабақ · {cur.bolim}</span>
                 <h2>{cur.topic}</h2>
               </div>
-              <div className="lessonbar__dl">
-                {(['kmzh', 'pres', 'ws'] as Kind[]).filter((x) => cur[x]).map((x) => (
-                  <a key={x} className={`btn btn--sm ${x === 'kmzh' ? 'btn--primary' : ''}`} href={`/samples/${cur.grade}/${cur[x]!.file}`} download={cur[x]!.name}>{NAMES[x]} <small>{kb(cur[x]!.size)}</small></a>
-                ))}
-              </div>
             </div>
             <div className="viewbar">
               <Segmented label="Материал" value={k} onChange={(x) => { setKind(x); setSlide(0); }} items={(['kmzh', 'pres', 'ws'] as Kind[]).filter((x) => cur[x]).map((x) => ({ value: x, label: NAMES[x] }))} />
-              <span className="t-small">{k === 'pres' ? `${Math.min(slide, cur.pres!.pages.length - 1) + 1} / ${cur.pres!.pages.length} слайд` : `${cur[k]!.pages.length} бет`}</span>
+              <span className="viewbar__r">
+                <span className="t-small">{k === 'pres' ? `${Math.min(slide, cur.pres!.pages.length - 1) + 1} / ${cur.pres!.pages.length} слайд` : `${cur[k]!.pages.length} бет`}</span>
+                <a className="btn btn--sm btn--primary" href={`/samples/${cur.grade}/${cur[k]!.file}`} download={cur[k]!.name}>{NAMES[k]} жүктеу <small>{kb(cur[k]!.size)}</small></a>
+              </span>
             </div>
             {k === 'pres' ? <Deck base={`/samples/${cur.grade}/`} pages={cur.pres!.pages} i={Math.min(slide, cur.pres!.pages.length - 1)} go={setSlide} />
               : <div className="pages">{cur[k]!.pages.map(([n, w, h], i) => <img key={n} src={`/samples/${cur.grade}/${n}`} width={w} height={h} alt={`${NAMES[k]}, ${i + 1}-бет`} loading={i ? 'lazy' : 'eager'} decoding="async" />)}</div>}
