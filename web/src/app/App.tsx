@@ -11,6 +11,7 @@ const Board = lazy(() => import('./pages/Board'));
 const Samples = lazy(() => import('./pages/Samples'));
 const Legal = lazy(() => import('./pages/Legal'));
 const Admin = lazy(() => import('./pages/Admin'));
+const Join = lazy(() => import('./pages/Join'));
 
 const TITLES: Record<string, string> = { '/': 'Сабақтас', '/app': 'Кабинет · Сабақтас', '/samples': 'Тегін үлгілер · Сабақтас', '/admin': 'Әкімші · Сабақтас' };
 
@@ -49,6 +50,7 @@ export default function App() {
               <Route path="/oferta" element={<Legal doc="oferta" />} />
               <Route path="/privacy" element={<Legal doc="privacy" />} />
               <Route path="/admin" element={<Admin />} />
+              <Route path="/s" element={<Join />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </Suspense>

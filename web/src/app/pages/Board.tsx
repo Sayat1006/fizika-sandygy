@@ -4,6 +4,7 @@ import { useAccount } from '../lib/account';
 import { labOf } from '../lib/config';
 import { lessonDeck, lessonPlan, loadLessons, viewPages, type Lesson, type Stage } from '../lib/data';
 import Deck, { THEMES, type Theme } from '../deck/Deck';
+import LivePanel from './board/LivePanel';
 import { stepsOf, type DeckData } from '../deck/types';
 import { IcChevronL, IcChevronR } from '../ui/icons';
 
@@ -37,6 +38,8 @@ export default function Board() {
   const [running, setRunning] = useState(false);
   const [left, setLeft] = useState(0);
   const [notes, setNotes] = useState(false);
+  const [liveOpen, setLiveOpen] = useState(false);
+  const [names, setNames] = useState<string[]>([]);
   const [fs, setFs] = useState(false);
   const [pop, setPop] = useState<'pick' | 'timer' | null>(null);
   const [deck, setDeck] = useState<DeckData | null>(null);
@@ -190,7 +193,7 @@ export default function Board() {
 
   // «Басқару» режимінде слайдты саусақпен сырғыту
   const swipe = useRef<{ x: number; y: number } | null>(null);
-  const stDown = (e: React.PointerEvent) => { if (tool === 'hand' && !(e.target as HTMLElement).closest('button, iframe, input, select, .bd-notes, .dk-ill, .dk-cardf')) swipe.current = { x: e.clientX, y: e.clientY }; };
+  const stDown = (e: React.PointerEvent) => { if (tool === 'hand' && !(e.target as HTMLElement).closest('button, iframe, input, select, .bd-notes, .bd-live, .bd-joinbig, .dk-ill, .dk-cardf')) swipe.current = { x: e.clientX, y: e.clientY }; };
   const stUp = (e: React.PointerEvent) => {
     const s = swipe.current; if (!s) return; swipe.current = null;
     const dx = e.clientX - s.x, dy = e.clientY - s.y;
@@ -274,6 +277,7 @@ export default function Board() {
             <h3>Оқушының әрекеті</h3>{st.student.map((t, k) => <p key={k}>{t}</p>)}
           </> : <p>Бұл сабақтың сценарийі жоқ.</p>}
         </aside>
+        <LivePanel open={liveOpen} onClose={() => setLiveOpen(false)} slide={onDeck && deck ? deck.slides[i] : null} title={lesson?.topic || ''} onNames={setNames} />
       </main>
 
       <div className="bd-tools">
@@ -297,7 +301,9 @@ export default function Board() {
         </div>
         <div className="bd-grp" role="group" aria-label="Сынып құралдары">
           {deck && src === 'pres' && <button className="bd-ib bd-theme" type="button" onClick={cycleTheme} aria-label={`Слайд стилі: ${THEMES.find((x) => x.id === theme)!.name}`} title={THEMES.find((x) => x.id === theme)!.name}><b>{theme.toUpperCase()}</b></button>}
-          <button className="bd-ib" type="button" aria-pressed={notes} onClick={() => setNotes(!notes)} aria-label="Мұғалім жазбасы">{S('M5 4h14v16H5zM9 8h6M9 12h6M9 16h4')}</button>
+          <button className="bd-ib bd-ib--badge" type="button" aria-pressed={liveOpen} onClick={() => { setLiveOpen(!liveOpen); setNotes(false); }} aria-label="Сынып: оқушылардың телефоны" title="Оқушылар телефоннан қосылады">
+            {S('M8 2h8a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2zM11 18h2')}{names.length > 0 && <em>{names.length}</em>}</button>
+          <button className="bd-ib" type="button" aria-pressed={notes} onClick={() => { setNotes(!notes); setLiveOpen(false); }} aria-label="Мұғалім жазбасы">{S('M5 4h14v16H5zM9 8h6M9 12h6M9 16h4')}</button>
           <button className="bd-ib" type="button" onClick={() => setPop('pick')} aria-label="Кездейсоқ оқушы">{S('M7 3h10a4 4 0 0 1 4 4v10a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V7a4 4 0 0 1 4-4zM8.5 8.5h.01M15.5 15.5h.01M12 12h.01')}</button>
           <button className="bd-ib" type="button" onClick={() => setPop('timer')} aria-label="Таймер">{S('M12 21a8 8 0 1 0 0-16 8 8 0 0 0 0 16zM12 9v4l2.5 2.5M9 2h6')}</button>
         </div>
@@ -314,7 +320,7 @@ export default function Board() {
         </nav>
       )}
 
-      <Picker open={pop === 'pick'} onClose={() => setPop(null)} grade={grade} />
+      <Picker open={pop === 'pick'} onClose={() => setPop(null)} grade={grade} names={names} />
       <Timer open={pop === 'timer'} onClose={() => setPop(null)} />
     </div>
   );
@@ -331,7 +337,34 @@ function Pop({ open, onClose, children, title }: { open: boolean; onClose: () =>
 }
 
 /* кездейсоқ оқушы: барлығы шыққанша қайталанбайды */
-function Picker({ open, onClose, grade }: { open: boolean; onClose: () => void; grade: number }) {
+function Picker({ open, onClose, grade, names }: { open: boolean; onClose: () => void; grade: number; names: string[] }) {
+  if (names.length >= 2) return <NamePicker open={open} onClose={onClose} names={names} />;
+  return <NumberPicker open={open} onClose={onClose} grade={grade} />;
+}
+
+/* сабаққа телефоннан қосылған оқушылардың аты бойынша: барлығы шыққанша қайталанбайды */
+function NamePicker({ open, onClose, names }: { open: boolean; onClose: () => void; names: string[] }) {
+  const [bag, setBag] = useState<string[]>([]);
+  const [shown, setShown] = useState('?');
+  const [rolling, setRolling] = useState(false);
+  const pick = () => {
+    const b = bag.length ? [...bag] : [...names];
+    const p = b.splice(Math.floor(Math.random() * b.length), 1)[0];
+    setBag(b);
+    if (reduce) return setShown(p);
+    setRolling(true); let k = 0;
+    const t = setInterval(() => { setShown(names[Math.floor(Math.random() * names.length)]); if (++k > 12) { clearInterval(t); setRolling(false); setShown(p); } }, 80);
+  };
+  return (
+    <Pop open={open} onClose={onClose} title="Кездейсоқ оқушы">
+      <div className={`bd-big bd-big--name${rolling ? ' bd-big--roll' : ''}`}>{shown}</div>
+      <small>Қалды: {bag.length || names.length} · сабаққа қосылғандар ішінен</small>
+      <div className="bd-row"><button className="bd-pill" type="button" onClick={pick} disabled={rolling}>Таңдау</button><button className="bd-pill bd-pill--ghost" type="button" onClick={onClose}>Жабу</button></div>
+    </Pop>
+  );
+}
+
+function NumberPicker({ open, onClose, grade }: { open: boolean; onClose: () => void; grade: number }) {
   const key = `fs-pick-${grade}`;
   const [size, setSize] = useState(() => +store.get(key, '25') || 25);
   const [bag, setBag] = useState<number[]>([]);
