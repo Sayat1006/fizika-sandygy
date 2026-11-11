@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import type { Chart, DeckData, Dir, Quote, Scale, Slide, Vec, Visual } from './types';
+import Illus, { ILLUS } from './Illus';
 import './deck.css';
 
 /* Анимациялы слайд: 1920×1080 сахна, контейнерге сыйғызылады. step — неше рет басылды. */
@@ -112,7 +113,7 @@ function SlideView({ s, step, custom }: { s: Slide; step: number; custom: boolea
       return (
         <div className="dk-pad">
           <Head tag={s.tag} time={s.time} title={s.title} />
-          <div className="dk-split">
+          <div className={`dk-split${s.illus ? ' dk-split--ill' : ''}`}>
             <div className="dk-card dk-pic">{hasVisual(s) ? <VisualView v={s} /> : <VecAdd />}</div>
             <div className="dk-qs">
               {s.items.map((t, i) => <In key={i} on={step > i} className="dk-q"><span className="dk-num">?</span>{t}</In>)}
@@ -240,7 +241,7 @@ function SlideView({ s, step, custom }: { s: Slide; step: number; custom: boolea
       return (
         <div className="dk-pad">
           <Head tag={s.tag} time={s.time} title={s.title} />
-          <div className={vis ? 'dk-split dk-split--th' : 'dk-solo'}>
+          <div className={vis ? `dk-split dk-split--th${s.illus ? ' dk-split--ill' : ''}` : 'dk-solo'}>
             <ul className="dk-bul">{s.items.map((t, i) => <In as="li" key={i} on={step > i}><Rich t={t} /></In>)}</ul>
             {vis && <div className="dk-card dk-pic"><VisualView v={s} />{s.caption && s.img && <span className="dk-cap">{s.caption}</span>}</div>}
           </div>
@@ -487,9 +488,10 @@ function Sub({ t }: { t: string }) {
   return <>{out}</>;
 }
 
-const hasVisual = (v: Visual) => !!(v.img || v.cards || v.flow || v.chart);
+const hasVisual = (v: Visual) => !!(v.img || v.cards || v.flow || v.chart || (v.illus && ILLUS.has(v.illus.k)));
 
 function VisualView({ v }: { v: Visual }) {
+  if (v.illus && ILLUS.has(v.illus.k)) return <Illus s={v.illus} />;
   if (v.cards) {
     const n = v.cards.items.length, cols = n === 4 || n === 2 ? 2 : 3;
     return (

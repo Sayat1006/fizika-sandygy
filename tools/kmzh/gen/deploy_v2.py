@@ -6,8 +6,9 @@ Usage: python3 deploy_v2.py VARIANT
 import json, os, sys, shutil, subprocess, hashlib, glob, tempfile
 from PIL import Image
 
-SITE = '/home/claude/fizika-sandygy'
-GEN = '/home/claude/kmzh/final_v2'
+HERE = os.path.dirname(os.path.abspath(__file__))
+SITE = os.path.dirname(os.path.dirname(os.path.dirname(HERE)))
+GEN = os.environ.get('FS_OUT', os.path.join(os.path.dirname(HERE), 'final_v2'))
 SECRET = 'sabaqtas-pv-7f3a91'
 SITEV = {'10': '10-zhmb-2', '11': '11-zhmb-3'}
 
@@ -20,7 +21,7 @@ prev = json.load(open(f'{SITE}/materials/previews.json'))
 folder = sv if '-' in sv and sv not in ('10-zhmb-2', '11-zhmb-3') else sv.split('-')[0]
 os.makedirs(f'{SITE}/materials/{folder}', exist_ok=True)
 
-pdfdir = tempfile.mkdtemp(prefix='kpdf_', dir='/tmp/claude-0/-home-claude/9cd33916-1c07-578a-8ca8-15d1a161d2ab/scratchpad')
+pdfdir = tempfile.mkdtemp(prefix='kpdf_')
 copied = []
 for n, fname in sorted(index.items(), key=lambda x: int(x[0])):
     key = f'{sv}:{n}'
@@ -56,6 +57,23 @@ for key, path in copied:
             im.save(f'{out}/{fn}', 'WEBP', quality=58, method=5); files.append(fn)
     prev[f'{key}:kmzh'] = {'dir': h, 'files': files, 'w': im.width, 'h': im.height}
 
+# Жаңа нұсқа: сабақтар тізіміне (public/lessons.json) қосу; күндер – сағат саны бірдей нұсқаның кестесінен
+lp = f'{SITE}/public/lessons.json'
+L = json.load(open(lp, encoding='utf-8'))
+have = {(x['v'], x['n']) for x in L}
+KV2 = json.load(open(os.path.join(HERE, 'ktzh_v2.json'), encoding='utf-8')).get(variant)
+if KV2:
+    hours = int(variant.rsplit('-', 1)[1])
+    ref = '11-zhmb-3' if hours == 3 else '10-zhmb-2'
+    dates = [x['date'] for x in sorted((x for x in L if x['v'] == ref), key=lambda x: x['n'])]
+    if hours == 1: dates = dates[::2]
+    while len(dates) < len(KV2): dates.append(dates[-1])
+    for i, it in enumerate(KV2):
+        if (sv, it['n']) in have or str(it['n']) not in index: continue
+        L.append({'grade': int(variant.split('-')[0]), 'n': it['n'], 'disp': str(it['disp']), 'topic': it['topic'], 'bolim': it['bolim'],
+                  'date': dates[i], 'kmzh': True, 'pres': False, 'ws': False, 'v': sv})
+        man[f'{sv}:{it["n"]}']['date'] = dates[i]
+    json.dump(L, open(lp, 'w', encoding='utf-8'), ensure_ascii=False, separators=(',', ':'))
 json.dump(man, open(f'{SITE}/materials/manifest.json', 'w'), ensure_ascii=False, indent=1)
 json.dump(prev, open(f'{SITE}/materials/previews.json', 'w'), ensure_ascii=False, separators=(',', ':'))
 shutil.rmtree(pdfdir, ignore_errors=True)

@@ -33,7 +33,7 @@ export type Slide =
   | (Head & { t: 'chart'; title: string; chart: Chart; items: string[] });
 
 /** Сызба: сурет (SVG) немесе дерекпен салынатын карточкалар / схема / график */
-export interface Visual { img?: { svg: string; png?: string; w: number; h: number }; cards?: { title: string; items: [string, string][] }; flow?: { title: string; items: string[] }; chart?: Chart }
+export interface Visual { illus?: { k: string; a?: unknown[] }; img?: { svg: string; png?: string; w: number; h: number }; cards?: { title: string; items: [string, string][] }; flow?: { title: string; items: string[] }; chart?: Chart }
 export interface Chart { type: 'line' | 'bar'; title: string; xl: string; yl: string; labels: string[]; series: { name: string; values: number[] }[] }
 
 export interface Quote { text: string; by: string }

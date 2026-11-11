@@ -110,13 +110,43 @@ def imgsize(name):
     return [name, w, h]
 
 
-for g in sys.argv[1:]:
-    specs = {}
+def _specs(g):
+    sp = {}
     for part in sorted(f for f in os.listdir(os.path.join(ROOT, 'gen')) if re.match(rf'g{g}[a-z]?\.py$', f)):
-        specs.update(importlib.import_module(part[:-3]).S)
-    items = KTZH[g]
+        sp.update(importlib.import_module(part[:-3]).S)
+    return sp
+
+
+def _variant(var):
+    """Жаңа курс нұсқасы (ktzh_v2.json): спецификация v{вариант}.py картасы бойынша (make2.py-дағыдай)"""
+    V = importlib.import_module('v' + var.replace('-', '_')).V
+    K2 = json.load(open(os.path.join(ROOT, 'gen', 'ktzh_v2.json'), encoding='utf-8'))[var]
+    cache = {}
+    specs = {}
+    for it in K2:
+        v = V.get(it['n'])
+        if not v:
+            continue
+        sp = {}
+        if v.get('base'):
+            bg, bn = v['base']
+            if bg not in cache: cache[bg] = _specs(bg)
+            sp = dict(cache[bg].get(bn) or {})
+        sp.update(v.get('spec', {}))
+        specs[it['n']] = sp
+    return K2, specs
+
+
+for g in sys.argv[1:]:
+    var = g
+    if '-' in g and g not in ('10-zhmb-2', '11-zhmb-3'):
+        items, specs = _variant(g); g = g.split('-')[0]
+    else:
+        specs = _specs(g); items = KTZH[g]
     for idx, item in enumerate(items):
-        n = item['n']; spec = specs[n]; topic = clean_topic(item['topic'])
+        n = item['n']; spec = specs.get(n)
+        if not spec: continue
+        topic = clean_topic(item['topic'])
         kind = spec.get('kind') or kind_of(topic)
         if kind == 'tjb': continue
         disp = item.get('disp') or (n if (g == '7' or n <= 52) else ('52а' if n == 53 else n - 1))
@@ -151,5 +181,6 @@ for g in sys.argv[1:]:
             equip=spec.get('e'), steps=spec.get('st'), table=spec.get('tb'),
             chart=chart_of(spec.get('f'), topic), extra=extra_fig(topic, spec.get('f')), formulas=formulas(spec['t']))
         qr(co[2], co[1])
-        json.dump(data, open(os.path.join(OUT, f'{g}_{n:02d}.json'), 'w'), ensure_ascii=False)
-    print(g, 'done')
+        data['f_spec'] = spec.get('f'); data['variant'] = var
+        json.dump(data, open(os.path.join(OUT, f'{var}_{n:02d}.json'), 'w'), ensure_ascii=False)
+    print(var, 'done')
