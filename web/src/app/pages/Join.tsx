@@ -91,11 +91,11 @@ function Room({ code, me, title, onLeave }: { code: string; me: Me; title: strin
     <div className="join__card join__q">
       <p className="join__qtext">{q.text}</p>
       {q.kind === 'choice' ? (
-        <div className={`join__opts${(q.options?.length || 0) > 3 ? ' join__opts--grid' : ''}`}>
-          {q.options?.map((o) => {
+        <div className={`join__opts${(q.options?.length || 0) > 3 && q.options!.every((o) => o.length <= 5) ? ' join__opts--grid' : ''}`}>
+          {q.options?.map((o, k) => {
             const picked = st.mine === o, right = q.reveal && q.correct === o;
             return <button key={o} type="button" disabled={!q.open || sending} aria-pressed={picked}
-              className={`join__opt${picked ? ' join__opt--on' : ''}${right ? ' join__opt--ok' : ''}${q.reveal && picked && !right ? ' join__opt--bad' : ''}`} onClick={() => send(o)}>{o}</button>;
+              className={`join__opt${picked ? ' join__opt--on' : ''}${right ? ' join__opt--ok' : ''}${q.reveal && picked && !right ? ' join__opt--bad' : ''}`} onClick={() => send(o)}>{(q.options?.length || 0) > 2 && o.length > 1 && <b className="join__let">{'ABCDEF'[k]}</b>}{o}</button>;
           })}
         </div>
       ) : (

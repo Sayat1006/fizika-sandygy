@@ -215,6 +215,9 @@ def main():
             done += 1
         print(g, 'ok')
     print('жасалды:', done)
+    # тақтадағы «Сабақтың тесті» (оқушылар телефоннан жауап береді)
+    import subprocess, sys
+    subprocess.run([sys.executable, os.path.join(REPO, 'tools', 'quiz', 'add_quiz.py')], check=True)
 
 
 if __name__ == '__main__':

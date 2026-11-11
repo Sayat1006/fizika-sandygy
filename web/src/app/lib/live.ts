@@ -1,5 +1,5 @@
 import type { RealtimeChannel } from '@supabase/supabase-js';
-import type { Slide } from '../deck/types';
+import type { DeckData, Slide } from '../deck/types';
 import { sb } from './data';
 
 /* Сабақ кезінде оқушылардың телефоннан қосылуы (Supabase: live_sessions / live_participants / live_answers).
@@ -73,6 +73,10 @@ export function fromSlide(s: Slide | null): SlideQ[] {
     case 'text': return s.task && !/^\W*(\*\*)?Үлгі/.test(s.task) ? [{ id: rid(), kind: 'text', text: strip(s.task), tag: '✎' }] : [];
     default: return [];
   }
+}
+/** Сабақтың тесті (A/B/C/D, дұрыс жауабы белгілі) */
+export function quizOf(d: DeckData | null): SlideQ[] {
+  return (d?.quiz || []).map(([text, options, correct]) => ({ id: rid(), kind: 'choice' as const, text, options, correct, tag: 'T' }));
 }
 /** Бүкіл сабақтың сұрақтары (слайд нөмірімен) */
 export function fromDeck(slides: Slide[]): { at: number; q: SlideQ }[] {
