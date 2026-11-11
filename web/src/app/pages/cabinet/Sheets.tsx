@@ -5,6 +5,7 @@ import { KIND_LABEL, dm, dmy, money, sb, tgPayLink, viewPages, type Kind, type L
 import { IcLock } from '../../ui/icons';
 import { Note, Segmented, Sheet, useToast } from '../../ui/kit';
 import { DownloadAct } from './LessonActions';
+import { deleteReview, myReview, sendReview, type Review } from '../../lib/reviews';
 import { markSeen } from '../../lib/seen';
 
 /* ───────── Қарау: ҚМЖ, слайд, парақ беттері ───────── */
@@ -253,6 +254,46 @@ export function ProfileSheet({ open, onClose }: { open: boolean; onClose: () => 
         <label className="field"><span>Мектеп, қала</span><input className="input" name="school" defaultValue={initial.school} /></label>
         <button className="btn btn--lg btn--primary" type="submit">Сақтау</button>
       </form>
+    </Sheet>
+  );
+}
+
+/* ───────── Пікір: басты бетте (әкімші бекіткен соң) жарияланады ───────── */
+export function ReviewSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const { profile, session } = useAccount();
+  const toast = useToast();
+  const [mine, setMine] = useState<Review | null | undefined>(undefined);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState('');
+  useEffect(() => { if (open && session) { setErr(''); myReview(session.user.id).then(setMine); } }, [open, session]);
+  const submit = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault(); setErr('');
+    const f = new FormData(e.currentTarget);
+    if (!f.get('consent')) return setErr('Жариялауға келісім белгіленбеген.');
+    setBusy(true);
+    try { await sendReview({ name: String(f.get('name')).trim(), school: String(f.get('school')).trim(), text: String(f.get('text')).trim() }); toast('Рахмет! Пікіріңіз тексерілгеннен кейін басты бетте шығады.'); onClose(); }
+    catch (x) { setErr((x as Error).message); }
+    setBusy(false);
+  };
+  return (
+    <Sheet open={open} onClose={onClose} title="Пікір қалдыру" sub="Сабақтас сабағыңызға көмектесті ме? Әріптестеріңізге айтыңыз.">
+      {mine === undefined ? <div className="sheet__body"><div className="skel" style={{ height: 160 }} /></div>
+        : mine ? (
+          <div className="sheet__body">
+            <blockquote className="rv-mine">«{mine.text}»<small>— {mine.name}{mine.school ? `, ${mine.school}` : ''}</small></blockquote>
+            <p className="hint">{mine.approved ? 'Пікіріңіз басты бетте жарияланған. Рахмет!' : 'Пікіріңіз тексерілуде. Бекітілген соң басты бетте шығады.'}</p>
+            <button className="btn btn--outline" type="button" onClick={async () => { await deleteReview(mine.id); setMine(null); }}>Пікірді өшіру</button>
+          </div>
+        ) : (
+          <form className="sheet__body form" onSubmit={submit}>
+            <label className="field"><span>Пікіріңіз</span><textarea className="input rv-text" name="text" required minLength={20} maxLength={600} rows={5} placeholder="Мысалы: сабаққа дайындалу уақытым қысқарды, оқушылар телефоннан жауап бергенді ұнатады…" /></label>
+            <label className="field"><span>Аты-жөні</span><input className="input" name="name" required minLength={2} maxLength={80} defaultValue={profile?.full_name || ''} /></label>
+            <label className="field"><span>Мектеп, қала</span><input className="input" name="school" maxLength={120} defaultValue={profile?.school || ''} /></label>
+            <label className="check"><input type="checkbox" name="consent" /> <span>Пікірім аты-жөнім және мектебіммен бірге сайттың басты бетінде жариялануына келісемін</span></label>
+            <Note>{err}</Note>
+            <button className="btn btn--lg btn--primary" type="submit" disabled={busy}>Жіберу</button>
+          </form>
+        )}
     </Sheet>
   );
 }

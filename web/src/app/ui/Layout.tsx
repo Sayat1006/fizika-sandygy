@@ -46,7 +46,7 @@ export function ModeSwitch() {
 }
 
 /** Кабинеттің парақшаларын кез келген беттен ашу (Cabinet.tsx тыңдайды) */
-export type SheetId = 'subscribe' | 'classes' | 'tg' | 'profile';
+export type SheetId = 'subscribe' | 'classes' | 'tg' | 'profile' | 'review';
 export function openSheet(id: SheetId) {
   try { sessionStorage.setItem('fs-sheet', id); } catch { /* */ }
   window.dispatchEvent(new Event('fs-sheet'));
@@ -81,6 +81,7 @@ export function AccountNav() {
             <button role="menuitem" type="button" onClick={() => go('classes')}>Менің сыныптарым</button>
             {CONFIG.telegramBot && <button role="menuitem" type="button" onClick={() => go('tg')}>Telegram</button>}
             <button role="menuitem" type="button" onClick={() => go('profile')}>Профиль</button>
+            <button role="menuitem" type="button" onClick={() => go('review')}>Пікір қалдыру</button>
             {profile?.is_admin && <Link role="menuitem" to="/admin" onClick={() => setOpen(false)}>Әкімші</Link>}
             <hr />
             <button role="menuitem" type="button" className="umenu__out" onClick={async () => { setOpen(false); await sb.auth.signOut(); nav('/app'); }}>Шығу</button>

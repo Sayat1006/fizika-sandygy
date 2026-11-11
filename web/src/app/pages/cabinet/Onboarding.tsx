@@ -27,3 +27,18 @@ export default function Onboarding({ onClasses, onLook }: { onClasses: () => voi
     </div>
   );
 }
+
+/** Тақтада кемінде бір сабақ өткізген мұғалімнен пікір сұрау — бір ықшам жол */
+export function ReviewAsk({ onOpen }: { onOpen: () => void }) {
+  const [hide, setHide] = useState(() => !!get('fs-rv-ask-done') || !get('fs-board-opened'));
+  if (hide) return null;
+  const close = () => { setHide(true); try { localStorage.setItem('fs-rv-ask-done', '1'); } catch { /* */ } };
+  return (
+    <div className="strip__row" aria-label="Пікір">
+      <span className="strip__k">Пікір</span>
+      <span className="strip__t">Сабақтас көмектесті ме? Әріптестеріңізге айтыңыз</span>
+      <button type="button" className="link" onClick={() => { close(); onOpen(); }}>Пікір қалдыру</button>
+      <button type="button" className="strip__x" onClick={close} aria-label="Жасыру"><IcClose /></button>
+    </div>
+  );
+}

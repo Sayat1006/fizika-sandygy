@@ -5,6 +5,8 @@ import { CONFIG } from '../lib/config';
 import LessonDemo from '../ui/LessonDemo';
 import HeroBoard from '../ui/HeroBoard';
 import { IcBoard, IcKmzh, IcSend } from '../ui/icons';
+import { publicReviews, type Review } from '../lib/reviews';
+import { useAccount } from '../lib/account';
 
 const Morph = lazy(() => import('../ui/Morph'));
 
@@ -42,6 +44,7 @@ const T = {
     endT: 'Ертеңгі сабаққа бүгін дайын болыңыз.', endP: 'Тіркеліңіз — 3 күн бойы барлық сыныптың материалдары мен тақта тегін.',
     labT: '3D зертхана.', labP: 'Оқушы тәжірибе жасайды, өлшейді, есеп алады.', labGo: 'Зертхананы ашу',
     q: 'Сұрағыңыз бар ма? WhatsApp', wa: 'WhatsApp', tg: 'Telegram', statsL: 'Сабақтастағы материалдар',
+    demo: 'Бұл — тегін үлгі сабақ (7-сынып). Толық ашу', rvT: 'Мұғалімдер не дейді',
   },
   ru: {
     lab: '3D лаборатория', login: 'Войти', other: 'Қаз',
@@ -71,6 +74,7 @@ const T = {
     endT: 'Будьте готовы к завтрашнему уроку уже сегодня.', endP: 'Зарегистрируйтесь — 3 дня материалы всех классов и доска бесплатно.',
     labT: '3D лаборатория.', labP: 'Ученик ставит опыт, измеряет и получает отчёт.', labGo: 'Открыть лабораторию',
     q: 'Есть вопрос? WhatsApp', wa: 'WhatsApp', tg: 'Telegram', statsL: 'Материалы в Сабақтас',
+    demo: 'Это бесплатный образец урока (7 класс). Открыть полностью', rvT: 'Что говорят учителя',
   },
 };
 
@@ -91,15 +95,19 @@ const ICONS = [IcKmzh, IcBoard, IcSend];
 
 export default function Landing() {
   const idle = useIdle();
+  const { session } = useAccount();
   const [lang, setLang] = useState<'kk' | 'ru'>(() => { try { return localStorage.getItem('fs-lang') === 'ru' ? 'ru' : 'kk'; } catch { return 'kk'; } });
   const t = T[lang];
+  // Нақты пікірлер (әкімші бекіткен); жоқ болса бөлім көрінбейді
+  const [reviews, setReviews] = useState<Review[]>([]);
+  useEffect(() => { publicReviews().then(setReviews).catch(() => {}); }, []);
   const flip = () => { const l = lang === 'kk' ? 'ru' : 'kk'; setLang(l); document.documentElement.lang = l; try { localStorage.setItem('fs-lang', l); } catch { /* жеке режим */ } };
   return (
     <div className="shell landing" lang={lang}>
       <Nav plain>
         <a className="nav__link nav__hide-sm" href="/lab">{t.lab}</a>
         <button className="nav__link" type="button" onClick={flip} aria-label={lang === 'kk' ? 'Русский язык' : 'Қазақ тілі'}>{t.other}</button>
-        <Link className="btn btn--sm btn--primary" to="/app">{t.login}</Link>
+        <Link className="btn btn--sm btn--primary" to="/app">{session ? (lang === 'kk' ? 'Кабинет' : 'Кабинет') : t.login}</Link>
       </Nav>
 
       <main>
@@ -114,12 +122,26 @@ export default function Landing() {
             </div>
             <ul className="lp-trust rise rise-4">{t.trust.map((x) => <li key={x}>{x}</li>)}</ul>
           </div>
-          <div className="lp-hero__vis rise rise-3"><HeroBoard lang={lang} /></div>
+          <div className="lp-hero__vis rise rise-3"><HeroBoard lang={lang} /><Link className="lp-hero__demo link link--more" to="/samples">{t.demo}</Link></div>
         </section>
 
         <section className="lp-stats container" aria-label={t.statsL}>
           {t.stats.map(([n, l]) => <div key={l}><b className="tabular">{n}</b><span>{l}</span></div>)}
         </section>
+
+        {reviews.length > 0 && (
+          <section className="lp-rv container" aria-label={t.rvT}>
+            <h2 className="t-title">{t.rvT}</h2>
+            <div className="lp-rv__grid">
+              {reviews.map((r) => (
+                <figure key={r.id} className="lp-rv__card">
+                  <blockquote>«{r.text}»</blockquote>
+                  <figcaption><b>{r.name}</b>{r.school && <span>{r.school}</span>}</figcaption>
+                </figure>
+              ))}
+            </div>
+          </section>
+        )}
 
         <section className="lp-why container">
           <h2 className="t-title">{t.whyT}</h2>

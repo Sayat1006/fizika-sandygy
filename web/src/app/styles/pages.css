@@ -263,3 +263,20 @@
 }
 @media (max-width: 600px) { .lp-before__row { grid-template-columns: 1fr; text-align: center; } .lp-before__row i { transform: rotate(90deg); } .hb__phone { display: none; } }
 @media (prefers-reduced-motion: reduce) { .hb__phone { animation: none; } }
+
+/* Басты бет: тегін үлгі сілтемесі, нақты пікірлер */
+.lp-hero__demo { display: inline-block; margin-top: 14px; font-size: 15px; }
+.lp-rv { display: grid; gap: var(--s-5); padding: var(--s-8) 0 0; }
+.lp-rv h2 { text-align: center; }
+.lp-rv__grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 380px)); justify-content: center; gap: var(--s-4); }
+.lp-rv__card { margin: 0; display: grid; align-content: space-between; gap: 18px; padding: 28px; border-radius: var(--r-xl); background: var(--bg-2); }
+.lp-rv__card blockquote { margin: 0; font-size: 18px; line-height: 1.5; }
+.lp-rv__card figcaption { display: grid; gap: 2px; }
+.lp-rv__card figcaption span { color: var(--fg-2); font-size: 15px; }
+.rv-text { min-height: 120px; resize: vertical; font: inherit; }
+.rv-mine { margin: 0 0 12px; padding: 16px 18px; border-radius: var(--r-m); background: var(--bg-2); font-size: 16px; line-height: 1.5; }
+.rv-mine small { display: block; margin-top: 8px; color: var(--fg-2); }
+.adm__rv { display: grid; gap: 10px; }
+.adm__rvi { display: grid; gap: 8px; padding: 16px 18px; border-radius: var(--r-m); background: var(--bg-2); }
+.adm__rvi.on { box-shadow: inset 3px 0 0 var(--ok); }
+.adm__rvi p { margin: 0; } .adm__rvi small { color: var(--fg-2); }

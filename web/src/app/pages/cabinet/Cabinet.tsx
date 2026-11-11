@@ -10,9 +10,9 @@ import Lessons from './Lessons';
 import { useMode } from '../../lib/mode';
 import ClassMode from './ClassMode';
 import PrepNext from './PrepNext';
-import Onboarding from './Onboarding';
+import Onboarding, { ReviewAsk } from './Onboarding';
 import LessonPane, { morph, useWide } from './LessonPane';
-import { ClassesSheet, ProfileSheet, SubscribeSheet, TelegramSheet, ViewerSheet } from './Sheets';
+import { ClassesSheet, ProfileSheet, ReviewSheet, SubscribeSheet, TelegramSheet, ViewerSheet } from './Sheets';
 
 
 /** /app — мұғалім кабинеті. Кірмеген болса — кіру/тіркелу. */
@@ -41,7 +41,7 @@ function Skeleton() {
   );
 }
 
-type SheetId = 'subscribe' | 'classes' | 'tg' | 'profile' | null;
+type SheetId = 'subscribe' | 'classes' | 'tg' | 'profile' | 'review' | null;
 
 function Teacher() {
   const { profile, subs } = useAccount();
@@ -92,6 +92,7 @@ function Teacher() {
       <ClassesSheet open={sheet === 'classes'} onClose={() => setSheet(null)} ready={ready} />
       <TelegramSheet open={sheet === 'tg'} onClose={() => setSheet(null)} />
       <ProfileSheet open={sheet === 'profile'} onClose={() => setSheet(null)} />
+      <ReviewSheet open={sheet === 'review'} onClose={() => setSheet(null)} />
     </div>
   );
   return (
@@ -111,6 +112,7 @@ function Teacher() {
       <div className="strip">
         <Onboarding onClasses={() => open('classes')} onLook={() => document.querySelector('.lessons')?.scrollIntoView({ behavior: 'smooth', block: 'start' })} />
         <PrepNext lessons={lessons} onOpen={view} />
+        <ReviewAsk onOpen={() => open('review')} />
       </div>
 
       <Lessons lessons={lessons} onView={view} onLock={lock} onClasses={() => open('classes')} sel={wide && sel ? `${sel.v}|${sel.n}` : null} onSelect={wide ? select : undefined} />
@@ -132,6 +134,7 @@ function Teacher() {
       <ClassesSheet open={sheet === 'classes'} onClose={() => setSheet(null)} ready={ready} />
       <TelegramSheet open={sheet === 'tg'} onClose={() => setSheet(null)} />
       <ProfileSheet open={sheet === 'profile'} onClose={() => setSheet(null)} />
+      <ReviewSheet open={sheet === 'review'} onClose={() => setSheet(null)} />
     </div>
   );
 }
