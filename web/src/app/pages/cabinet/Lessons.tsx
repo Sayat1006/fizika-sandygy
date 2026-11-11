@@ -12,8 +12,9 @@ const dowOf = (d: string) => DOW[((Date.parse(d) / 864e5 + 3) % 7 + 7) % 7];
 const store = { get: (k: string, d: string) => { try { return localStorage.getItem(k) ?? d; } catch { return d; } }, set: (k: string, v: string) => { try { localStorage.setItem(k, v); } catch { /* жеке режим */ } } };
 
 /** Сабақтар: «Осы апта» (күндер жолағы + карточкалар) және «Тақырыптар» (бүкіл ҚТЖ, іздеу, зертханалық жұмыстар) */
-export default function Lessons({ lessons, onView, onLock, onClasses }: {
+export default function Lessons({ lessons, onView, onLock, onClasses, sel, onSelect }: {
   lessons: Lesson[]; onView: (l: Lesson) => void; onLock: (g: number) => void; onClasses: () => void;
+  /** кең экран: таңдалған сабақ оң жақта ашылады */ sel?: string | null; onSelect?: (l: Lesson | null, auto?: boolean) => void;
 }) {
   const { profile, subOf } = useAccount();
   const ready = useMemo(() => new Set(lessons.map((l) => l.v)), [lessons]);
@@ -63,9 +64,9 @@ export default function Lessons({ lessons, onView, onLock, onClasses }: {
       {!vs.length ? (
         <div className="empty">Бұл бағыттың материалдары әзірленуде. <button className="link" type="button" onClick={onClasses}>Сыныптарым</button></div>
       ) : mode === 'week' ? (
-        <WeekView key={g} lessons={lessons} vs={vs} g={g} w={w} day={day} setDay={setDay} onView={onView} onLock={onLock} onAll={() => switchMode('all')} />
+        <WeekView key={g} lessons={lessons} vs={vs} g={g} w={w} day={day} setDay={setDay} onView={onView} onLock={onLock} onAll={() => switchMode('all')} sel={sel} onSelect={onSelect} />
       ) : (
-        <AllView key={g} lessons={lessons} vs={vs} g={g} w={w} query={query} setQuery={setQuery} labOnly={labOnly} setLabOnly={setLabOnly} open={open} setOpen={setOpen} onView={onView} onLock={onLock} />
+        <AllView key={g} lessons={lessons} vs={vs} g={g} w={w} query={query} setQuery={setQuery} labOnly={labOnly} setLabOnly={setLabOnly} open={open} setOpen={(k) => { setOpen(k); const l = k && lessons.find((x) => `${x.v}|${x.n}` === k); if (l) onSelect?.(l); }} onView={onView} onLock={onLock} sel={sel} />
       )}
     </section>
   );
@@ -73,13 +74,20 @@ export default function Lessons({ lessons, onView, onLock, onClasses }: {
 
 type W = ReturnType<typeof week>;
 
-function WeekView({ lessons, vs, g, w, day, setDay, onView, onLock, onAll }: {
+function WeekView({ lessons, vs, g, w, day, setDay, onView, onLock, onAll, sel, onSelect }: {
   lessons: Lesson[]; vs: string[]; g: number; w: W; day: string | null; setDay: (d: string | null) => void; onView: (l: Lesson) => void; onLock: (g: number) => void; onAll: () => void;
+  sel?: string | null; onSelect?: (l: Lesson | null, auto?: boolean) => void;
 }) {
   const all = useMemo(() => lessons.filter((l) => vs.includes(l.v) && l.date >= w.from && l.date <= w.to), [lessons, vs, w.from, w.to]);
   const days: string[] = []; for (let d = w.from; d <= w.to; d = addDays(d, 1)) days.push(d);
   const shown = day ? all.filter((l) => l.date === day) : all;
   const strip = useRef<HTMLDivElement>(null);
+  const keyOf = (l: Lesson) => `${l.v}|${l.n}`;
+  // кең экранда: көрсетілген сабақтардың бірі әрқашан таңдаулы (бүгінгісі не біріншісі)
+  useEffect(() => {
+    if (!onSelect || shown.some((l) => keyOf(l) === sel)) return;
+    onSelect(shown.find((l) => l.date >= w.today) || shown[0] || null, true);
+  }, [shown.map(keyOf).join()]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { const t = strip.current?.querySelector<HTMLElement>('.day--today'); if (t && strip.current) strip.current.scrollLeft = Math.max(0, t.offsetLeft - 120); }, []);
   return (
     <>
@@ -99,7 +107,8 @@ function WeekView({ lessons, vs, g, w, day, setDay, onView, onLock, onAll }: {
       ) : (
         <div className="cards">
           {shown.map((l, i) => (
-            <article key={l.v + l.n} className={`card rise${l.date === w.today ? ' card--today' : ''}`} style={{ animationDelay: `${i * 0.05}s` }}>
+            <article key={l.v + l.n} className={`card rise${l.date === w.today ? ' card--today' : ''}${onSelect ? ' card--pick' : ''}${sel === keyOf(l) ? ' card--sel' : ''}`} style={{ animationDelay: `${i * 0.05}s` }}
+              onClick={onSelect ? (e) => { if (!(e.target as HTMLElement).closest('a, button')) onSelect(l); } : undefined}>
               <div className="card__date"><b>{+l.date.slice(8)}</b><span>{dowOf(l.date)}</span></div>
               <div className="card__body">
                 <small>№{l.disp}{g >= 10 ? ` · ${VARIANT[l.v].short}` : ''}</small>
@@ -114,9 +123,9 @@ function WeekView({ lessons, vs, g, w, day, setDay, onView, onLock, onAll }: {
   );
 }
 
-function AllView({ lessons, vs, g, w, query, setQuery, labOnly, setLabOnly, open, setOpen, onView, onLock }: {
+function AllView({ lessons, vs, g, w, query, setQuery, labOnly, setLabOnly, open, setOpen, onView, onLock, sel }: {
   lessons: Lesson[]; vs: string[]; g: number; w: W; query: string; setQuery: (s: string) => void; labOnly: boolean; setLabOnly: (b: boolean) => void;
-  open: string | null; setOpen: (k: string | null) => void; onView: (l: Lesson) => void; onLock: (g: number) => void;
+  open: string | null; setOpen: (k: string | null) => void; onView: (l: Lesson) => void; onLock: (g: number) => void; sel?: string | null;
 }) {
   const q = query.trim().toLowerCase();
   const labCount = lessons.filter((l) => vs.includes(l.v) && labOf(l)).length;
@@ -137,7 +146,7 @@ function AllView({ lessons, vs, g, w, query, setQuery, labOnly, setLabOnly, open
           return (
             <div key={k}>
               {head && <h4 className="topics__bol">{head}</h4>}
-              <div className={`topic${isOpen ? ' topic--open' : ''}${isNow ? ' topic--now' : ''}`} ref={firstNow === l ? now : undefined}>
+              <div className={`topic${isOpen ? ' topic--open' : ''}${isNow ? ' topic--now' : ''}${sel === k ? ' topic--sel' : ''}`} ref={firstNow === l ? now : undefined}>
                 <button className="topic__head" type="button" aria-expanded={isOpen} onClick={() => setOpen(isOpen ? null : k)}>
                   <span className="topic__n tabular">{l.disp}</span>
                   <span className="topic__t">{l.topic}{lab?.exp && <small><IcLab width={14} height={14} />3D тәжірибе бар</small>}</span>

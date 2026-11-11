@@ -7,6 +7,7 @@ import { useToast } from '../../ui/kit';
 import { AccountNav, Footer } from '../../ui/Layout';
 import { AuthView, RecoverView } from '../Auth';
 import Lessons from './Lessons';
+import LessonPane, { morph, useWide } from './LessonPane';
 import { ClassesSheet, ProfileSheet, SubscribeSheet, TelegramSheet, ViewerSheet } from './Sheets';
 
 const Logo3D = lazy(() => import('../../ui/Logo3D'));
@@ -46,6 +47,11 @@ function Teacher() {
   const [sheet, setSheet] = useState<SheetId>(null);
   const [preset, setPreset] = useState<number | null>(null);
   const [viewing, setViewing] = useState<Lesson | null>(null);
+  const wide = useWide();
+  const [sel, setSel] = useState<Lesson | null>(null);
+  const [tab, setTab] = useState<'pres' | 'kmzh'>('pres');
+  const select = (l: Lesson | null, auto?: boolean) => { if (auto || !sel) setSel(l); else if (l && (l.v !== sel.v || l.n !== sel.n)) morph(() => setSel(l)); };
+  const view = (l: Lesson) => { if (!wide) return setViewing(l); morph(() => { setSel(l); setTab('kmzh'); }); };
   useEffect(() => { loadLessons().then(setLessons); }, []);
   const ready = useMemo(() => new Set(lessons.map((l) => l.v)), [lessons]);
 
@@ -71,7 +77,8 @@ function Teacher() {
     ...vs.filter((v) => v.includes('-')).map((v) => { const [g, d, h] = v.split('-'); return `${g} ${DIRN[d]} ${h} сағ.`; })].filter(Boolean).join(' · ');
 
   return (
-    <div className="cab">
+    <div className={`cab${wide ? ' cab--split' : ''}`}>
+      <div className="cab__main">
       <header className="hello">
         <Suspense fallback={<div style={{ width: 88, height: 88 }} />}><Logo3D /></Suspense>
         <h1 className="t-title rise rise-1">Қайырлы {dayPart()}{name ? `, ${name}` : ''}!</h1>
@@ -86,7 +93,7 @@ function Teacher() {
         )}
       </header>
 
-      <Lessons lessons={lessons} onView={setViewing} onLock={lock} onClasses={() => open('classes')} />
+      <Lessons lessons={lessons} onView={view} onLock={lock} onClasses={() => open('classes')} sel={wide && sel ? `${sel.v}|${sel.n}` : null} onSelect={wide ? select : undefined} />
 
       <section className="settings">
         <h2 className="t-headline">Басқару</h2>
@@ -97,6 +104,8 @@ function Teacher() {
           <button className="group__row" type="button" onClick={() => open('profile')}><span className="group__ic" style={{ background: '#8E8E93' }}><IcUser /></span><span className="group__t">Профиль</span><span className="group__v">{profile.full_name}</span></button>
         </div>
       </section>
+      </div>
+      {wide && <LessonPane lesson={sel} onLock={lock} tab={tab} setTab={setTab} />}
 
       <ViewerSheet lesson={viewing} onClose={() => setViewing(null)} onLock={lock} />
       <SubscribeSheet open={sheet === 'subscribe'} onClose={() => setSheet(null)} preset={preset} />
