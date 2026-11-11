@@ -3,3 +3,8 @@ node_modules
 .DS_Store
 dist
 __pycache__/
+# анимациялы презентация генераторының аралық файлдары (from_kmzh.py қайта жасайды)
+tools/kmzh/pres_json/
+tools/kmzh/img/qr_*.png
+tools/deck/fig/
+tools/kmzh/img/x_*.png
