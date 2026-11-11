@@ -139,7 +139,7 @@ button.group__row:hover { background: color-mix(in srgb, var(--fg) 4%, transpare
 .mswitch button[aria-checked="true"] { color: var(--fg); }
 .mswitch--class button[aria-checked="true"] { color: #fff; }
 .mswitch__thumb { position: absolute; z-index: 0; top: 3px; bottom: 3px; left: 3px; width: calc(50% - 3px); border-radius: var(--r-full); background: var(--bg); box-shadow: 0 1px 2px rgba(0,0,0,.08), 0 4px 12px -4px rgba(0,0,0,.18); transition: transform 0.55s var(--spring), background 0.4s var(--ease); }
-.mswitch--class .mswitch__thumb { transform: translateX(100%); background: linear-gradient(135deg, #2f7bff, #7a5cff); box-shadow: 0 6px 18px -6px rgba(90, 110, 255, .7); }
+.mswitch--class .mswitch__thumb { transform: translateX(100%); background: var(--accent); box-shadow: none; }
 .mswitch__s { display: none; }
 @media (max-width: 760px) { .mswitch button { padding: 0 12px; font-size: 13px; } .mswitch__l { display: none; } .mswitch__s { display: inline; } }
 
@@ -160,7 +160,7 @@ html[data-mode="class"] {
   --shadow-2: 0 1px 2px rgba(0,0,0,.3), 0 12px 32px -12px rgba(0,0,0,.6);
   color-scheme: dark;
 }
-html[data-mode="class"] body { background: radial-gradient(1200px 600px at 80% -10%, rgba(77, 141, 255, .16), transparent 60%), var(--bg); }
+html[data-mode="class"] body { background: var(--bg); }
 html[data-mode="class"] .footer { display: none; }
 
 /* Режим ауысқанда жаңа көрініс батырмадан шеңбер болып жайылады */

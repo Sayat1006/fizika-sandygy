@@ -100,19 +100,18 @@ function Teacher() {
       <header className="hello">
         <span className="hello__mark" aria-hidden><Mark /></span>
         <h1 className="t-title rise rise-1">Қайырлы {dayPart()}{name ? `, ${name}` : ''}!</h1>
-        {left !== null && (
-          <div className="hello__trial rise rise-2">
-            <span className="chip chip--warn"><i className="dot" />{left > 0 ? `Тегін сынақ: тағы ${left} күн` : 'Тегін сынақ бүгін аяқталады'}</span>
-            <button className="btn btn--sm btn--primary" type="button" onClick={() => open('subscribe')}>Жазылу</button>
-          </div>
-        )}
-        {!(profile.phone || '').trim() && (
-          <div className="note note--info hello__nudge">Телефон нөміріңізді жазыңыз. <button className="link" type="button" onClick={() => open('profile')}>Толтыру</button></div>
+        {(left !== null || !(profile.phone || '').trim()) && (
+          <p className="hello__sub rise rise-2">
+            {left !== null && <span>{left > 0 ? `Тегін сынақ: тағы ${left} күн` : 'Тегін сынақ бүгін аяқталады'}</span>}
+            {!(profile.phone || '').trim() && <button className="link" type="button" onClick={() => open('profile')}>Телефон нөмірін жазу</button>}
+          </p>
         )}
       </header>
 
-      <Onboarding onClasses={() => open('classes')} onLook={() => document.querySelector('.lessons')?.scrollIntoView({ behavior: 'smooth', block: 'start' })} />
-      <PrepNext lessons={lessons} onOpen={view} />
+      <div className="strip">
+        <Onboarding onClasses={() => open('classes')} onLook={() => document.querySelector('.lessons')?.scrollIntoView({ behavior: 'smooth', block: 'start' })} />
+        <PrepNext lessons={lessons} onOpen={view} />
+      </div>
 
       <Lessons lessons={lessons} onView={view} onLock={lock} onClasses={() => open('classes')} sel={wide && sel ? `${sel.v}|${sel.n}` : null} onSelect={wide ? select : undefined} />
 

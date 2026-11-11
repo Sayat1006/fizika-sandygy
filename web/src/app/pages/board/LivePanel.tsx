@@ -86,7 +86,7 @@ export default function LivePanel({ open, onClose, deck, at, title, onNames }: {
             <small>Қосылды: <b>{people.length}</b>{q ? <> · жауап берді: <b>{mine.length}</b></> : null}</small>
             <div>{people.map((p) => <span key={p.id} className={q && mine.some((a) => a.participant_id === p.id) ? 'on' : ''}>{p.name}</span>)}</div>
           </div>
-          {hist.length > 0 && <button type="button" className="bd-live__top" onClick={() => setWall('top')}>🏆 Үздіктер · {hist.length} сұрақ</button>}
+          {hist.length > 0 && <button type="button" className="bd-live__top" onClick={() => setWall('top')}>Үздіктер · {hist.length} сұрақ</button>}
           {q ? <Results q={q} answers={mine} people={people} onPut={put} onWall={() => setWall('res')} />
             : <div className="bd-live__ask">
               {items.length > 0 && <><small>Осы слайдтан</small>
@@ -207,7 +207,7 @@ function Leaders({ hist, answers, people }: { hist: LiveQuestion[]; answers: Ans
   }).sort((a, b) => b.n - a.n || a.name.localeCompare(b.name)).slice(0, 10);
   return (
     <div className="bd-wall__in">
-      <p className="bd-wall__q">🏆 Үздіктер · {hist.length} сұрақ</p>
+      <p className="bd-wall__q">Үздіктер · {hist.length} сұрақ</p>
       <ol className="bd-lead">
         {rows.map((r, k) => <li key={r.name + k} className={k < 3 && r.n > 0 ? `bd-lead--${k + 1}` : ''}><b className="tabular">{k + 1}</b><span>{r.name}</span><em className="tabular">{r.n} / {hist.length}</em></li>)}
         {!rows.length && <p className="bd-wall__wait">Әзірге ешкім жоқ.</p>}

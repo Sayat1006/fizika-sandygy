@@ -57,8 +57,8 @@ export default function Lessons({ lessons, onView, onLock, onClasses, sel, onSel
       <div className="lessons__meta">
         <span>{g}-сынып{vs.length === 1 && g >= 10 ? ` · ${VARIANT[vs[0]].short}` : ''}</span>
         {sub
-          ? <span className={`chip chip--${sub.trial ? 'warn' : 'ok'}`}>{sub.trial ? 'Тегін сынақ, ' : ''}{dm(sub.paid_until)} дейін</span>
-          : <button className="chip" type="button" onClick={() => onLock(g)}><IcLock width={13} height={13} />Жазылу</button>}
+          ? <span className="lessons__sub">{sub.trial ? 'Тегін сынақ' : 'Жазылым'} · {dm(sub.paid_until)} дейін</span>
+          : <button className="link lessons__lock" type="button" onClick={() => onLock(g)}><IcLock width={13} height={13} />Жазылым жоқ</button>}
       </div>
 
       {!vs.length ? (
