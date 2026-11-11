@@ -33,3 +33,13 @@ window.FS_VARIANTS = (function () {
   list.forEach(v => { v.dirName = DIR[v.dir] || ''; v.short = v.dir ? `${DIR[v.dir]} · ${v.hours} сағ.` : ''; v.label = `${v.grade}-сынып${v.dir ? ' · ' + v.short : ''}`; });
   return { list, byId: Object.fromEntries(list.map(v => [v.id, v])) };
 })();
+
+/* 3D зертханада (/lab) дайын тұрған тәжірибелер: сынып → ҚТЖ-дағы зертханалық жұмыс нөмірі → тәжірибе id.
+   Кабинет пен тақта осы тізім бойынша «3D тәжірибе» батырмасын көрсетеді. */
+window.FS_LAB3D = { 7: { 4: 'g7-4', 5: 'g7-5', 6: 'g7-6', 10: 'g7-10' }, 9: { 1: 'g9-1' } };
+window.FS_LABOF = function (l) {
+  const m = /№\s*(\d+)[\s.\-–]*зертханалық\s+жұмыс/i.exec(l.topic || '');
+  if (!m) return null;
+  const no = +m[1];
+  return { no, exp: (window.FS_LAB3D[parseInt(l.v, 10)] || {})[no] || null };
+};

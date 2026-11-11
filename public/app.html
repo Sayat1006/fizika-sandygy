@@ -14,7 +14,7 @@
 <meta property="og:site_name" content="Сабақтас">
 <meta property="og:locale" content="kk_KZ">
 <meta property="og:title" content="Мұғалім кабинеті · Сабақтас">
-<meta property="og:description" content="ҚМЖ тегін, кез келген тақырып. Презентация мен жұмыс парағы жазылыммен.">
+<meta property="og:description" content="Физика, 7–11-сынып: ҚМЖ, презентация, жұмыс парағы және сабаққа арналған интерактивті тақта. Алғашқы 3 күн тегін.">
 <meta property="og:url" content="https://sabaqtas-kz.vercel.app/app">
 <meta property="og:image" content="https://sabaqtas-kz.vercel.app/assets/og.jpg">
 <meta property="og:image:width" content="1200">
@@ -312,14 +312,16 @@ dialog.sheet[open]::backdrop { animation: fade .4s var(--out); }
 a.dl { text-decoration: none; }
 .dl.lab3d { background: var(--fg); color: var(--bg); }
 .dl.lab3d:hover { background: color-mix(in srgb, var(--fg) 85%, var(--bg)); color: var(--bg); }
-.tx .lb .dl.lab3d { grid-column: 1 / -1; }
+.tx .lb .dl.lab3d, .tx .lb .dl.board { grid-column: 1 / -1; }
+.dl.board:not(.lock) { background: var(--accent); color: #fff; }
+.dl.board:not(.lock):hover { background: var(--accent-hover); color: #fff; }
+.tx .dl.view { background: var(--bg-2); color: var(--fg); }
 
 /* Ашылған тақырып: төрт үлкен әрекет, бір торда */
 .tx .lb { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; padding: 0 0 22px 46px; }
 .tx .dl { justify-content: center; gap: 8px; min-height: 50px; padding: 0 12px; border-radius: 14px; font: 600 15px var(--text); }
 .tx .dl svg { width: 18px; height: 18px; display: block; }
 .tx .dl em { font-size: 11px; }
-.tx .dl.view { background: var(--accent); color: #fff; }
 .tx .dl.lock { color: var(--fg-3); box-shadow: inset 0 0 0 1px var(--line); outline: 0; }
 .tx .dl.got::after { top: 6px; right: 6px; }
 
@@ -380,7 +382,7 @@ dialog.viewer[open] { display: flex; }
   <!-- Кіру / тіркелу -->
   <section class="auth" id="v-auth" hidden>
     <h1>Мұғалім кабинеті</h1>
-    <p class="sub">ҚМЖ тегін, кез келген тақырып. Презентация мен жұмыс парағы жазылыммен, алғашқы 3 күн тегін.</p>
+    <p class="sub">ҚМЖ, презентация, жұмыс парағы және интерактивті тақта. Тіркелгеннен кейін 3 күн бәрі тегін.</p>
     <div class="google" id="google-box" hidden>
       <button class="gbtn" type="button" id="google"><svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="m6.3 14.7 6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-7.9l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg>Google арқылы кіру</button>
       <p class="hint center">Кіру арқылы <a href="/oferta" target="_blank">офертамен</a> және <a href="/privacy" target="_blank">құпиялылық саясатымен</a> келісесіз.</p>
@@ -648,10 +650,10 @@ function render() {
   $('hello').textContent = first ? `Қайырлы ${part}, ${first}!` : `Қайырлы ${part}!`;
   const paid = subs.filter(x => !x.trial && x.paid_until >= w.today).map(x => x.grade).sort((a, b) => a - b);
   const trial = subs.filter(x => x.trial && x.paid_until >= w.today);
-  $('weeklabel').textContent = paid.length ? `ҚМЖ тегін. Слайд пен парақ: ${paid.map(g => g + '-сынып').join(', ')}.` : 'ҚМЖ тегін, кез келген тақырып. Слайд пен парақ жазылыммен ашылады.';
+  $('weeklabel').textContent = paid.length ? `Жазылым: ${paid.map(g => g + '-сынып').join(', ')}.` : 'Жазылым жоқ.';
   if (trial.length && !paid.length) {
     const left = Math.max(0, Math.round((Date.parse(trial[0].paid_until) - Date.parse(w.today)) / 864e5));
-    $('trial-text').textContent = left > 0 ? `Слайд пен парақ тегін: тағы ${left} күн` : 'Тегін сынақ бүгін аяқталады';
+    $('trial-text').textContent = left > 0 ? `Тегін сынақ: тағы ${left} күн` : 'Тегін сынақ бүгін аяқталады';
     $('trial-banner').hidden = false; $('weeklabel').hidden = true;
   } else $('trial-banner').hidden = true;
   $('phone-banner').hidden = !!(profile.phone || '').trim();
@@ -782,15 +784,9 @@ const ICO = {
 };
 const LBL = { kmzh: 'ҚМЖ', pres: 'Слайд', ws: 'Парақ' };
 ICO.lab = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6M10 3v6l-5 9a2 2 0 0 0 2 3h10a2 2 0 0 0 2-3l-5-9V3"/><path d="M7.5 14h9"/></svg>';
-/* Зертханалық жұмыс: ҚТЖ тақырыбындағы «№ N зертханалық жұмыс» жазуынан анықталады.
-   LAB3D — 3D зертханада (/lab) дайын тұрған тәжірибелер: сынып → жұмыс нөмірі → тәжірибе id. */
-const LAB3D = { 7: { 4: 'g7-4', 5: 'g7-5', 6: 'g7-6', 10: 'g7-10' }, 9: { 1: 'g9-1' } };
-function labOf(l) {
-  const m = /№\s*(\d+)[\s.\-–]*зертханалық\s+жұмыс/i.exec(l.topic);
-  if (!m) return null;
-  const g = parseInt(l.v, 10), no = +m[1];
-  return { no, exp: (LAB3D[g] || {})[no] || null };
-}
+// Зертханалық жұмысты тану және дайын 3D тәжірибелер тізімі — config.js ішінде (кабинет пен тақтаға ортақ)
+const labOf = window.FS_LABOF;
+ICO.board = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8M12 17v4M7 13l3-3 2 2 4-4"/></svg>';
 let labOnly = false;
 let selG = (() => { try { return +localStorage.getItem('fs-g') || 0; } catch (_) { return 0; } })(), selDay = null;
 const addDays = (s, n) => new Date(Date.parse(s) + n * 864e5).toISOString().slice(0, 10);
@@ -805,8 +801,10 @@ const dowOf = d => DOW[(Date.parse(d) / 864e5 + 3) % 7];
 function subOf(g) { const t = FS_WEEK().today; return subs.find(x => x.grade === g && x.paid_until >= t); }
 function dlBtns(l, g) {
   const ok = !!subOf(g), lab = labOf(l);
-  return (lab && lab.exp ? `<a class="dl lab3d" href="/lab/experiments/${lab.exp}">${ICO.lab}<span>3D тәжірибе</span></a>` : '') + `<button class="dl view" type="button" data-view="${l.v}|${l.n}">${ICO.eye}<span>Қарау</span></button>` + ['kmzh', 'pres', 'ws'].filter(k => l[k]).map(k => k === 'kmzh' || ok
-    ? `<button class="dl${GOT.has(`${l.v}|${l.n}|${k}`) ? ' got' : ''}" type="button" data-dl="${l.v}|${l.n}|${k}" title="${GOT.has(`${l.v}|${l.n}|${k}`) ? 'Бұрын жүктелген' : 'Жүктеу'}">${ICO[k]}<span>${LBL[k]}</span>${k === 'kmzh' && !GOT.has(`${l.v}|${l.n}|${k}`) ? '<em>тегін</em>' : ''}</button>`
+  const board = ok ? `<a class="dl board" href="/board?v=${encodeURIComponent(l.v)}&n=${l.n}">${ICO.board}<span>Тақтада ашу</span></a>`
+    : `<button class="dl board lock" type="button" data-lock="${g}" title="Жазылыммен ашылады">${ICO.lock}<span>Тақтада ашу</span></button>`;
+  return board + (lab && lab.exp ? `<a class="dl lab3d" href="/lab/experiments/${lab.exp}">${ICO.lab}<span>3D тәжірибе</span></a>` : '') + `<button class="dl view" type="button" data-view="${l.v}|${l.n}">${ICO.eye}<span>Қарау</span></button>` + ['kmzh', 'pres', 'ws'].filter(k => l[k]).map(k => ok
+    ? `<button class="dl${GOT.has(`${l.v}|${l.n}|${k}`) ? ' got' : ''}" type="button" data-dl="${l.v}|${l.n}|${k}" title="${GOT.has(`${l.v}|${l.n}|${k}`) ? 'Бұрын жүктелген' : 'Жүктеу'}">${ICO[k]}<span>${LBL[k]}</span></button>`
     : `<button class="dl lock" type="button" data-lock="${g}" title="Жазылыммен ашылады">${ICO.lock}<span>${LBL[k]}</span></button>`).join('');
 }
 function renderWeek() {
@@ -884,7 +882,7 @@ document.addEventListener('click', e => {
   if (m && m.dataset.mode !== mode) { mode = m.dataset.mode; selDay = null; jumpNow = mode === 'all'; try { localStorage.setItem('fs-mode', mode); } catch (_) {} swapWeek(); return; }
   const lk = e.target.closest('[data-lock]');
   if (lk) { const g = +lk.dataset.lock; GRADES.forEach(x => { const c = $('pick-' + x); if (c) c.checked = x === g; }); calc(); $('pay').hidden = true; $('f-buy').hidden = false;
-    toast('Презентация мен жұмыс парағы жазылыммен ашылады'); openSheet('subscribe'); }
+    toast('Материалдар жазылыммен ашылады'); openSheet('subscribe'); }
 });
 function moveInd(instant) {
   const ind = $('ind'), b = document.querySelector('#gtabs [aria-selected="true"]'); if (!ind || !b) return;
@@ -934,9 +932,9 @@ async function showView() {
   const { v, n, g, kind } = VIEW;
   document.querySelectorAll('#vtabs [data-vk]').forEach(b => b.setAttribute('aria-selected', b.dataset.vk === kind));
   const body = $('vbody'); body.scrollTop = 0;
-  const ok = kind === 'kmzh' || !!subOf(g);
+  const ok = !!subOf(g);
   $('vfoot').innerHTML = ok
-    ? `<button class="pill" type="button" data-dl="${v}|${n}|${kind}">${ICO[kind]} ${LBL[kind]} жүктеу${kind === 'kmzh' ? ' · тегін' : ''}</button>`
+    ? `<button class="pill" type="button" data-dl="${v}|${n}|${kind}">${ICO[kind]} ${LBL[kind]} жүктеу</button>`
     : `<p class="hint">${LBL[kind]} толық нұсқасы жазылыммен ашылады.</p><button class="pill" type="button" data-lock="${g}">Жазылу</button>`;
   if (!VIEW.cache[kind]) {
     body.innerHTML = `<div class="vmsg">Жүктелуде…</div>`;
