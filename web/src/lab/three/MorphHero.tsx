@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 // Пішіндер мен морф шейдері «Сабақтас» басты бетімен ортақ — бір файлдан алынады.
-import '../../../public/assets/morph.js';
+import '../../shared/morph.js';
 
 interface Morph {
   mount: (canvas: HTMLCanvasElement, opts: Record<string, unknown>) => { dispose: () => void } | null;

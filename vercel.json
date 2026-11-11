@@ -1,6 +1,6 @@
 {
-  "buildCommand": "npm --prefix lab ci && npm --prefix lab run build",
-  "outputDirectory": "public",
+  "buildCommand": "npm --prefix web ci && npm --prefix web run build",
+  "outputDirectory": "dist",
   "regions": [
     "fra1"
   ],
@@ -30,6 +30,10 @@
     {
       "source": "/lab/:path*",
       "destination": "/lab"
+    },
+    {
+      "source": "/((?!api/|lab$|lab/|assets/).*)",
+      "destination": "/index.html"
     }
   ]
 }
