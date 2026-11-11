@@ -7,6 +7,8 @@ import { useToast } from '../../ui/kit';
 import { AccountNav, Footer } from '../../ui/Layout';
 import { AuthView, RecoverView } from '../Auth';
 import Lessons from './Lessons';
+import { useMode } from '../../lib/mode';
+import ClassMode from './ClassMode';
 import LessonPane, { morph, useWide } from './LessonPane';
 import { ClassesSheet, ProfileSheet, SubscribeSheet, TelegramSheet, ViewerSheet } from './Sheets';
 
@@ -48,6 +50,7 @@ function Teacher() {
   const [preset, setPreset] = useState<number | null>(null);
   const [viewing, setViewing] = useState<Lesson | null>(null);
   const wide = useWide();
+  const mode = useMode(); // «Сабақтан тыс» / «Сабақ барысы» — жоғарғы жолақтағы ауыстырғыш
   const [sel, setSel] = useState<Lesson | null>(null);
   const [tab, setTab] = useState<'pres' | 'kmzh'>('pres');
   const select = (l: Lesson | null, auto?: boolean) => { if (auto || !sel) setSel(l); else if (l && (l.v !== sel.v || l.n !== sel.n)) morph(() => setSel(l)); };
@@ -76,6 +79,12 @@ function Teacher() {
   const clsSum = [[7, 8, 9].filter((g) => vs.includes(String(g))).join(', ') + ([7, 8, 9].some((g) => vs.includes(String(g))) ? '-сынып' : ''),
     ...vs.filter((v) => v.includes('-')).map((v) => { const [g, d, h] = v.split('-'); return `${g} ${DIRN[d]} ${h} сағ.`; })].filter(Boolean).join(' · ');
 
+  if (mode === 'class') return (
+    <div className="cab cab--class">
+      <ClassMode lessons={lessons} onLock={lock} />
+      <SubscribeSheet open={sheet === 'subscribe'} onClose={() => setSheet(null)} preset={preset} />
+    </div>
+  );
   return (
     <div className={`cab${wide ? ' cab--split' : ''}`}>
       <div className="cab__main">
