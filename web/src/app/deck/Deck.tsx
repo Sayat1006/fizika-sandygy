@@ -55,7 +55,7 @@ function SlideView({ s, step, custom }: { s: Slide; step: number; custom: boolea
       return (
         <div className="dk-pad">
           <Head tag={s.tag} time={s.time} title={s.title} />
-          <ol className="dk-goals">{s.items.map((t, i) => <In as="li" key={i} on={step > i}><span className="dk-num">{i + 1}</span>{t}</In>)}</ol>
+          <ol className="dk-goals">{s.items.map((t, i) => <In as="li" key={i} on={step > i}><span className="dk-num">{i + 1}</span><Rich t={t} /></In>)}</ol>
           {s.code && <p className="dk-code">Оқу мақсаты: {s.code}</p>}
         </div>
       );
@@ -171,8 +171,8 @@ function SlideView({ s, step, custom }: { s: Slide; step: number; custom: boolea
           <div className={`dk-task-row${s.illus || s.vectors ? '' : ' dk-task-row--solo'}`}>
             <div className="dk-qs">
               <div className="dk-lvl">{s.level}</div>
-              <p className="dk-qtext">{s.q}</p>
-              <In on={step >= 1} className="dk-answer"><small>Жауабы</small>{s.answer}</In>
+              <p className="dk-qtext"><Rich t={s.q} /></p>
+              <In on={step >= 1} className="dk-answer"><small>Жауабы</small><Rich t={s.answer} /></In>
             </div>
             {(s.illus || s.vectors) && <div className="dk-card dk-gridbox">
               {s.illus === 'track' ? <Track run={step >= 1} /> : s.vectors && s.scale ? <VectorGrid scale={s.scale} vectors={s.vectors} shown={step >= 1 ? s.vectors.length : 0} /> : null}
@@ -187,7 +187,7 @@ function SlideView({ s, step, custom }: { s: Slide; step: number; custom: boolea
           <div className="dk-split dk-split--qr">
             <div className="dk-yn">
               {s.items.map(([q, a], i) => (
-                <div key={i} className="dk-yn__row"><span className="dk-yn__n">{i + 1}</span><span className="dk-yn__t">{q}</span><span className={`dk-yn__a dk-yn__a--v${step > i ? ' dk-pop' : ''}`}>{a}</span></div>
+                <div key={i} className="dk-yn__row"><span className="dk-yn__n">{i + 1}</span><span className="dk-yn__t"><Rich t={q} /></span><span className={`dk-yn__a dk-yn__a--v${step > i ? ' dk-pop' : ''}`}><Rich t={a} /></span></div>
               ))}
             </div>
             {s.qr && <div className="dk-qr"><img src={s.qr} alt="QR-код" /><span>{s.qrLabel || 'Socrative'}</span></div>}
@@ -209,7 +209,7 @@ function SlideView({ s, step, custom }: { s: Slide; step: number; custom: boolea
       return (
         <div className="dk-pad">
           <Head tag={s.tag} time={s.time} title={s.title} />
-          <div className="dk-levels dk-levels--hw">{s.items.map(([k, t], i) => <div key={k} className={`dk-level dk-level--${i} dk-step dk-in`}><b>{k}</b><span>{t}</span></div>)}</div>
+          <div className="dk-levels dk-levels--hw">{s.items.map(([k, t], i) => <div key={k} className={`dk-level dk-level--${i} dk-step dk-in`}><b>{k}</b><span><Rich t={t} /></span></div>)}</div>
         </div>
       );
     case 'text':
@@ -472,7 +472,19 @@ function Hand({ n }: { n: number }) {
 /* ───────── мәтін: **қалың** ───────── */
 function Rich({ t }: { t: string }) {
   const parts = t.split(/\*\*(.+?)\*\*/g);
-  return <>{parts.map((p, i) => (i % 2 ? <b key={i}>{p}</b> : p))}</>;
+  return <span className="dk-rt">{parts.map((p, i) => (i % 2 ? <b key={i}><Sub t={p} /></b> : <Sub key={i} t={p} />))}</span>;
+}
+
+/** Физикалық белгілердің төменгі индексі: X_L, υ_орт, E_{k} → <sub> */
+const SUB = /(?<=[\p{L}\p{N})])_(\{[^}]*\}|[\p{L}\p{N}]+)/gu;
+function Sub({ t }: { t: string }) {
+  const out: React.ReactNode[] = []; let last = 0;
+  for (const m of t.matchAll(SUB)) {
+    out.push(t.slice(last, m.index), <sub key={m.index}>{m[1].replace(/^\{|\}$/g, '')}</sub>);
+    last = m.index! + m[0].length;
+  }
+  out.push(t.slice(last));
+  return <>{out}</>;
 }
 
 const hasVisual = (v: Visual) => !!(v.img || v.cards || v.flow || v.chart);

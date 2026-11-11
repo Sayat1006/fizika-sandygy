@@ -241,3 +241,4 @@ svg .dk-step { transform: none; }
 .dk-spin { transform-origin: 380px 380px; animation: dk-rot 40s linear infinite; }
 @keyframes dk-rot { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .dk-spin { animation: none; } }
+.dk sub { font-size: .62em; vertical-align: -.25em; line-height: 0; }

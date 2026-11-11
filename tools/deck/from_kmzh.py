@@ -29,6 +29,10 @@ plt.rcParams['svg.fonttype'] = 'path'
 os.makedirs(OUT, exist_ok=True); os.makedirs(FIG, exist_ok=True)
 
 
+# генератордағы сынып → сайттағы курс нұсқасы
+SITE = {'10': '10-zhmb-2', '11': '11-zhmb-3'}
+
+
 def specs_of(g):
     S = {}
     for f in sorted(os.listdir(GEN)):
@@ -100,7 +104,7 @@ def quote_of(s):
 def build(g, n, S):
     d = json.load(open(os.path.join(PJ, f'{g}_{n:02d}.json'), encoding='utf-8'))
     spec = S[n]
-    v = d['g']
+    v = SITE.get(g, g)
     disp = d['disp'].lstrip('0') or '0'
     main = visual(spec.get('f'), os.path.join(FIG, f'{g}-{n}-main'))
     ex_spec = None
@@ -178,7 +182,7 @@ def main():
             if not m:
                 continue
             n = int(m.group(1))
-            out = os.path.join(OUT, f'{g}-{n}.json')
+            out = os.path.join(OUT, f'{SITE.get(g, g)}-{n}.json')
             if os.path.exists(out) and json.load(open(out, encoding='utf-8')).get('custom'):
                 continue
             D = build(g, n, S)
