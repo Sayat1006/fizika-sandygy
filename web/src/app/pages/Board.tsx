@@ -7,6 +7,7 @@ import Deck, { THEMES, type Theme } from '../deck/Deck';
 import LivePanel from './board/LivePanel';
 import { stepsOf, type DeckData } from '../deck/types';
 import { IcChevronL, IcChevronR } from '../ui/icons';
+import { useOnline } from '../lib/offline';
 
 /* Тақта: интерактивті панельге арналған толық экранды сабақ режимі.
    Слайд / жұмыс парағы / ақ тақта / 3D тәжірибе, қалам қабаты, сабақ кезеңдері мен уақыт, кездейсоқ оқушы, таймер. */
@@ -46,6 +47,10 @@ export default function Board() {
   const [step, setStep] = useState(0);
   const [theme, setTheme] = useState<Theme>(() => (['a', 'b', 'c'].includes(store.get('fs-deck-theme', 'a')) ? store.get('fs-deck-theme', 'a') : 'a') as Theme);
   const lab = lesson ? labOf(lesson) : null;
+  const [dark, setDark] = useState(false); // «B» — экранды қарайту (оқушылар мұғалімге қарасын)
+  const [zoom, setZoomS] = useState(() => Math.min(1.5, Math.max(1, +store.get('fs-bd-zoom', '1') || 1)));
+  const setZoom = (z: number) => { const v = Math.round(Math.min(1.5, Math.max(1, z)) * 100) / 100; setZoomS(v); store.set('fs-bd-zoom', String(v)); };
+  const online = useOnline();
 
   /* ───────── жүктеу ───────── */
   useEffect(() => {
@@ -77,6 +82,7 @@ export default function Board() {
       setCur(0); setLeft((plan.stages?.[0]?.min || 0) * 60);
       document.title = `${l.topic} · Тақта`;
       setLoading(false);
+      try { localStorage.setItem('fs-board-opened', '1'); } catch { /* */ }
       try { await (navigator as Navigator & { wakeLock?: { request: (t: string) => Promise<unknown> } }).wakeLock?.request('screen'); } catch { /* тақтаның экраны сөніп қалмасын */ }
     })().catch(() => { if (!off) fail('Қате орын алды', 'Бетті жаңартып көріңіз.'); });
     return () => { off = true; };
@@ -204,14 +210,21 @@ export default function Board() {
   const maxStep = deck && onDeck ? stepsOf(deck.slides[i]) : 0;
 
   /* ───────── пернетақта, толық экран ───────── */
+  const zoomRef = useRef(zoom); zoomRef.current = zoom;
   const toggleFs = () => { if (document.fullscreenElement) document.exitFullscreen?.(); else document.documentElement.requestFullscreen?.().catch(() => {}); };
   useEffect(() => {
     const k = (e: KeyboardEvent) => {
       if ((e.target as HTMLElement).closest('input, dialog')) return;
+      if ((e.key === ' ' || e.key === 'Enter') && (e.target as HTMLElement).closest('button, a')) return;
       // пульттер мен пернетақта: → / PageDown / бос орын — келесі, ← / PageUp — алдыңғы
-      if (['ArrowRight', 'PageDown', ' '].includes(e.key)) { e.preventDefault(); go(1); }
-      else if (['ArrowLeft', 'PageUp'].includes(e.key)) { e.preventDefault(); go(-1); }
-      else if (e.key === 'f') toggleFs();
+      // пульттер (презентер) PageDown/PageUp, кейбірі ↓/↑, «.» не «B» — қара экран жібереді
+      if (['ArrowRight', 'ArrowDown', 'PageDown', ' ', 'Enter'].includes(e.key)) { e.preventDefault(); setDark(false); go(1); }
+      else if (['ArrowLeft', 'ArrowUp', 'PageUp', 'Backspace'].includes(e.key)) { e.preventDefault(); setDark(false); go(-1); }
+      else if (e.key === 'f' || e.key === 'F' || e.key === 'F5') { e.preventDefault(); toggleFs(); }
+      else if (['b', 'B', '.', 'и', 'И'].includes(e.key)) setDark((x) => !x);
+      else if (e.key === 'Escape') setDark(false);
+      else if (e.key === '+' || e.key === '=') setZoom(zoomRef.current + 0.1);
+      else if (e.key === '-') setZoom(zoomRef.current - 0.1);
     };
     const f = () => setFs(!!document.fullscreenElement);
     addEventListener('keydown', k); document.addEventListener('fullscreenchange', f);
@@ -226,14 +239,18 @@ export default function Board() {
     const t = setInterval(() => { const now = performance.now(); setLeft((x) => x - (now - last) / 1000); last = now; }, 250);
     return () => clearInterval(t);
   }, [running]);
-  const stagesRef = useRef<HTMLElement>(null);
-  useEffect(() => { stagesRef.current?.querySelector('.bd-st--on')?.scrollIntoView({ block: 'nearest', inline: 'center', behavior: reduce ? 'auto' : 'smooth' }); }, [cur, stages.length]);
   const st = stages[cur];
 
   if (fatal || loading) {
     return (
       <div className="bd bd--msg">
-        {loading && !fatal ? <p>Сабақ жүктелуде…</p> : fatal && (
+        {loading && !fatal ? (
+          <div className="bd-skel" aria-label="Сабақ жүктелуде">
+            <div className="bd-skel__top"><i /><b /><em /></div>
+            <div className="bd-skel__stage"><span>Сабақ жүктелуде…</span></div>
+            <div className="bd-skel__tools"><i /><i /><i /></div>
+          </div>
+        ) : fatal && (
           <div className="bd-msg"><b>{fatal.title}</b><span>{fatal.text}</span><Link className="bd-pill" to={fatal.to}>{fatal.label}</Link></div>
         )}
       </div>
@@ -245,7 +262,9 @@ export default function Board() {
   );
 
   return (
-    <div className="bd">
+    <div className="bd" style={{ ['--bz' as string]: zoom }}>
+      {dark && <button type="button" className="bd-black" onClick={() => setDark(false)} aria-label="Экранды қайтару (B)" />}
+      {!online && <div className="bd-offline" role="status">Интернет жоқ — сақталған нұсқа ашық. Оқушылардың телефоны қосылмайды.</div>}
       <header className="bd-top">
         <Link className="bd-ib" to="/app" aria-label="Кабинетке оралу"><IcChevronL /></Link>
         <div className="bd-ttl"><small>{grade}-сынып · №{lesson!.disp}</small><b>{lesson!.topic}</b></div>
@@ -255,7 +274,12 @@ export default function Board() {
             {running ? S('M7 5h4v14H7zM13 5h4v14h-4z', true) : S('M8 5v14l11-7z', true)}
           </button>
         </div>
-        <button className="bd-ib" type="button" aria-pressed={fs} onClick={toggleFs} aria-label="Толық экран">{S('M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5')}</button>
+        <div className="bd-zoom" role="group" aria-label="Мәтін өлшемі">
+          <button type="button" onClick={() => setZoom(zoom - 0.1)} disabled={zoom <= 1} aria-label="Мәтінді кішірейту" title="Мәтінді кішірейту (−)">A−</button>
+          <button type="button" onClick={() => setZoom(zoom + 0.1)} disabled={zoom >= 1.5} aria-label="Мәтінді үлкейту" title="Мәтінді үлкейту (+)">A+</button>
+        </div>
+        <button className="bd-ib" type="button" onClick={() => setDark(true)} aria-label="Экранды қарайту (B)" title="Экранды қарайту (B)">{S('M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9z')}</button>
+        <button className="bd-ib" type="button" aria-pressed={fs} onClick={toggleFs} aria-label="Толық экран" title="Толық экран (F)">{S('M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5')}</button>
       </header>
 
       <main className="bd-stage" ref={stageRef} onPointerDown={stDown} onPointerUp={stUp}>
@@ -310,13 +334,19 @@ export default function Board() {
       </div>
 
       {stages.length > 0 && (
-        <nav className="bd-stages" ref={stagesRef} aria-label="Сабақ кезеңдері">
-          {stages.map((s, k) => (
-            <button key={k} type="button" className={`bd-st${k === cur ? ' bd-st--on' : ''}${k < cur ? ' bd-st--done' : ''}`} onClick={() => pickStage(k)}>
-              <i style={k === cur && s.min ? { width: Math.min(100, (1 - left / (s.min * 60)) * 100) + '%' } : undefined} />
-              <b>{s.sub || s.stage}</b><small>{s.stage} · {s.min} мин</small>
-            </button>
-          ))}
+        <nav className="bd-stages" aria-label="Сабақ кезеңдері">
+          <div className="bd-snow">
+            <small className="tabular">{cur + 1} / {stages.length}</small>
+            <b>{st?.sub || st?.stage}</b>
+            {cur < stages.length - 1 && <button type="button" className="bd-snext" onClick={() => pickStage(cur + 1)}>Келесі кезең: {stages[cur + 1].sub || stages[cur + 1].stage} ›</button>}
+          </div>
+          <div className="bd-sbar">
+            {stages.map((s, k) => (
+              <button key={k} type="button" className={`bd-seg${k === cur ? ' bd-seg--on' : ''}${k < cur ? ' bd-seg--done' : ''}`} style={{ flexGrow: Math.max(1, s.min) }} onClick={() => pickStage(k)} title={`${s.sub || s.stage} · ${s.min} мин`} aria-label={`${k + 1}-кезең: ${s.sub || s.stage}, ${s.min} мин`} aria-current={k === cur}>
+                <i style={k === cur && s.min ? { width: Math.min(100, Math.max(0, (1 - left / (s.min * 60)) * 100)) + '%' } : undefined} />
+              </button>
+            ))}
+          </div>
         </nav>
       )}
 

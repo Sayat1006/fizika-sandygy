@@ -4,6 +4,7 @@ import { VARIANT } from '../../lib/config';
 import { dm, lessonDeck, viewPages, type Lesson, type ViewPages } from '../../lib/data';
 import { useAccount } from '../../lib/account';
 import { stepsOf, type DeckData, type Slide } from '../../deck/types';
+import { markSeen } from '../../lib/seen';
 import { IcLock } from '../../ui/icons';
 import { Segmented } from '../../ui/kit';
 import LessonActions from './LessonActions';
@@ -54,6 +55,7 @@ export default function LessonPane({ lesson, onLock, tab, setTab }: { lesson: Le
     return () => { off = true; };
   }, [key, need, pages]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  useEffect(() => { if (lesson && tab === 'kmzh' && pages.kmzh && typeof pages.kmzh !== 'string') markSeen(lesson.v, lesson.n); }, [lesson, tab, pages.kmzh]);
   if (!lesson) return <aside className="pane pane--empty"><p>Сабақты таңдаңыз — мұнда ҚМЖ мен презентация көрінеді.</p></aside>;
   const g = VARIANT[lesson.v]?.grade || lesson.grade, ok = !!subOf(g);
   return (

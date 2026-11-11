@@ -66,7 +66,8 @@ export default function Lessons({ lessons, onView, onLock, onClasses, sel, onSel
       ) : mode === 'week' ? (
         <WeekView key={g} lessons={lessons} vs={vs} g={g} w={w} day={day} setDay={setDay} onView={onView} onLock={onLock} onAll={() => switchMode('all')} sel={sel} onSelect={onSelect} />
       ) : (
-        <AllView key={g} lessons={lessons} vs={vs} g={g} w={w} query={query} setQuery={setQuery} labOnly={labOnly} setLabOnly={setLabOnly} open={open} setOpen={(k) => { setOpen(k); const l = k && lessons.find((x) => `${x.v}|${x.n}` === k); if (l) onSelect?.(l); }} onView={onView} onLock={onLock} sel={sel} />
+        <AllView key={g} lessons={lessons} vs={vs} g={g} w={w} query={query} setQuery={setQuery} labOnly={labOnly} setLabOnly={setLabOnly} open={open} setOpen={(k) => { setOpen(k); const l = k && lessons.find((x) => `${x.v}|${x.n}` === k); if (l) onSelect?.(l); }} onView={onView} onLock={onLock} sel={sel} onSelect={onSelect}
+          others={grades.filter((x) => x !== g).flatMap((x) => myVariants(x))} onOther={(l) => { const x = VARIANT[l.v]?.grade || l.grade; setGrade(x); store.set('fs-g', String(x)); const k = `${l.v}|${l.n}`; setOpen(k); onSelect?.(l); }} />
       )}
     </section>
   );
@@ -123,15 +124,18 @@ function WeekView({ lessons, vs, g, w, day, setDay, onView, onLock, onAll, sel, 
   );
 }
 
-function AllView({ lessons, vs, g, w, query, setQuery, labOnly, setLabOnly, open, setOpen, onView, onLock, sel }: {
+function AllView({ lessons, vs, g, w, query, setQuery, labOnly, setLabOnly, open, setOpen, onView, onLock, sel, others, onOther, onSelect }: {
   lessons: Lesson[]; vs: string[]; g: number; w: W; query: string; setQuery: (s: string) => void; labOnly: boolean; setLabOnly: (b: boolean) => void;
   open: string | null; setOpen: (k: string | null) => void; onView: (l: Lesson) => void; onLock: (g: number) => void; sel?: string | null;
+  others: string[]; onOther: (l: Lesson) => void; onSelect?: (l: Lesson | null, auto?: boolean) => void;
 }) {
   const q = query.trim().toLowerCase();
   const labCount = lessons.filter((l) => vs.includes(l.v) && labOf(l)).length;
   const now = useRef<HTMLDivElement>(null);
   useEffect(() => { if (!q && !labOnly) now.current?.scrollIntoView({ block: 'center', behavior: 'smooth' }); }, []); // eslint-disable-line react-hooks/exhaustive-deps
   const firstNow = lessons.find((l) => vs.includes(l.v) && l.date >= w.from && l.date <= w.to);
+  // кең экранда «Тақырыптар» ашылғанда да панель бос тұрмасын — осы аптаның сабағы
+  useEffect(() => { if (onSelect && !sel && firstNow) onSelect(firstNow, true); }, [firstNow?.v, firstNow?.n]); // eslint-disable-line react-hooks/exhaustive-deps
   let hits = 0;
   const lists = vs.map((v) => {
     const rows = lessons.filter((l) => l.v === v && (!q || (l.disp + ' ' + l.topic).toLowerCase().includes(q)) && (!labOnly || labOf(l)));
@@ -168,7 +172,21 @@ function AllView({ lessons, vs, g, w, query, setQuery, labOnly, setLabOnly, open
         <button className="filter" type="button" aria-pressed={labOnly} onClick={() => setLabOnly(!labOnly)}><IcLab />Зертханалық жұмыстар <b>{labCount}</b></button>
       )}
       <div className="topics">{lists}</div>
-      {!hits && <div className="empty">Ештеңе табылмады.</div>}
+      {q && (() => {
+        const more = lessons.filter((l) => others.includes(l.v) && (l.disp + ' ' + l.topic).toLowerCase().includes(q)).slice(0, 12);
+        return more.length > 0 && (
+          <div className="topics topics--other">
+            <h4 className="topics__bol">Басқа сыныптарда · {more.length}</h4>
+            {more.map((l) => (
+              <button key={l.v + l.n} type="button" className="topic__head topic__head--other" onClick={() => onOther(l)}>
+                <span className="topic__n tabular">{VARIANT[l.v]?.grade || l.grade}·{l.disp}</span><span className="topic__t">{l.topic}</span><span className="topic__d tabular">{VARIANT[l.v]?.short || ''}</span>
+              </button>
+            ))}
+          </div>
+        );
+      })()}
+      {!hits && !q && <div className="empty">Ештеңе табылмады.</div>}
+      {!hits && q && <div className="empty">Бұл сыныпта табылмады.</div>}
     </>
   );
 }

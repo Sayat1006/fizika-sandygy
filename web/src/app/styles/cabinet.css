@@ -159,7 +159,7 @@
 .card--pick:hover { background: var(--bg-3); }
 @media (min-width: 1100px) {
   .shell:has(.cab--split) .container { max-width: 1720px; }
-  .cab--split { max-width: none; display: grid; grid-template-columns: minmax(480px, 580px) minmax(0, 1fr); gap: clamp(28px, 3vw, 48px); align-items: start; }
+  .cab--split { min-height: calc(100vh - var(--nav-h)); max-width: none; display: grid; grid-template-columns: minmax(480px, 580px) minmax(0, 1fr); gap: clamp(28px, 3vw, 48px); align-items: start; }
   .cab__main { min-width: 0; }
   .cab--split .hello { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-start; text-align: left; gap: var(--s-3) var(--s-4); padding: var(--s-5) 0; }
   .cab--split .hello > :not(canvas):not(h1):not(:first-child) { flex-basis: 100%; }
@@ -189,7 +189,8 @@
 .pane__stage--c { background: #fbf8ef; }
 .pane__stage .dk-box { position: absolute; inset: 0; }
 .pane__stage--img img { width: 100%; height: 100%; object-fit: contain; display: block; }
-.pane__stage--wait { display: grid; place-items: center; background: var(--bg); }
+.pane__stage--wait { display: grid; place-items: center; background: linear-gradient(90deg, var(--bg) 0%, var(--bg-3) 50%, var(--bg) 100%); background-size: 200% 100%; animation: pane-shim 1.4s ease-in-out infinite; }
+@keyframes pane-shim { to { background-position: -200% 0; } }
 .pane__stage--doc { aspect-ratio: 1 / 1.414; max-height: 100%; width: auto; }
 .pane__spin { width: 28px; height: 28px; border-radius: 50%; border: 3px solid var(--line); border-top-color: var(--accent); animation: spin 0.8s linear infinite; }
 
@@ -274,3 +275,49 @@
   .cab--split .hello h1 { font-size: 26px; }
   .cab--split .hello { padding: var(--s-4) 0 var(--s-2); }
 }
+.cm__off { margin-left: 10px; padding: 2px 8px; border-radius: 999px; background: color-mix(in srgb, var(--ok) 18%, transparent); color: var(--ok); font-style: normal; font-size: 13px; font-weight: 600; }
+.cm__net { padding: 12px 16px; border-radius: var(--r-m); background: var(--warn-bg); color: var(--warn); font-weight: 600; }
+html[data-mode="class"] { --ok: #3ddc84; --warn-bg: #2a1f0e; --warn: #ffb340; }
+
+/* Келесі сабақтарға дайындық */
+.prep { display: grid; gap: 10px; margin: var(--s-2) 0 var(--s-5); padding: var(--s-4) var(--s-5); border-radius: var(--r-l); background: var(--bg-2); }
+.prep__head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.prep__head b { font-size: 16px; }
+.prep__sum { padding: 3px 10px; border-radius: 999px; background: var(--warn-bg); color: var(--warn); font-size: 13px; font-weight: 600; }
+.prep__sum--ok { background: var(--ok-bg); color: var(--ok); }
+.prep__list { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.prep__list button { width: 100%; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 8px 10px; border: 0; border-radius: var(--r-m); background: none; color: var(--fg); text-align: left; cursor: pointer; }
+.prep__list button:hover { background: var(--bg); }
+.prep__g { flex: none; width: 28px; height: 28px; display: grid; place-items: center; border-radius: 8px; background: color-mix(in srgb, var(--accent) 14%, transparent); color: var(--accent); font-weight: 700; font-size: 14px; }
+.prep__t { flex: 1; min-width: 160px; font-size: 15px; }
+.prep__b { padding: 2px 8px; border-radius: 999px; background: var(--bg); color: var(--fg-3); font-size: 12px; font-weight: 600; white-space: nowrap; }
+.prep__b--ok { color: var(--ok); }
+.topics--other { margin-top: var(--s-4); }
+.topic__head--other { width: 100%; border-bottom: 1px solid var(--line) !important; }
+
+/* Тар кең экранда (ноутбук) панель: слайдтар тізімі жасырылады, слайд пен батырмалар қалады */
+@media (min-width: 1100px) and (max-width: 1500px) {
+  .player__list { display: none; }
+  .pane { padding: 18px; gap: 12px; }
+  .pane__title { font-size: 21px; }
+  .cab--split { grid-template-columns: minmax(440px, 500px) minmax(0, 1fr); gap: 28px; }
+}
+.hello__mark { display: grid; place-items: center; width: 72px; height: 72px; border-radius: 22px; background: color-mix(in srgb, var(--accent) 12%, var(--bg-2)); color: var(--accent); animation: mark-in 0.9s var(--spring) both; }
+.hello__mark svg { width: 40px; height: 40px; }
+@keyframes mark-in { from { opacity: 0; transform: translateY(10px) scale(0.8) rotate(-10deg); } }
+@media (min-width: 1100px) { .cab--split .hello__mark { display: none; } }
+
+/* Жаңа мұғалімге 3 қадам */
+.onb { margin: var(--s-2) 0 var(--s-4); padding: var(--s-4) var(--s-5); border-radius: var(--r-l); background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 12%, var(--bg-2)), var(--bg-2)); }
+.onb header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.onb__x { width: 32px; height: 32px; border: 0; border-radius: 50%; background: var(--bg); color: var(--fg-2); font-size: 20px; cursor: pointer; }
+.onb ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.onb li { display: flex; align-items: center; gap: 12px; padding: 10px; border-radius: var(--r-m); }
+.onb li.on { background: var(--bg); box-shadow: var(--shadow-1); }
+.onb li i { flex: none; width: 28px; height: 28px; display: grid; place-items: center; border-radius: 50%; background: var(--bg-3); font-style: normal; font-weight: 700; font-size: 14px; }
+.onb li.on i { background: var(--accent); color: #fff; }
+.onb li.ok i { background: var(--ok); color: #fff; }
+.onb li.ok b { color: var(--fg-3); text-decoration: line-through; }
+.onb li span { flex: 1; display: grid; gap: 2px; }
+.onb li small { color: var(--fg-2); font-size: 13px; }
+.onb li.ok small { display: none; }

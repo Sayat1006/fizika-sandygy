@@ -1,4 +1,5 @@
-import { Suspense, lazy, useState } from 'react';
+import { Suspense, lazy, useEffect, useState } from 'react';
+import LessonDemo from '../ui/LessonDemo';
 import { Link } from 'react-router-dom';
 import { Footer, Nav } from '../ui/Layout';
 import { CONFIG } from '../lib/config';
@@ -22,7 +23,21 @@ const T = {
   },
 };
 
+/** 3D көрініс (three.js, ~740 КБ) бет жүктеліп болған соң ғана, баяу интернетте/үнемдеу режимінде мүлде жүктелмейді */
+function useIdle() {
+  const [ok, setOk] = useState(false);
+  useEffect(() => {
+    const c = (navigator as Navigator & { connection?: { saveData?: boolean; effectiveType?: string } }).connection;
+    if (c?.saveData || /2g/.test(c?.effectiveType || '')) return;
+    const w = window as Window & { requestIdleCallback?: (f: () => void, o?: { timeout: number }) => number };
+    const id = w.requestIdleCallback ? w.requestIdleCallback(() => setOk(true), { timeout: 2500 }) : window.setTimeout(() => setOk(true), 1200);
+    return () => { if (!w.requestIdleCallback) clearTimeout(id); };
+  }, []);
+  return ok;
+}
+
 export default function Landing() {
+  const idle = useIdle();
   const [lang, setLang] = useState<'kk' | 'ru'>(() => { try { return localStorage.getItem('fs-lang') === 'ru' ? 'ru' : 'kk'; } catch { return 'kk'; } });
   const t = T[lang];
   const flip = () => { const l = lang === 'kk' ? 'ru' : 'kk'; setLang(l); document.documentElement.lang = l; try { localStorage.setItem('fs-lang', l); } catch { /* жеке режим */ } };
@@ -44,9 +59,11 @@ export default function Landing() {
             <Link className="link link--more" to="/samples">{t.samples}</Link>
           </div>
           <div className="hero__stage rise rise-4">
-            <Suspense fallback={null}><Morph className="hero__canvas" /></Suspense>
+            {idle && <Suspense fallback={null}><Morph className="hero__canvas" /></Suspense>}
           </div>
         </section>
+
+        <LessonDemo lang={lang} />
 
         <a className="labband" href="/lab">
           <h2 className="t-title">{t.labT}</h2>

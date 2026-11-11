@@ -120,3 +120,38 @@
 .join__res--ok { background: var(--ok-bg); color: var(--ok); }
 .join__res--bad { background: var(--err-bg); color: var(--err); }
 @media (prefers-reduced-motion: reduce) { .join__pulse, .join__spin { animation: none; } }
+.join__score { margin-top: 8px; padding: 8px 14px; border-radius: 999px; background: var(--bg-2); color: var(--fg-2); font-size: 15px; text-align: center; justify-self: center; }
+.join__score b { color: var(--accent); }
+.join__final { display: grid; justify-items: center; gap: 4px; margin: 12px 0; }
+.join__final b { font: 800 72px/1 var(--font-display); color: var(--accent); letter-spacing: -0.04em; }
+.join__final span { font-size: 22px; color: var(--fg-2); margin-top: -6px; }
+.join__final p { font-size: 18px; font-weight: 600; margin-top: 6px; }
+
+/* Басты бет: «Сабақ қалай өтеді» */
+.demo { display: grid; gap: var(--s-5); justify-items: center; padding: var(--s-8) 0; text-align: center; }
+.demo__steps { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+.demo__steps li { display: flex; align-items: center; gap: 10px; padding: 10px 16px; border-radius: 999px; background: var(--bg-2); color: var(--fg-3); font-size: 15px; font-weight: 500; transition: background .4s, color .4s; }
+.demo__steps li b { width: 24px; height: 24px; display: grid; place-items: center; border-radius: 50%; background: var(--bg-3); font-size: 13px; }
+.demo__steps li.on { background: var(--fg); color: var(--bg); }
+.demo__steps li.on b { background: var(--accent); color: #fff; }
+.demo__scene { width: min(980px, 100%); display: grid; grid-template-columns: 1fr 200px; gap: var(--s-6); align-items: center; text-align: left; }
+.demo__board { aspect-ratio: 16 / 9; display: grid; align-content: center; gap: 4%; padding: 5%; border-radius: var(--r-xl); background: #0b1020; color: #f4f7ff; box-shadow: 0 30px 60px -30px rgba(0,0,0,.5); }
+.demo__q { font: 700 clamp(18px, 2.6vw, 30px) var(--font-display); }
+.demo__bars { display: grid; gap: 10px; }
+.demo__bar { display: grid; grid-template-columns: 34% 1fr 40px; gap: 12px; align-items: center; font-size: clamp(13px, 1.5vw, 17px); }
+.demo__bar i { height: 18px; border-radius: 6px; background: #1b2240; overflow: hidden; }
+.demo__bar em { display: block; height: 100%; background: #4d8dff; border-radius: 6px; transition: width .9s cubic-bezier(.22,1,.36,1); }
+.demo__bar--ok em { background: #3ddc84; } .demo__bar--ok span { color: #3ddc84; font-weight: 700; }
+.demo__bar b { text-align: right; }
+.demo__who { color: #aab4d0; font-size: clamp(12px, 1.3vw, 15px); } .demo__who b { color: #fff; }
+.demo__phone { position: relative; display: grid; gap: 8px; padding: 26px 14px 18px; border: 8px solid #1d1d1f; border-radius: 34px; background: var(--bg); box-shadow: 0 30px 60px -30px rgba(0,0,0,.45); transition: transform .6s var(--spring); }
+.demo__scene[data-ph="1"] .demo__phone { transform: translateY(-8px) rotate(-2deg); }
+.demo__ph-q { font-weight: 700; font-size: 14px; margin-bottom: 4px; }
+.demo__opt { display: flex; gap: 8px; align-items: center; padding: 9px 10px; border: 2px solid var(--line); border-radius: 12px; font-size: 14px; font-weight: 600; transition: border-color .3s, background .3s; }
+.demo__opt b { width: 20px; height: 20px; display: grid; place-items: center; border-radius: 50%; background: var(--bg-3); font-size: 11px; }
+.demo__opt--on { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, var(--bg)); }
+.demo__opt--on b { background: var(--accent); color: #fff; }
+.demo__sent { position: absolute; top: -14px; right: -14px; width: 34px; height: 34px; display: grid; place-items: center; border-radius: 50%; background: #34c759; color: #fff; font-weight: 800; transform: scale(0); transition: transform .4s var(--spring); }
+.demo__sent.on { transform: scale(1); }
+@media (max-width: 700px) { .demo__scene { grid-template-columns: 1fr; } .demo__phone { width: 220px; justify-self: center; } }
+@media (prefers-reduced-motion: reduce) { .demo__bar em, .demo__phone, .demo__sent { transition: none; } }

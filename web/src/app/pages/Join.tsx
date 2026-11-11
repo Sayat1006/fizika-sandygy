@@ -56,6 +56,16 @@ function Room({ code, me, title, onLeave }: { code: string; me: Me; title: strin
   const [err, setErr] = useState('');
   const ch = useRef<RealtimeChannel | null>(null);
   const qid = st?.question?.id;
+  // Оқушының өз нәтижесі: жауабы ашылған әр сұрақ — дұрыс/қате (құрылғыда сақталады)
+  const [score, setScore] = useState<Record<string, boolean>>(() => { try { return JSON.parse(localStorage.getItem('fs-live-score-' + code) || '{}'); } catch { return {}; } });
+  useEffect(() => {
+    const q = st?.question;
+    if (!q?.reveal || !q.correct || q.id in score) return;
+    const next = { ...score, [q.id]: !!st?.mine && isCorrect(q, st.mine) === true };
+    setScore(next); try { localStorage.setItem('fs-live-score-' + code, JSON.stringify(next)); } catch { /* */ }
+  }, [st]); // eslint-disable-line react-hooks/exhaustive-deps
+  const total = Object.keys(score).length, good = Object.values(score).filter(Boolean).length;
+  const chip = total > 0 && <p className="join__score">Нәтижең: <b>{good}</b> / {total} дұрыс</p>;
 
   const refresh = useCallback(async () => {
     try { const s = await state(code, me); setSt(s); if (!s.ended && !s.joined) onLeave(); } catch { /* желі — келесі жолы */ }
@@ -82,9 +92,13 @@ function Room({ code, me, title, onLeave }: { code: string; me: Me; title: strin
   };
 
   if (!st) return <div className="join__card join__wait"><div className="join__spin" /><p>Қосылып жатыр…</p></div>;
-  if (st.ended) return <div className="join__card join__wait"><h2>Сабақ аяқталды</h2><p className="t-muted">Қатысқаның үшін рахмет!</p></div>;
+  if (st.ended) return (
+    <div className="join__card join__wait"><h2>Сабақ аяқталды</h2>
+      {total > 0 && <div className="join__final"><b>{good}</b><span>/ {total}</span><p>{good === total ? 'Керемет! Бәрі дұрыс!' : good >= total / 2 ? 'Жақсы нәтиже! Жарайсың!' : 'Келесі жолы міндетті түрде шығады!'}</p></div>}
+      <p className="t-muted">Қатысқаның үшін рахмет!</p></div>
+  );
   const q = st.question;
-  if (!q) return <div className="join__card join__wait"><div className="join__pulse" /><h2>Сен сабақтасың!</h2><p className="t-muted">{st.title || title ? `«${st.title || title}». ` : ''}Мұғалім сұрақ жібергенше күт.</p></div>;
+  if (!q) return <div className="join__card join__wait"><div className="join__pulse" /><h2>Сен сабақтасың!</h2><p className="t-muted">{st.title || title ? `«${st.title || title}». ` : ''}Мұғалім сұрақ жібергенше күт.</p>{chip}</div>;
 
   const ok = q.reveal && st.mine ? isCorrect(q, st.mine) : null;
   return (
@@ -114,6 +128,7 @@ function Room({ code, me, title, onLeave }: { code: string; me: Me; title: strin
         </div>
       )}
       {!q.open && !q.reveal && <p className="t-muted">Жауап қабылдау жабылды.</p>}
+      {chip}
     </div>
   );
 }

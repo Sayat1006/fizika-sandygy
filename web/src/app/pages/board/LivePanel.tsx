@@ -18,6 +18,10 @@ export default function LivePanel({ open, onClose, deck, at, title, onNames }: {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
   const [big, setBig] = useState(false);
+  const [wall, setWall] = useState<'res' | 'top' | null>(null); // тақтаға толық экран: нәтиже немесе үздіктер
+  // Жауабы ашылған сұрақтар (үздіктер тізімі үшін), сессия бойынша құрылғыда сақталады
+  const [hist, setHist] = useState<LiveQuestion[]>([]);
+  useEffect(() => { try { setHist(s ? JSON.parse(localStorage.getItem('fs-live-hist-' + s.id) || '[]') : []); } catch { setHist([]); } }, [s?.id]); // eslint-disable-line react-hooks/exhaustive-deps
   const [qr, setQr] = useState('');
   const ch = useRef<RealtimeChannel | null>(null);
   const timer = useRef(0);
@@ -43,11 +47,14 @@ export default function LivePanel({ open, onClose, deck, at, title, onNames }: {
     try { setS(await startSession(title)); } catch { setErr('Сабақты бастау мүмкін болмады. Интернетті тексеріңіз.'); }
     setBusy(false);
   };
-  const stop = async () => { if (!s) return; await endSession(s.id); setS(null); setPeople([]); setAnswers([]); setBig(false); };
+  const stop = async () => { if (!s) return; await endSession(s.id); setS(null); setPeople([]); setAnswers([]); setBig(false); setWall(null); };
   const put = async (q: LiveQuestion | null) => {
     if (!s) return;
     setErr('');
     const prev = s; setS({ ...s, question: q });
+    if (q?.reveal && q.correct && !hist.some((h) => h.id === q.id)) {
+      const h = [...hist, q]; setHist(h); try { localStorage.setItem('fs-live-hist-' + s.id, JSON.stringify(h)); } catch { /* */ }
+    }
     try { await setQuestion(s, q, ch.current); } catch { setS(prev); setErr('Сұрақты жіберу мүмкін болмады.'); }
   };
   const q = s?.question || null;
@@ -79,7 +86,8 @@ export default function LivePanel({ open, onClose, deck, at, title, onNames }: {
             <small>Қосылды: <b>{people.length}</b>{q ? <> · жауап берді: <b>{mine.length}</b></> : null}</small>
             <div>{people.map((p) => <span key={p.id} className={q && mine.some((a) => a.participant_id === p.id) ? 'on' : ''}>{p.name}</span>)}</div>
           </div>
-          {q ? <Results q={q} answers={mine} people={people} onPut={put} />
+          {hist.length > 0 && <button type="button" className="bd-live__top" onClick={() => setWall('top')}>🏆 Үздіктер · {hist.length} сұрақ</button>}
+          {q ? <Results q={q} answers={mine} people={people} onPut={put} onWall={() => setWall('res')} />
             : <div className="bd-live__ask">
               {items.length > 0 && <><small>Осы слайдтан</small>
                 <div className="bd-live__list">{items.map((x, k) => <QBtn key={k} q={x} n={k + 1} onSend={send} />)}</div></>}
@@ -96,6 +104,12 @@ export default function LivePanel({ open, onClose, deck, at, title, onNames }: {
           <button type="button" className="bd-link bd-live__end" onClick={stop}>Сабақты аяқтау</button>
         </>}
       </aside>
+      {wall && s && (
+        <div className="bd-wall" onClick={() => setWall(null)} role="dialog" aria-label={wall === 'res' ? 'Нәтиже' : 'Үздіктер'}>
+          {wall === 'res' && q ? <WallResults q={q} answers={mine} total={people.length} /> : <Leaders hist={hist} answers={answers} people={people} />}
+          <small className="bd-wall__x">Жабу үшін басыңыз</small>
+        </div>
+      )}
       {big && s && (
         <div className="bd-joinbig" onClick={() => setBig(false)}>
           {qr && <img src={qr} alt="QR-код" />}
@@ -117,7 +131,7 @@ function QBtn({ q, n, slide, onSend }: { q: SlideQ; n: number; slide?: boolean; 
   );
 }
 
-function Results({ q, answers, people, onPut }: { q: LiveQuestion; answers: Answer[]; people: Participant[]; onPut: (q: LiveQuestion | null) => void }) {
+function Results({ q, answers, people, onPut, onWall }: { q: LiveQuestion; answers: Answer[]; people: Participant[]; onPut: (q: LiveQuestion | null) => void; onWall: () => void }) {
   const total = answers.length;
   const name = (pid: string) => people.find((p) => p.id === pid)?.name || '';
   const groups = useMemo(() => {
@@ -147,11 +161,57 @@ function Results({ q, answers, people, onPut }: { q: LiveQuestion; answers: Answ
       {q.reveal && right !== null && total > 0 && <p className="bd-live__score">Дұрыс: <b>{right}</b> / {total} ({Math.round((right / total) * 100)}%)</p>}
       {q.correct && !q.reveal && <p className="bd-live__muted">Дұрыс жауап: оқушыларға әлі көрсетілмеген.</p>}
       <div className="bd-live__btns">
+        <button type="button" className="bd-pill" onClick={onWall}>Тақтаға шығару</button>
         {q.open ? <button type="button" className="bd-pill bd-pill--ghost" onClick={() => onPut({ ...q, open: false })}>Жауап қабылдауды жабу</button>
           : <button type="button" className="bd-pill bd-pill--ghost" onClick={() => onPut({ ...q, open: true })}>Қайта ашу</button>}
         {!q.reveal && <button type="button" className="bd-pill" disabled={!q.correct} onClick={() => onPut({ ...q, open: false, reveal: true })}>{q.correct ? 'Жауапты көрсету' : 'Дұрыс жауапты белгілеңіз'}</button>}
         <button type="button" className="bd-pill bd-pill--ghost" onClick={() => onPut(null)}>Жаңа сұрақ</button>
       </div>
+    </div>
+  );
+}
+
+/** Нәтиже тақтада толық экранда: сынып алыстан көреді */
+function WallResults({ q, answers, total }: { q: LiveQuestion; answers: Answer[]; total: number }) {
+  const groups = useMemo(() => {
+    if (q.kind === 'choice') return (q.options || []).map((o) => ({ label: o, n: answers.filter((a) => a.answer === o).length, ok: q.correct ? q.correct === o : null }));
+    const m = new Map<string, { label: string; n: number; ok: boolean | null }>();
+    for (const a of answers) { const k = norm(a.answer), g = m.get(k) || { label: a.answer, n: 0, ok: isCorrect(q, a.answer) }; g.n++; m.set(k, g); }
+    return [...m.values()].sort((a, b) => b.n - a.n).slice(0, 6);
+  }, [q, answers]);
+  const max = Math.max(1, ...groups.map((g) => g.n));
+  const right = q.correct ? answers.filter((a) => isCorrect(q, a.answer)).length : null;
+  return (
+    <div className="bd-wall__in">
+      <p className="bd-wall__q">{q.text}</p>
+      <div className="bd-wall__bars">
+        {groups.map((g, k) => (
+          <div key={k} className={`bd-wbar${q.reveal && g.ok ? ' bd-wbar--ok' : ''}${q.reveal && g.ok === false ? ' bd-wbar--bad' : ''}`}>
+            <span className="bd-wbar__l">{q.kind === 'choice' && (q.options?.length || 0) > 2 ? <b>{'ABCDEF'[k]}</b> : null}{g.label}</span>
+            <span className="bd-wbar__t"><i style={{ width: `${(g.n / max) * 100}%` }} /></span>
+            <em className="tabular">{g.n}</em>
+          </div>
+        ))}
+        {!groups.length && <p className="bd-wall__wait">Жауаптар күтілуде…</p>}
+      </div>
+      <p className="bd-wall__foot">Жауап берді: <b>{answers.length}</b> / {total}{q.reveal && right !== null && answers.length > 0 ? <> · Дұрыс: <b>{Math.round((right / answers.length) * 100)}%</b></> : null}</p>
+    </div>
+  );
+}
+
+/** Үздіктер: жауабы ашылған сұрақтар бойынша дұрыс жауап саны */
+function Leaders({ hist, answers, people }: { hist: LiveQuestion[]; answers: Answer[]; people: Participant[] }) {
+  const rows = people.map((p) => {
+    const n = hist.filter((h) => answers.some((a) => a.participant_id === p.id && a.qid === h.id && isCorrect(h, a.answer))).length;
+    return { name: p.name, n };
+  }).sort((a, b) => b.n - a.n || a.name.localeCompare(b.name)).slice(0, 10);
+  return (
+    <div className="bd-wall__in">
+      <p className="bd-wall__q">🏆 Үздіктер · {hist.length} сұрақ</p>
+      <ol className="bd-lead">
+        {rows.map((r, k) => <li key={r.name + k} className={k < 3 && r.n > 0 ? `bd-lead--${k + 1}` : ''}><b className="tabular">{k + 1}</b><span>{r.name}</span><em className="tabular">{r.n} / {hist.length}</em></li>)}
+        {!rows.length && <p className="bd-wall__wait">Әзірге ешкім жоқ.</p>}
+      </ol>
     </div>
   );
 }
