@@ -298,6 +298,22 @@ dialog.sheet[open]::backdrop { animation: fade .4s var(--out); }
 .tr.open .tx { grid-template-rows: 1fr; }
 .tr.open .tx > div > .lb { opacity: 1; transform: none; transition-delay: .08s; }
 
+/* Зертханалық жұмыс белгісі мен сүзгі */
+.th .tt .lw { display: flex; align-items: center; gap: 6px; margin-top: 4px; font: 600 13px var(--text); color: var(--fg-3); letter-spacing: 0; }
+.th .tt .lw svg { width: 15px; height: 15px; flex: none; }
+.th .tt .lw.on { color: var(--accent); }
+.tfil { display: flex; margin: 0 0 4px; }
+.lfil { display: inline-flex; align-items: center; gap: 8px; border: 0; cursor: pointer; background: var(--bg-2); color: var(--fg); font: 600 14px var(--text); border-radius: 999px; padding: 8px 14px 8px 12px; transition: background .25s var(--out), color .25s var(--out); }
+.lfil svg { width: 17px; height: 17px; }
+.lfil b { font-weight: 600; color: var(--fg-3); font-variant-numeric: tabular-nums; }
+.lfil[aria-pressed="true"] { background: var(--fg); color: var(--bg); }
+.lfil[aria-pressed="true"] b { color: color-mix(in srgb, var(--bg) 60%, transparent); }
+/* 3D тәжірибе батырмасы: тақырып ішінде бірінші, толық енде */
+a.dl { text-decoration: none; }
+.dl.lab3d { background: var(--fg); color: var(--bg); }
+.dl.lab3d:hover { background: color-mix(in srgb, var(--fg) 85%, var(--bg)); color: var(--bg); }
+.tx .lb .dl.lab3d { grid-column: 1 / -1; }
+
 /* Ашылған тақырып: төрт үлкен әрекет, бір торда */
 .tx .lb { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; padding: 0 0 22px 46px; }
 .tx .dl { justify-content: center; gap: 8px; min-height: 50px; padding: 0 12px; border-radius: 14px; font: 600 15px var(--text); }
@@ -765,6 +781,17 @@ const ICO = {
   done: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5 9-10"/></svg>',
 };
 const LBL = { kmzh: 'ҚМЖ', pres: 'Слайд', ws: 'Парақ' };
+ICO.lab = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6M10 3v6l-5 9a2 2 0 0 0 2 3h10a2 2 0 0 0 2-3l-5-9V3"/><path d="M7.5 14h9"/></svg>';
+/* Зертханалық жұмыс: ҚТЖ тақырыбындағы «№ N зертханалық жұмыс» жазуынан анықталады.
+   LAB3D — 3D зертханада (/lab) дайын тұрған тәжірибелер: сынып → жұмыс нөмірі → тәжірибе id. */
+const LAB3D = { 7: { 4: 'g7-4', 5: 'g7-5', 6: 'g7-6', 10: 'g7-10' }, 9: { 1: 'g9-1' } };
+function labOf(l) {
+  const m = /№\s*(\d+)[\s.\-–]*зертханалық\s+жұмыс/i.exec(l.topic);
+  if (!m) return null;
+  const g = parseInt(l.v, 10), no = +m[1];
+  return { no, exp: (LAB3D[g] || {})[no] || null };
+}
+let labOnly = false;
 let selG = (() => { try { return +localStorage.getItem('fs-g') || 0; } catch (_) { return 0; } })(), selDay = null;
 const addDays = (s, n) => new Date(Date.parse(s) + n * 864e5).toISOString().slice(0, 10);
 const vt = fn => { if (!reduce && document.startViewTransition) return document.startViewTransition(fn); fn(); return null; };
@@ -777,8 +804,8 @@ let mode = (() => { try { return localStorage.getItem('fs-mode') || 'week'; } ca
 const dowOf = d => DOW[(Date.parse(d) / 864e5 + 3) % 7];
 function subOf(g) { const t = FS_WEEK().today; return subs.find(x => x.grade === g && x.paid_until >= t); }
 function dlBtns(l, g) {
-  const ok = !!subOf(g);
-  return `<button class="dl view" type="button" data-view="${l.v}|${l.n}">${ICO.eye}<span>Қарау</span></button>` + ['kmzh', 'pres', 'ws'].filter(k => l[k]).map(k => k === 'kmzh' || ok
+  const ok = !!subOf(g), lab = labOf(l);
+  return (lab && lab.exp ? `<a class="dl lab3d" href="/lab/experiments/${lab.exp}">${ICO.lab}<span>3D тәжірибе</span></a>` : '') + `<button class="dl view" type="button" data-view="${l.v}|${l.n}">${ICO.eye}<span>Қарау</span></button>` + ['kmzh', 'pres', 'ws'].filter(k => l[k]).map(k => k === 'kmzh' || ok
     ? `<button class="dl${GOT.has(`${l.v}|${l.n}|${k}`) ? ' got' : ''}" type="button" data-dl="${l.v}|${l.n}|${k}" title="${GOT.has(`${l.v}|${l.n}|${k}`) ? 'Бұрын жүктелген' : 'Жүктеу'}">${ICO[k]}<span>${LBL[k]}</span>${k === 'kmzh' && !GOT.has(`${l.v}|${l.n}|${k}`) ? '<em>тегін</em>' : ''}</button>`
     : `<button class="dl lock" type="button" data-lock="${g}" title="Жазылыммен ашылады">${ICO.lock}<span>${LBL[k]}</span></button>`).join('');
 }
@@ -815,13 +842,15 @@ function renderWeek() {
       const rows = LESSONS.filter(l => l.v === v).map(l => {
         const head = l.bolim !== bol ? `<div class="bol">${esc(bol = l.bolim)}</div>` : '';
         const now = l.date >= w.from && l.date <= w.to;
-        return `${head}<div class="tr${now ? ' now' : ''}" data-q="${esc((l.disp + ' ' + l.topic).toLowerCase())}">
-          <button class="th" type="button" aria-expanded="false"><span class="tn">${esc(l.disp)}</span><span class="tt">${esc(l.topic)}</span><span class="td">${now ? 'осы апта' : dm(l.date)}</span></button>
+        const lab = labOf({ ...l, v });
+        const tag = lab && lab.exp ? `<small class="lw on">${ICO.lab}3D тәжірибе бар</small>` : ''; // атауда «№ N зертханалық жұмыс» бар — қайталамаймыз
+        return `${head}<div class="tr${now ? ' now' : ''}${lab ? ' is-lab' : ''}" data-q="${esc((l.disp + ' ' + l.topic).toLowerCase())}">
+          <button class="th" type="button" aria-expanded="false"><span class="tn">${esc(l.disp)}</span><span class="tt">${esc(l.topic)}${tag}</span><span class="td">${now ? 'осы апта' : dm(l.date)}</span></button>
           <div class="tx"><div><div class="lb">${dlBtns({ ...l, v }, selG)}</div></div></div></div>`;
       }).join('');
       return (vs.length > 1 ? `<div class="vtitle">${esc(V.byId[v].short)}</div>` : '') + rows;
     }).join('');
-    body = `<label class="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="tq" type="search" placeholder="Тақырыпты немесе нөмірін іздеу" value="${esc(query)}" autocomplete="off"></label><div class="topics" id="topics">${list}</div><div class="none" id="tq-none" hidden>Ештеңе табылмады.</div>`;
+    body = `<label class="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="tq" type="search" placeholder="Тақырыпты немесе нөмірін іздеу" value="${esc(query)}" autocomplete="off"></label><div class="tfil"><button class="lfil" id="lab-only" type="button" aria-pressed="${labOnly}">${ICO.lab}<span>Зертханалық жұмыстар</span><b id="lab-n"></b></button></div><div class="topics" id="topics">${list}</div><div class="none" id="tq-none" hidden>Ештеңе табылмады.</div>`;
   }
   $('week').innerHTML = `${modes}<div class="gtabs" role="tablist" id="gtabs"><span class="ind" id="ind"></span>${tabs}</div><div class="gmeta acc-row"><span>${selG}-сынып${vs.length === 1 && selG >= 10 ? ' · ' + esc(V.byId[vs[0]].short) : ''}</span>${access}</div>${body}`;
   moveInd(true);
@@ -830,11 +859,22 @@ function renderWeek() {
 }
 function filterTopics() {
   const q = query.trim().toLowerCase(); let n = 0;
-  document.querySelectorAll('#topics .tr').forEach(r => { const hit = !q || r.dataset.q.includes(q); r.hidden = !hit; if (hit) n++; });
-  document.querySelectorAll('#topics .bol, #topics .vtitle').forEach(h => h.hidden = !!q);
+  document.querySelectorAll('#topics .tr').forEach(r => { const hit = (!q || r.dataset.q.includes(q)) && (!labOnly || r.classList.contains('is-lab')); r.hidden = !hit; if (hit) n++; });
+  // Бөлім тақырыбы: астында көрінетін жол болса ғана шығады
+  document.querySelectorAll('#topics .bol, #topics .vtitle').forEach(h => {
+    if (q) { h.hidden = true; return; }
+    let e = h.nextElementSibling, any = false;
+    while (e && e.classList.contains('tr')) { if (!e.hidden) { any = true; break; } e = e.nextElementSibling; }
+    h.hidden = h.classList.contains('vtitle') ? false : !any;
+  });
+  const ln = $('lab-n'); if (ln) ln.textContent = document.querySelectorAll('#topics .tr.is-lab').length;
   $('tq-none').hidden = n > 0;
 }
 document.addEventListener('input', e => { if (e.target.id === 'tq') { query = e.target.value; filterTopics(); } });
+document.addEventListener('click', e => {
+  const b = e.target.closest('#lab-only'); if (!b) return;
+  labOnly = !labOnly; b.setAttribute('aria-pressed', labOnly); filterTopics();
+});
 document.addEventListener('click', e => {
   const th = e.target.closest('.th');
   if (th) { const r = th.parentNode, open = !r.classList.contains('open');
