@@ -30,14 +30,14 @@ async function netFirst(req, key) {
     if (r.ok) c.put(key, r.clone());
     return r;
   } catch (err) {
-    const hit = await c.match(key);
+    const hit = await c.match(key, { ignoreVary: true });
     if (hit) return hit;
     throw err;
   }
 }
 async function cacheFirst(req) {
   const c = await caches.open(V);
-  const hit = await c.match(req);
+  const hit = await c.match(req, { ignoreVary: true });
   if (hit) return hit;
   const r = await fetch(req);
   if (r.ok) c.put(req, r.clone());

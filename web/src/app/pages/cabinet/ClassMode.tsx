@@ -47,6 +47,7 @@ export default function ClassMode({ lessons, onLock }: { lessons: Lesson[]; onLo
   useEffect(() => {
     if (!online) return;
     let off = false;
+    void import('../Board'); // тақтаның коды мен стилі де кэшке түссін (интернет үзілсе де ашылуы үшін)
     (async () => { for (const l of day) { if (off) return; if (subOf(gradeOf(l)) && await prepareLesson(l) && !off) setSaved((s) => new Set(s).add(l.v + '|' + l.n)); } })();
     return () => { off = true; };
   }, [dayKey, online]); // eslint-disable-line react-hooks/exhaustive-deps
