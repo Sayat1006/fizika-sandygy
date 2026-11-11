@@ -56,6 +56,11 @@ function Teacher() {
   const select = (l: Lesson | null, auto?: boolean) => { if (auto || !sel) setSel(l); else if (l && (l.v !== sel.v || l.n !== sel.n)) morph(() => setSel(l)); };
   const view = (l: Lesson) => { if (!wide) return setViewing(l); morph(() => { setSel(l); setTab('kmzh'); }); };
   useEffect(() => { loadLessons().then(setLessons); }, []);
+  // Жоғарғы жолақтағы профиль мәзірінен парақша ашу
+  useEffect(() => {
+    const f = () => { let id: string | null = null; try { id = sessionStorage.getItem('fs-sheet'); sessionStorage.removeItem('fs-sheet'); } catch { /* */ } if (id) { setPreset(null); setSheet(id as SheetId); } };
+    f(); window.addEventListener('fs-sheet', f); return () => window.removeEventListener('fs-sheet', f);
+  }, []);
   const ready = useMemo(() => new Set(lessons.map((l) => l.v)), [lessons]);
 
   // Сыныптар бекітілмеген болса, бір рет ұсынамыз
@@ -83,6 +88,9 @@ function Teacher() {
     <div className="cab cab--class">
       <ClassMode lessons={lessons} onLock={lock} />
       <SubscribeSheet open={sheet === 'subscribe'} onClose={() => setSheet(null)} preset={preset} />
+      <ClassesSheet open={sheet === 'classes'} onClose={() => setSheet(null)} ready={ready} />
+      <TelegramSheet open={sheet === 'tg'} onClose={() => setSheet(null)} />
+      <ProfileSheet open={sheet === 'profile'} onClose={() => setSheet(null)} />
     </div>
   );
   return (

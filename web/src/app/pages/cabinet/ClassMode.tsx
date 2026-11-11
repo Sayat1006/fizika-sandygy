@@ -27,14 +27,19 @@ export default function ClassMode({ lessons, onLock }: { lessons: Lesson[]; onLo
   const clock = useClock();
   const [pick, setPickS] = useState(false);
   const setPick = (b: boolean) => { setPickS(b); window.scrollTo(0, 0); };
+  const [only, setOnly] = useState<number | null>(() => { try { return +(localStorage.getItem('fs-cm-g') || '') || null; } catch { return null; } });
   const w = week();
   const ready = useMemo(() => new Set(lessons.map((l) => l.v)), [lessons]);
   const mine = (profile?.variants || []).filter((v) => ready.has(v));
   const my = useMemo(() => lessons.filter((l) => mine.includes(l.v)), [lessons, mine.join()]); // eslint-disable-line react-hooks/exhaustive-deps
+  const gradeOf = (l: Lesson) => VARIANT[l.v]?.grade || l.grade;
   const today = my.filter((l) => l.date === w.today);
   const nextDay = today.length ? null : my.map((l) => l.date).filter((d) => d > w.today).sort()[0] || null;
-  const shown = today.length ? today : my.filter((l) => l.date === nextDay);
-  const gradeOf = (l: Lesson) => VARIANT[l.v]?.grade || l.grade;
+  const day = (today.length ? today : my.filter((l) => l.date === nextDay)).sort((x, y) => gradeOf(x) - gradeOf(y) || x.v.localeCompare(y.v) || x.n - y.n);
+  const grades = [...new Set(day.map(gradeOf))];
+  const g = only && grades.includes(only) ? only : null;
+  const shown = g ? day.filter((l) => gradeOf(l) === g) : day;
+  const choose = (x: number | null) => { setOnly(x); try { localStorage.setItem('fs-cm-g', x ? String(x) : ''); } catch { /* */ } };
 
   if (pick) return <Picker lessons={my} onBack={() => setPick(false)} onLock={onLock} />;
   return (
@@ -43,18 +48,31 @@ export default function ClassMode({ lessons, onLock }: { lessons: Lesson[]; onLo
         <div><small>Бүгін</small><h1>{longDate(w.today)}</h1></div>
         <b className="cm__clock tabular">{clock}</b>
       </header>
-      <p className="cm__sub">{today.length ? `Бүгінгі сабақтар · ${today.length}` : nextDay ? `Бүгін сабақ жоқ. Келесі сабақтар — ${longDate(nextDay)}` : 'Жақын күндері сабақ жоқ.'}</p>
+      {!today.length && <p className="cm__none">Бүгін сабақ жоқ.</p>}
+      {day.length > 0 && (
+        <div className="cm__bar">
+          <h2>{today.length ? 'Бүгінгі сабақтар' : `Келесі сабақтар · ${longDate(nextDay!)}`}</h2>
+          {grades.length > 1 && (
+            <div className="cm__chips" role="group" aria-label="Сынып">
+              <button type="button" aria-pressed={!g} onClick={() => choose(null)}>Барлығы</button>
+              {grades.map((x) => <button key={x} type="button" aria-pressed={g === x} onClick={() => choose(x)}>{x} сынып</button>)}
+            </div>
+          )}
+        </div>
+      )}
+      {!day.length && <p className="cm__sub">Жақын күндері сабақ жоқ.</p>}
       <div className="cm__tiles">
         {shown.map((l, i) => {
-          const g = gradeOf(l), ok = !!subOf(g);
+          const gr = gradeOf(l), ok = !!subOf(gr), first = i === 0;
           const body = (<>
-            <span className="cm__g">{g}<small>-сынып</small></span>
-            <span className="cm__t"><small>№{l.disp}{g >= 10 && VARIANT[l.v] ? ` · ${VARIANT[l.v].short}` : ''}{!today.length ? ` · ${dm(l.date)}` : ''}</small><b>{l.topic}</b></span>
+            <span className="cm__g"><b>{gr}</b><small>сынып</small></span>
+            <span className="cm__t"><small>№{l.disp}{gr >= 10 && VARIANT[l.v] ? ` · ${VARIANT[l.v].short}` : ''}</small><b>{l.topic}</b></span>
             <span className="cm__go">{ok ? <><IcBoard />Тақтада ашу</> : <><IcLock />Жазылым керек</>}</span>
           </>);
+          const cls = `cm__tile rise${first ? ' cm__tile--first' : ''}${ok ? '' : ' cm__tile--lock'}`;
           return ok
-            ? <Link key={l.v + l.n} to={boardUrl(l)} className="cm__tile rise" style={{ animationDelay: `${i * 0.06}s` }}>{body}</Link>
-            : <button key={l.v + l.n} type="button" className="cm__tile cm__tile--lock rise" onClick={() => onLock(g)}>{body}</button>;
+            ? <Link key={l.v + l.n} to={boardUrl(l)} className={cls} style={{ animationDelay: `${i * 0.05}s` }}>{body}</Link>
+            : <button key={l.v + l.n} type="button" className={cls} onClick={() => onLock(gr)}>{body}</button>;
         })}
       </div>
       <button type="button" className="cm__other" onClick={() => setPick(true)}><IcSearch />Басқа тақырыпты ашу</button>
