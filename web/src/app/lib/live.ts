@@ -92,6 +92,7 @@ export function teacherChannel(s: LiveSession, onChange: () => void) {
 export interface Me { pid: string; secret: string; name: string }
 const meKey = (code: string) => `fs-live-${code}`;
 export const loadMe = (code: string): Me | null => { try { return JSON.parse(localStorage.getItem(meKey(code)) || 'null'); } catch { return null; } };
+export const forgetMe = (code: string) => { try { localStorage.removeItem(meKey(code)); } catch { /* */ } };
 export const saveMe = (code: string, me: Me) => { try { localStorage.setItem(meKey(code), JSON.stringify(me)); } catch { /* жеке режим */ } };
 
 export async function join(code: string, name: string): Promise<Me & { title: string }> {

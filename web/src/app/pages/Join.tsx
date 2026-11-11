@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
 import type { RealtimeChannel } from '@supabase/supabase-js';
-import { answer, isCorrect, join, loadMe, saveMe, state, studentChannel, type Me, type StudentState } from '../lib/live';
+import { answer, forgetMe, isCorrect, join, loadMe, saveMe, state, studentChannel, type Me, type StudentState } from '../lib/live';
 import { Mark } from '../ui/icons';
 import { Note } from '../ui/kit';
 
@@ -10,11 +10,12 @@ export default function Join() {
   const [me, setMe] = useState<Me | null>(() => (code.length === 6 ? loadMe(code) : null));
   const [title, setTitle] = useState('');
   useEffect(() => { document.title = 'Сабаққа қосылу · Сабақтас'; }, []);
+  const leave = useCallback(() => { forgetMe(code); setMe(null); }, [code]);
   return (
     <div className="join">
       <header className="join__top"><Mark /><span>Сабақтас</span>{me && <b>{me.name}</b>}</header>
       <main className="join__main">
-        {me ? <Room code={code} me={me} title={title} onLeave={() => { setMe(null); }} />
+        {me ? <Room code={code} me={me} title={title} onLeave={leave} />
           : <Enter code={code} setCode={setCode} onJoined={(m, t) => { saveMe(code, m); setMe(m); setTitle(t); }} />}
       </main>
     </div>
