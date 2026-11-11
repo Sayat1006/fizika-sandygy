@@ -1,18 +1,19 @@
-import { Suspense, lazy, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useAccount } from '../../lib/account';
 import { CONFIG, week } from '../../lib/config';
 import { dayPart, firstName, loadLessons, type Lesson } from '../../lib/data';
-import { IcCard, IcList, IcSend, IcUser } from '../../ui/icons';
+import { IcCard, IcList, IcSend, IcUser, Mark } from '../../ui/icons';
 import { useToast } from '../../ui/kit';
 import { AccountNav, Footer } from '../../ui/Layout';
 import { AuthView, RecoverView } from '../Auth';
 import Lessons from './Lessons';
 import { useMode } from '../../lib/mode';
 import ClassMode from './ClassMode';
+import PrepNext from './PrepNext';
+import Onboarding from './Onboarding';
 import LessonPane, { morph, useWide } from './LessonPane';
 import { ClassesSheet, ProfileSheet, SubscribeSheet, TelegramSheet, ViewerSheet } from './Sheets';
 
-const Logo3D = lazy(() => import('../../ui/Logo3D'));
 
 /** /app — мұғалім кабинеті. Кірмеген болса — кіру/тіркелу. */
 export default function Cabinet() {
@@ -97,7 +98,7 @@ function Teacher() {
     <div className={`cab${wide ? ' cab--split' : ''}`}>
       <div className="cab__main">
       <header className="hello">
-        <Suspense fallback={<div style={{ width: 88, height: 88 }} />}><Logo3D /></Suspense>
+        <span className="hello__mark" aria-hidden><Mark /></span>
         <h1 className="t-title rise rise-1">Қайырлы {dayPart()}{name ? `, ${name}` : ''}!</h1>
         {left !== null && (
           <div className="hello__trial rise rise-2">
@@ -109,6 +110,9 @@ function Teacher() {
           <div className="note note--info hello__nudge">Телефон нөміріңізді жазыңыз. <button className="link" type="button" onClick={() => open('profile')}>Толтыру</button></div>
         )}
       </header>
+
+      <Onboarding onClasses={() => open('classes')} onLook={() => document.querySelector('.lessons')?.scrollIntoView({ behavior: 'smooth', block: 'start' })} />
+      <PrepNext lessons={lessons} onOpen={view} />
 
       <Lessons lessons={lessons} onView={view} onLock={lock} onClasses={() => open('classes')} sel={wide && sel ? `${sel.v}|${sel.n}` : null} onSelect={wide ? select : undefined} />
 

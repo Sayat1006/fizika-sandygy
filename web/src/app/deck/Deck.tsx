@@ -1,7 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import type { Chart, DeckData, Dir, Quote, Scale, Slide, Vec, Visual } from './types';
 import Illus, { ILLUS } from './Illus';
-import './deck.css';
 
 /* Анимациялы слайд: 1920×1080 сахна, контейнерге сыйғызылады. step — неше рет басылды. */
 export type Theme = 'a' | 'b' | 'c';

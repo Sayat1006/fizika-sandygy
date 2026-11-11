@@ -5,6 +5,7 @@ import { KIND_LABEL, dm, dmy, money, sb, tgPayLink, viewPages, type Kind, type L
 import { IcLock } from '../../ui/icons';
 import { Note, Segmented, Sheet, useToast } from '../../ui/kit';
 import { DownloadAct } from './LessonActions';
+import { markSeen } from '../../lib/seen';
 
 /* ───────── Қарау: ҚМЖ, слайд, парақ беттері ───────── */
 export function ViewerSheet({ lesson, onClose, onLock }: { lesson: Lesson | null; onClose: () => void; onLock: (g: number) => void }) {
@@ -17,6 +18,7 @@ export function ViewerSheet({ lesson, onClose, onLock }: { lesson: Lesson | null
     if (!lesson || cache[kind] !== undefined) return;
     viewPages(lesson.v, lesson.n, kind).then((j) => setCache((c) => ({ ...c, [kind]: j }))).catch((e) => setCache((c) => ({ ...c, [kind]: (e as Error).message })));
   }, [lesson, kind, cache]);
+  useEffect(() => { if (lesson && kind === 'kmzh' && cache.kmzh && typeof cache.kmzh !== 'string') markSeen(lesson.v, lesson.n); }, [lesson, kind, cache]);
   if (!lesson) return <Sheet open={false} onClose={onClose}>{null}</Sheet>;
   const g = VARIANT[lesson.v]?.grade || lesson.grade, ok = !!subOf(g), data = cache[kind];
   return (

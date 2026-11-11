@@ -1,4 +1,4 @@
-import { Suspense, lazy, useEffect } from 'react';
+import { Component, Suspense, lazy, useEffect, type ReactNode } from 'react';
 import { BrowserRouter, Link, Route, Routes, useLocation } from 'react-router-dom';
 import { AccountProvider } from './lib/account';
 import { ToastProvider } from './ui/kit';
@@ -21,6 +21,22 @@ function Titles() {
   return null;
 }
 
+/** Бет бөлігі жүктелмей қалса (интернет үзілді, жаңа нұсқа шықты) — ақ экран орнына түсінікті хабар */
+class Guard extends Component<{ children: ReactNode }, { err: boolean }> {
+  state = { err: false };
+  static getDerivedStateFromError() { return { err: true }; }
+  render() {
+    if (!this.state.err) return this.props.children;
+    return (
+      <div className="shell"><main className="container notfound">
+        <h1 className="t-title">Бет жүктелмеді</h1>
+        <p className="t-muted">Интернет байланысын тексеріп, бетті қайта жүктеңіз.</p>
+        <button className="btn btn--primary" type="button" onClick={() => location.reload()}>Қайта жүктеу</button>
+      </main></div>
+    );
+  }
+}
+
 function NotFound() {
   return (
     <div className="shell">
@@ -41,6 +57,7 @@ export default function App() {
       <ToastProvider>
         <AccountProvider>
           <Titles />
+          <Guard>
           <Suspense fallback={null}>
             <Routes>
               <Route path="/" element={<Landing />} />
@@ -54,6 +71,7 @@ export default function App() {
               <Route path="*" element={<NotFound />} />
             </Routes>
           </Suspense>
+          </Guard>
         </AccountProvider>
       </ToastProvider>
     </BrowserRouter>

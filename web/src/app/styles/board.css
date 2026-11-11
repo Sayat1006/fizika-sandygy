@@ -54,14 +54,40 @@
 .bd-col[aria-pressed="true"] { background: transparent; }
 .bd-col[aria-pressed="true"] .bd-dot { box-shadow: 0 0 0 3px var(--chrome), 0 0 0 5px var(--ink); }
 
-.bd-stages { display: flex; gap: 6px; padding: 6px 14px max(12px, env(safe-area-inset-bottom)); overflow-x: auto; scrollbar-width: none; }
-.bd-stages::-webkit-scrollbar { display: none; }
-.bd-st { position: relative; flex: 1 0 150px; min-height: 56px; border: 0; border-radius: 14px; background: var(--chrome-2); color: var(--ink-2); text-align: left; padding: 9px 14px; overflow: hidden; display: grid; align-content: center; gap: 2px; }
-.bd-st b { position: relative; font-size: 14.5px; font-weight: 600; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.bd-st small { position: relative; font-size: 12.5px; font-variant-numeric: tabular-nums; }
-.bd-st i { position: absolute; inset: 0 auto 0 0; width: 0; background: color-mix(in srgb, #2997ff 38%, var(--chrome-3)); transition: width 0.9s linear; }
-.bd-st--done { opacity: 0.55; }
-.bd-st--on { background: var(--chrome-3); box-shadow: inset 0 0 0 2px var(--ink); }
+/* сабақ кезеңдері: ықшам прогресс жолағы + қазіргі кезең */
+.bd-stages { display: grid; gap: 6px; padding: 4px 14px max(10px, env(safe-area-inset-bottom)); }
+.bd-snow { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.bd-snow small { color: var(--ink-2); font-size: 13px; font-weight: 600; }
+.bd-snow b { font-size: 16px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bd-snext { margin-left: auto; flex: none; max-width: 45%; min-height: 36px; padding: 0 14px; border: 0; border-radius: 999px; background: var(--chrome-2); color: var(--ink-2); font: 500 14px var(--font); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; }
+.bd-snext:hover { background: var(--chrome-3); color: var(--ink); }
+.bd-sbar { display: flex; gap: 4px; }
+.bd-seg { position: relative; flex-basis: 0; height: 10px; padding: 0; border: 0; border-radius: 5px; background: var(--chrome-3); overflow: hidden; cursor: pointer; }
+.bd-seg::after { content: ''; position: absolute; inset: -12px 0; } /* саусаққа үлкенірек басу аймағы */
+.bd-seg--done { background: color-mix(in srgb, #2997ff 55%, var(--chrome-3)); }
+.bd-seg--on { background: color-mix(in srgb, #2997ff 22%, var(--chrome-3)); box-shadow: 0 0 0 2px var(--ink); }
+.bd-seg i { position: absolute; inset: 0 auto 0 0; width: 0; background: #2997ff; transition: width 0.9s linear; }
+
+/* мәтін өлшемі (A− / A+): жолақтар үлкейеді, слайд өзі экранға сыяды */
+.bd-top, .bd-tools, .bd-stages { zoom: var(--bz, 1); }
+.bd-zoom { display: flex; gap: 2px; padding: 3px; border-radius: 14px; background: var(--chrome-2); }
+.bd-zoom button { min-width: 44px; height: 38px; border: 0; border-radius: 11px; background: none; color: var(--ink); font: 700 15px var(--font); cursor: pointer; }
+.bd-zoom button:hover:not(:disabled) { background: var(--chrome-3); }
+.bd-zoom button:disabled { opacity: 0.35; cursor: default; }
+
+/* «B» — қара экран; интернет жоқ белгісі */
+.bd-black { position: fixed; inset: 0; z-index: 90; border: 0; background: #000; cursor: pointer; animation: bd-fade 0.25s ease; }
+@keyframes bd-fade { from { opacity: 0; } }
+.bd-offline { position: fixed; left: 50%; top: 10px; z-index: 80; transform: translateX(-50%); max-width: 92vw; padding: 8px 16px; border-radius: 999px; background: #3a2a06; color: #ffcf6a; font-size: 14px; font-weight: 600; box-shadow: 0 8px 24px rgba(0,0,0,.4); }
+
+/* жүктелу қаңқасы */
+.bd-skel { position: fixed; inset: 0; display: grid; grid-template-rows: auto 1fr auto; gap: 12px; padding: 12px 14px 14px; }
+.bd-skel i, .bd-skel b, .bd-skel em, .bd-skel__stage { display: block; border-radius: 14px; background: linear-gradient(90deg, var(--chrome-2) 0%, var(--chrome-3) 50%, var(--chrome-2) 100%); background-size: 200% 100%; animation: bd-shim 1.4s ease-in-out infinite; }
+.bd-skel__top, .bd-skel__tools { display: flex; gap: 12px; align-items: center; }
+.bd-skel__top i { width: 44px; height: 44px; } .bd-skel__top b { width: min(420px, 50vw); height: 34px; } .bd-skel__top em { margin-left: auto; width: 200px; height: 44px; }
+.bd-skel__tools i { width: 220px; height: 52px; } .bd-skel__tools i:nth-child(2) { width: 300px; margin: 0 auto; }
+.bd-skel__stage { display: grid; place-items: center; border-radius: 18px; color: var(--ink-2); font-size: 18px; }
+@keyframes bd-shim { to { background-position: -200% 0; } }
 
 .bd-pop { border: 0; border-radius: 26px; padding: 26px; width: min(460px, 92vw); background: var(--chrome-2, #1c1c1e); color: #f5f5f7; text-align: center; }
 .bd-pop[open] { animation: sheet-up 0.45s var(--out); }
@@ -84,8 +110,8 @@
 .bd-tbig--end .bd-big { color: #ff9f0a; }
 .bd-tbig .bd-row { position: absolute; bottom: 7vh; left: 0; right: 0; }
 
-@media (max-width: 760px) { .bd-clock span, .bd-src button span { display: none; } .bd-st { flex-basis: 120px; } }
-@media (prefers-reduced-motion: reduce) { .bd-notes, .bd-st i { transition: none; } .bd-big--roll { animation: none; } }
+@media (max-width: 760px) { .bd-clock span, .bd-src button span, .bd-zoom, .bd-snext { display: none; } }
+@media (prefers-reduced-motion: reduce) { .bd-skel i, .bd-skel b, .bd-skel em, .bd-skel__stage { animation: none; } .bd-notes, .bd-seg i { transition: none; } .bd-big--roll { animation: none; } }
 .bd-steps { display: inline-flex; gap: 4px; margin-left: 10px; vertical-align: middle; }
 .bd-steps i { width: 7px; height: 7px; border-radius: 50%; background: rgba(255, 255, 255, 0.35); }
 .bd-steps i.on { background: #fff; }
@@ -144,3 +170,29 @@
 .bd-joinbig__code { display: block; font: 800 13vh/1 var(--font-display); letter-spacing: 0.05em; font-variant-numeric: tabular-nums; }
 .bd-joinbig__n { margin-top: 4vh !important; font-size: 3.4vh !important; color: #30d158 !important; }
 .bd-big--name { font-size: clamp(48px, 7vw, 96px); letter-spacing: -0.02em; }
+
+/* Нәтиже / үздіктер — тақтада толық экран */
+.bd-live__top { min-height: 44px; border: 0; border-radius: 12px; background: color-mix(in srgb, #ffd60a 18%, var(--chrome-2)); color: #ffd60a; font: 600 15px var(--font); cursor: pointer; }
+.bd-wall { position: fixed; inset: 0; z-index: 70; display: grid; place-items: center; padding: 5vh 5vw; background: #05080f; color: #f5f7ff; cursor: pointer; animation: bd-fade 0.3s ease; }
+.bd-wall__in { width: min(1400px, 100%); display: grid; gap: 4vh; }
+.bd-wall__q { margin: 0; font: 700 clamp(28px, 4.6vh, 56px)/1.2 var(--font-display); letter-spacing: -0.02em; }
+.bd-wall__bars { display: grid; gap: 2.4vh; }
+.bd-wbar { display: grid; grid-template-columns: minmax(160px, 34%) 1fr 90px; gap: 2vw; align-items: center; font-size: clamp(22px, 3.6vh, 44px); }
+.bd-wbar__l { display: flex; gap: 16px; align-items: center; font-weight: 600; }
+.bd-wbar__l b { flex: none; width: 1.6em; height: 1.6em; display: grid; place-items: center; border-radius: 50%; background: #2c3456; font-size: 0.8em; }
+.bd-wbar__t { height: 6vh; min-height: 36px; border-radius: 14px; background: #1b2240; overflow: hidden; }
+.bd-wbar__t i { display: block; height: 100%; background: linear-gradient(90deg, #2f7bff, #6d8bff); border-radius: 14px; transition: width 0.6s cubic-bezier(.22,1,.36,1); }
+.bd-wbar em { font-style: normal; font-weight: 800; text-align: right; }
+.bd-wbar--ok .bd-wbar__t i { background: linear-gradient(90deg, #1fb85a, #3ddc84); }
+.bd-wbar--ok .bd-wbar__l { color: #3ddc84; }
+.bd-wbar--bad { opacity: 0.55; }
+.bd-wall__foot { margin: 0; font-size: clamp(20px, 3vh, 34px); color: #aab4d0; }
+.bd-wall__foot b { color: #fff; }
+.bd-wall__wait { font-size: 3.4vh; color: #aab4d0; }
+.bd-wall__x { position: fixed; bottom: 3vh; left: 50%; transform: translateX(-50%); color: #7d88a8; font-size: 16px; }
+.bd-lead { list-style: none; margin: 0; padding: 0; display: grid; gap: 1.4vh; }
+.bd-lead li { display: grid; grid-template-columns: 2.2em 1fr auto; gap: 2vw; align-items: center; padding: 1.6vh 2vw; border-radius: 18px; background: #121a30; font-size: clamp(22px, 3.4vh, 42px); animation: bd-fade 0.4s ease both; }
+.bd-lead li b { width: 1.8em; height: 1.8em; display: grid; place-items: center; border-radius: 50%; background: #243052; font-size: 0.8em; }
+.bd-lead li em { font-style: normal; font-weight: 800; }
+.bd-lead--1 { background: linear-gradient(90deg, rgba(255,214,10,.22), #121a30) !important; } .bd-lead--1 b { background: #ffd60a !important; color: #1a1400; }
+.bd-lead--2 b { background: #c7cbd6 !important; color: #111; } .bd-lead--3 b { background: #d08a4a !important; color: #1a0d00; }
