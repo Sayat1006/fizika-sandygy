@@ -20,7 +20,7 @@ button { cursor: pointer; }
 .t-display { font-size: var(--t-display); font-weight: 700; letter-spacing: -0.04em; line-height: 1.02; }
 .t-title { font-size: var(--t-title); font-weight: 700; letter-spacing: -0.03em; }
 .t-headline { font-size: var(--t-headline); font-weight: 600; }
-.t-sub { color: var(--fg-2); font-size: clamp(19px, 2vw, 24px); line-height: 1.32; letter-spacing: -0.015em; }
+.t-sub { color: var(--fg-2); font-size: clamp(18px, 2vw, 24px); line-height: 1.32; letter-spacing: -0.015em; }
 .t-muted { color: var(--fg-2); }
 .t-small { font-size: var(--t-footnote); color: var(--fg-3); }
 .tabular { font-variant-numeric: tabular-nums; }

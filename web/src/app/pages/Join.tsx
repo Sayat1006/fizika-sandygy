@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 import { answer, forgetMe, isCorrect, join, loadMe, saveMe, state, studentChannel, type Me, type StudentState } from '../lib/live';
-import { Mark } from '../ui/icons';
+import { IcDone, Mark } from '../ui/icons';
 import { Note } from '../ui/kit';
 
 /** /s — оқушы телефоннан сабаққа қосылады (тіркелусіз): код + аты → мұғалімнің сұрақтарына жауап */
@@ -98,7 +98,13 @@ function Room({ code, me, title, onLeave }: { code: string; me: Me; title: strin
       <p className="t-muted">Қатысқаның үшін рахмет!</p></div>
   );
   const q = st.question;
-  if (!q) return <div className="join__card join__wait"><div className="join__pulse" /><h2>Сен сабақтасың!</h2><p className="t-muted">{st.title || title ? `«${st.title || title}». ` : ''}Мұғалім сұрақ жібергенше күт.</p>{chip}</div>;
+  if (!q) return (
+    <div className="join__card join__wait">
+      <span className="join__live"><i />Қосылды</span>
+      {(st.title || title) && <h2>{st.title || title}</h2>}
+      <p className="t-muted">Мұғалім сұрақ жібергенде осы жерде шығады.</p>{chip}
+    </div>
+  );
 
   const ok = q.reveal && st.mine ? isCorrect(q, st.mine) : null;
   return (
@@ -109,7 +115,7 @@ function Room({ code, me, title, onLeave }: { code: string; me: Me; title: strin
           {q.options?.map((o, k) => {
             const picked = st.mine === o, right = q.reveal && q.correct === o;
             return <button key={o} type="button" disabled={!q.open || sending} aria-pressed={picked}
-              className={`join__opt${picked ? ' join__opt--on' : ''}${right ? ' join__opt--ok' : ''}${q.reveal && picked && !right ? ' join__opt--bad' : ''}`} onClick={() => send(o)}>{(q.options?.length || 0) > 2 && o.length > 1 && <b className="join__let">{'ABCDEF'[k]}</b>}{o}</button>;
+              className={`join__opt${picked ? ' join__opt--on' : ''}${right ? ' join__opt--ok' : ''}${q.reveal && picked && !right ? ' join__opt--bad' : ''}`} onClick={() => send(o)}>{(q.options?.length || 0) > 2 && o.length > 1 && <b className="join__let">{'ABCDEF'[k]}</b>}<span className="join__otx">{o}</span>{picked && !q.reveal && <IcDone className="join__tick" />}</button>;
           })}
         </div>
       ) : (

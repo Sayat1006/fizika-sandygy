@@ -66,7 +66,7 @@
 
 /* — тақырып қойындылары (асты сызылған) — */
 .tabs { display: flex; gap: var(--s-5); border-bottom: 1px solid var(--line); }
-.tabs button { position: relative; border: 0; background: none; padding: 0 0 12px; font: 600 19px var(--font-display); color: var(--fg-3); transition: color var(--d-2) var(--out); }
+.tabs button { position: relative; border: 0; background: none; padding: 0 0 12px; font: 600 18px var(--font-display); color: var(--fg-3); transition: color var(--d-2) var(--out); }
 .tabs button[aria-selected="true"] { color: var(--fg); }
 .tabs button::after { content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 2px; border-radius: 2px; background: var(--fg); transform: scaleX(0); transition: transform 0.45s var(--spring); }
 .tabs button[aria-selected="true"]::after { transform: scaleX(1); }
@@ -91,7 +91,7 @@
 .note--info { color: var(--fg); background: var(--bg-2); }
 
 /* — белгі — */
-.chip { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: var(--r-full); font-size: 12.5px; font-weight: 600; white-space: nowrap; color: var(--fg-2); background: var(--bg-2); }
+.chip { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: var(--r-full); font-size: 12px; font-weight: 600; white-space: nowrap; color: var(--fg-2); background: var(--bg-2); }
 .chip--ok { color: var(--ok); background: var(--ok-bg); }
 .chip--warn { color: var(--warn); background: var(--warn-bg); }
 .chip--err { color: var(--err); background: var(--err-bg); }
@@ -190,3 +190,12 @@ html.mode-tr::view-transition-group(mode-switch) { animation: none; z-index: 2; 
 .umenu__out { color: var(--err) !important; }
 @keyframes umenu-in { from { opacity: 0; transform: translateY(-6px) scale(0.98); } }
 @media (max-width: 760px) { .umenu__name, .umenu__chev { display: none; } .umenu__btn { padding: 0 4px; } }
+
+/* «Сабақ барысы» — жоғарғы жолақтың астындағы көк сызық: компьютер қараңғы режимде болса да ерекшеленеді */
+html[data-mode="class"] .nav { border-bottom: 2px solid var(--accent); }
+html[data-mode="class"] { --fg-3: #9aa6c6; }
+
+/* Пернетақта мен пульт үшін айқын фокус */
+:focus-visible { outline: 2px solid var(--accent, #2997ff); outline-offset: 2px; border-radius: 8px; }
+button:focus:not(:focus-visible), a:focus:not(:focus-visible) { outline: none; }
+.bd :focus-visible { outline-color: #4d8dff; }

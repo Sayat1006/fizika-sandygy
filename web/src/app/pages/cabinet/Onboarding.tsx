@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useAccount } from '../../lib/account';
+import { IcClose } from '../../ui/icons';
 
 /* Жаңа мұғалімге 3 қадам — бір ықшам жол: «Бастау · 1/3 · келесі қадам [әрекет] ×». Бәрі орындалса не жабылса — жоқ. */
 const get = (k: string) => { try { return localStorage.getItem(k); } catch { return null; } };
@@ -22,7 +23,7 @@ export default function Onboarding({ onClasses, onLook }: { onClasses: () => voi
       <span className="strip__dots" aria-label={`${cur} / 3 қадам орындалды`}>{steps.map((x, k) => <i key={k} className={x.ok ? 'ok' : k === cur ? 'on' : ''} />)}</span>
       <span className="strip__t">{steps[cur].t}</span>
       <button type="button" className="link" onClick={steps[cur].go}>{steps[cur].b}</button>
-      <button type="button" className="strip__x" onClick={close} aria-label="Жасыру">×</button>
+      <button type="button" className="strip__x" onClick={close} aria-label="Жасыру"><IcClose /></button>
     </div>
   );
 }

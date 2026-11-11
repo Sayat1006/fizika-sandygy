@@ -13,6 +13,7 @@ const T = {
     signup: '3 күн тегін бастау', samples: 'Үлгіні көру',
     labT: '3D зертхана.', labP: 'Оқушы тәжірибе жасайды, өлшейді, есеп алады.', labGo: 'Зертхананы ашу',
     wa: 'WhatsApp', tg: 'Telegram',
+    priceT: 'Бағасы', priceSub: 'Бір сыныпқа. Тіркелгенде 3 күн бәрі тегін.', month: 'айына', year: 'жылына', inc: ['Әр сабаққа ҚМЖ, презентация (pptx), жұмыс парағы', 'Интерактивті тақта: анимациялы слайдтар, таймер, сценарий', 'Оқушылар телефоннан жауап береді, нәтиже бірден тақтада', 'Интернет үзілсе де тақта ашылады'],
   },
   ru: {
     lab: '3D лаборатория', login: 'Войти', other: 'Қаз', eyebrow: 'Физика · 7–11 классы',
@@ -20,6 +21,7 @@ const T = {
     signup: 'Начать 3 дня бесплатно', samples: 'Посмотреть образец',
     labT: '3D лаборатория.', labP: 'Ученик ставит опыт, измеряет и получает отчёт.', labGo: 'Открыть лабораторию',
     wa: 'WhatsApp', tg: 'Telegram',
+    priceT: 'Цена', priceSub: 'За один класс. После регистрации 3 дня всё бесплатно.', month: 'в месяц', year: 'в год', inc: ['К каждому уроку ҚМЖ, презентация (pptx), рабочий лист', 'Интерактивная доска: анимированные слайды, таймер, сценарий', 'Ученики отвечают с телефона, результат сразу на доске', 'Доска открывается даже без интернета'],
   },
 };
 
@@ -64,6 +66,17 @@ export default function Landing() {
         </section>
 
         <LessonDemo lang={lang} />
+
+        <section className="price" aria-label={t.priceT}>
+          <h2 className="t-title">{t.priceT}</h2>
+          <p className="t-sub">{t.priceSub}</p>
+          <div className="price__cards">
+            <div className="price__card"><b className="tabular">{CONFIG.prices.month.toLocaleString('ru-RU')} ₸</b><span>{t.month}</span></div>
+            <div className="price__card price__card--y"><b className="tabular">{CONFIG.prices.year.toLocaleString('ru-RU')} ₸</b><span>{t.year}</span></div>
+          </div>
+          <ul className="price__inc">{t.inc.map((x) => <li key={x}>{x}</li>)}</ul>
+          <Link className="btn btn--lg btn--primary" to="/app?signup">{t.signup}</Link>
+        </section>
 
         <a className="labband" href="/lab">
           <h2 className="t-title">{t.labT}</h2>

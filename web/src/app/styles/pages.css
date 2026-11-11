@@ -2,7 +2,7 @@
 
 /* — басты бет — */
 .hero { display: grid; justify-items: center; text-align: center; padding-top: clamp(40px, 9vh, 104px); }
-.hero__eyebrow { color: var(--fg-2); font-size: clamp(15px, 1.5vw, 19px); font-weight: 500; margin-bottom: 12px; }
+.hero__eyebrow { color: var(--fg-2); font-size: clamp(15px, 1.5vw, 18px); font-weight: 500; margin-bottom: 12px; }
 .hero__sub { max-width: 30ch; margin-top: 18px; text-wrap: balance; }
 .hero__cta { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px 28px; margin-top: 30px; }
 .hero__cta .link { font-size: var(--t-body); }
@@ -82,7 +82,7 @@
 .tbl table { width: 100%; border-collapse: collapse; font-size: 14px; }
 .tbl th { text-align: left; font-weight: 600; font-size: 12px; color: var(--fg-3); text-transform: uppercase; letter-spacing: 0.04em; padding: 12px 14px; white-space: nowrap; }
 .tbl td { padding: 12px 14px; border-top: 1px solid var(--line); vertical-align: top; }
-.tbl td small { display: block; color: var(--fg-3); font-size: 12.5px; }
+.tbl td small { display: block; color: var(--fg-3); font-size: 12px; }
 .tbl tr.flag td { background: var(--warn-bg); }
 
 /* — оқушының телефоны: /s — */
@@ -96,7 +96,13 @@
 .join__code { font: 700 32px var(--font-display); letter-spacing: 0.3em; text-align: center; font-variant-numeric: tabular-nums; }
 .join__wait { display: grid; gap: 12px; justify-items: center; text-align: center; padding-block: 44px; }
 .join__wait h2 { font-size: 24px; }
-.join__pulse { width: 64px; height: 64px; border-radius: 50%; background: var(--accent); animation: join-pulse 1.6s ease-in-out infinite; }
+.join__live { display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px; border-radius: 999px; background: var(--ok-bg); color: var(--ok); font-size: 15px; font-weight: 600; }
+.join__live i { width: 8px; height: 8px; border-radius: 50%; background: currentColor; animation: join-breath 2.4s ease-in-out infinite; }
+@keyframes join-breath { 50% { opacity: .35; transform: scale(.7); } }
+.join__tick { margin-left: auto; width: 22px; height: 22px; flex: none; color: var(--accent); animation: join-pop .35s var(--spring); }
+@keyframes join-pop { from { transform: scale(0); } }
+.join__otx { min-width: 0; }
+.join__opt--on { box-shadow: 0 0 0 1px var(--accent); }
 @keyframes join-pulse { 50% { transform: scale(0.8); opacity: 0.5; } }
 .join__spin { width: 36px; height: 36px; border-radius: 50%; border: 4px solid var(--bg-3); border-top-color: var(--accent); animation: spin 0.8s linear infinite; }
 .join__q { display: grid; gap: 18px; animation: rise var(--d-3) var(--out); }
@@ -119,7 +125,7 @@
 .join__res span { font: 500 16px var(--font); color: var(--fg-2); }
 .join__res--ok { background: var(--ok-bg); color: var(--ok); }
 .join__res--bad { background: var(--err-bg); color: var(--err); }
-@media (prefers-reduced-motion: reduce) { .join__pulse, .join__spin { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .join__live i, .join__tick, .join__spin { animation: none; } }
 .join__score { margin-top: 8px; padding: 8px 14px; border-radius: 999px; background: var(--bg-2); color: var(--fg-2); font-size: 15px; text-align: center; justify-self: center; }
 .join__score b { color: var(--accent); }
 .join__final { display: grid; justify-items: center; gap: 4px; margin: 12px 0; }
@@ -148,10 +154,26 @@
 .demo__scene[data-ph="1"] .demo__phone { transform: translateY(-8px) rotate(-2deg); }
 .demo__ph-q { font-weight: 700; font-size: 14px; margin-bottom: 4px; }
 .demo__opt { display: flex; gap: 8px; align-items: center; padding: 9px 10px; border: 2px solid var(--line); border-radius: 12px; font-size: 14px; font-weight: 600; transition: border-color .3s, background .3s; }
-.demo__opt b { width: 20px; height: 20px; display: grid; place-items: center; border-radius: 50%; background: var(--bg-3); font-size: 11px; }
+.demo__opt b { width: 20px; height: 20px; display: grid; place-items: center; border-radius: 50%; background: var(--bg-3); font-size: 12px; }
 .demo__opt--on { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, var(--bg)); }
 .demo__opt--on b { background: var(--accent); color: #fff; }
 .demo__sent { position: absolute; top: -14px; right: -14px; width: 34px; height: 34px; display: grid; place-items: center; border-radius: 50%; background: #34c759; color: #fff; font-weight: 800; transform: scale(0); transition: transform .4s var(--spring); }
 .demo__sent.on { transform: scale(1); }
 @media (max-width: 700px) { .demo__scene { grid-template-columns: 1fr; } .demo__phone { width: 220px; justify-self: center; } }
 @media (prefers-reduced-motion: reduce) { .demo__bar em, .demo__phone, .demo__sent { transition: none; } }
+
+/* Үлгілер: бір «жүктеу» батырмасы — қаралып тұрған материалға */
+.viewbar__r { display: inline-flex; align-items: center; gap: 14px; }
+.viewbar__r .btn small { opacity: .75; font-weight: 500; margin-left: 4px; }
+
+/* Басты бет: баға */
+.price { display: grid; gap: var(--s-4); justify-items: center; padding: var(--s-7) 0 var(--s-8); text-align: center; }
+.price__cards { display: flex; gap: var(--s-3); flex-wrap: wrap; justify-content: center; margin-top: var(--s-3); }
+.price__card { display: grid; gap: 4px; min-width: 220px; padding: var(--s-5) var(--s-6); border-radius: var(--r-l); background: var(--bg-2); }
+.price__card b { font: 700 36px/1 var(--font-display); letter-spacing: -0.03em; }
+.price__card span { color: var(--fg-2); font-size: 15px; }
+.price__card--y { box-shadow: inset 0 0 0 2px var(--accent); }
+.price__inc { list-style: none; margin: var(--s-3) 0; padding: 0; display: grid; gap: 10px; text-align: left; }
+.price__inc li { position: relative; padding-left: 28px; color: var(--fg-2); font-size: 17px; }
+.price__inc li::before { content: ''; position: absolute; left: 4px; top: 6px; width: 12px; height: 7px; border-left: 2px solid var(--ok); border-bottom: 2px solid var(--ok); transform: rotate(-45deg); }
+@media (min-width: 1100px) { .container.adm { max-width: 1280px; } }
