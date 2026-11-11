@@ -86,3 +86,7 @@
 
 @media (max-width: 760px) { .bd-clock span, .bd-src button span { display: none; } .bd-st { flex-basis: 120px; } }
 @media (prefers-reduced-motion: reduce) { .bd-notes, .bd-st i { transition: none; } .bd-big--roll { animation: none; } }
+.bd-steps { display: inline-flex; gap: 4px; margin-left: 10px; vertical-align: middle; }
+.bd-steps i { width: 7px; height: 7px; border-radius: 50%; background: rgba(255, 255, 255, 0.35); }
+.bd-steps i.on { background: #fff; }
+.bd-theme b { font: 700 17px var(--font-display); width: 30px; height: 30px; display: grid; place-items: center; border-radius: 8px; box-shadow: inset 0 0 0 2px currentColor; }

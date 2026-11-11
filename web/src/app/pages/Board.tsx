@@ -2,7 +2,9 @@ import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom';
 import { useAccount } from '../lib/account';
 import { labOf } from '../lib/config';
-import { lessonPlan, loadLessons, viewPages, type Lesson, type Stage } from '../lib/data';
+import { lessonDeck, lessonPlan, loadLessons, viewPages, type Lesson, type Stage } from '../lib/data';
+import Deck, { THEMES, type Theme } from '../deck/Deck';
+import { stepsOf, type DeckData } from '../deck/types';
 import { IcChevronL, IcChevronR } from '../ui/icons';
 
 /* Тақта: интерактивті панельге арналған толық экранды сабақ режимі.
@@ -37,6 +39,9 @@ export default function Board() {
   const [notes, setNotes] = useState(false);
   const [fs, setFs] = useState(false);
   const [pop, setPop] = useState<'pick' | 'timer' | null>(null);
+  const [deck, setDeck] = useState<DeckData | null>(null);
+  const [step, setStep] = useState(0);
+  const [theme, setTheme] = useState<Theme>(() => (['a', 'b', 'c'].includes(store.get('fs-deck-theme', 'a')) ? store.get('fs-deck-theme', 'a') : 'a') as Theme);
   const lab = lesson ? labOf(lesson) : null;
 
   /* ───────── жүктеу ───────── */
@@ -51,10 +56,11 @@ export default function Board() {
       const l = all.find((x) => x.v === V && x.n === N) || all.find((x) => grade < 10 && x.grade === grade && x.n === N);
       if (!l) return fail('Сабақ табылмады', 'Кабинетке оралып, тақырыпты қайта таңдаңыз.');
       const lv = { ...l, v: V };
-      const [plan, pres, ws] = await Promise.all([
+      const [plan, pres, ws, dk] = await Promise.all([
         lessonPlan(V, N),
         l.pres ? viewPages(V, N, 'pres').catch(() => null) : null,
         l.ws ? viewPages(V, N, 'ws').catch(() => null) : null,
+        lessonDeck(V, N),
       ]);
       if (off) return;
       if (plan.status === 402) return fail('Тақта жазылыммен ашылады', `${grade}-сыныпқа жазылым немесе тегін сынақ мерзімі керек.`, 'Жазылымды рәсімдеу');
@@ -62,6 +68,8 @@ export default function Board() {
       const p = { pres: pres?.pages || [], ws: ws?.pages || [] };
       // интернет нашар болса да слайдтар кідірмеуі үшін бәрін алдын ала жүктеп қоямыз
       [...p.pres, ...p.ws].forEach((u) => { const i = new Image(); i.decoding = 'async'; i.src = u; });
+      // анимациялы презентация болса, «Слайд» соны көрсетеді
+      if (dk?.slides?.length) { setDeck(dk); p.pres = dk.slides.map((_, k) => `deck:${k}`); }
       setLesson(lv); setPages(p); setStages(plan.stages || []); setSrc(p.pres.length ? 'pres' : 'board');
       setCur(0); setLeft((plan.stages?.[0]?.min || 0) * 60);
       document.title = `${l.topic} · Тақта`;
@@ -75,16 +83,24 @@ export default function Board() {
   const paged = src === 'pres' || src === 'ws';
   const list = paged ? pages[src] : [];
   const i = paged ? idx[src] : 0;
-  const live = useRef({ src, i, tool, color });
-  live.current = { src, i, tool, color };
+  const onDeck = src === 'pres' && !!deck;
+  const live = useRef({ src, i, tool, color, step, deck });
+  live.current = { src, i, tool, color, step, deck };
   const go = useCallback((d: number) => {
-    const s = live.current.src;
+    const { src: s, i: at, step: st, deck: dk } = live.current;
     if (s !== 'pres' && s !== 'ws') return;
+    if (s === 'pres' && dk) {
+      // анимациялы презентация: алдымен слайдтағы қадамдар, сосын келесі слайд
+      const max = stepsOf(dk.slides[at]);
+      if (d > 0) { if (st < max) return setStep(st + 1); if (at < dk.slides.length - 1) { setIdx((x) => ({ ...x, pres: at + 1 })); setStep(0); } }
+      else { if (st > 0) return setStep(st - 1); if (at > 0) { setIdx((x) => ({ ...x, pres: at - 1 })); setStep(stepsOf(dk.slides[at - 1])); } }
+      return;
+    }
     setIdx((x) => ({ ...x, [s]: Math.max(0, Math.min(pages[s].length - 1, x[s] + d)) }));
   }, [pages]);
 
   /* ───────── қалам қабаты ───────── */
-  const stageRef = useRef<HTMLElement>(null), cvRef = useRef<HTMLCanvasElement>(null), imgRef = useRef<HTMLImageElement>(null);
+  const stageRef = useRef<HTMLElement>(null), cvRef = useRef<HTMLCanvasElement>(null), imgRef = useRef<HTMLImageElement>(null), deckRef = useRef<HTMLDivElement>(null);
   const ink = useRef(new Map<string, Stroke[]>());
   const drawing = useRef<Stroke | null>(null);
   const pointers = useRef(new Set<number>());
@@ -93,6 +109,10 @@ export default function Board() {
   // Сызық беттің өзіне (слайд суретіне) байланады: object-fit: contain — суреттің нақты көрінетін бөлігі
   const box = useCallback(() => {
     const st = stageRef.current!.getBoundingClientRect(), img = imgRef.current;
+    if (live.current.src === 'pres' && live.current.deck && deckRef.current) {
+      const r = deckRef.current.getBoundingClientRect();
+      if (r.width) return { x: r.left - st.left, y: r.top - st.top, w: r.width, h: r.height };
+    }
     if (img && img.naturalWidth && (live.current.src === 'pres' || live.current.src === 'ws')) {
       const r = img.getBoundingClientRect(), k = Math.min(r.width / img.naturalWidth, r.height / img.naturalHeight);
       const w = img.naturalWidth * k, h = img.naturalHeight * k;
@@ -175,7 +195,10 @@ export default function Board() {
     const s = swipe.current; if (!s) return; swipe.current = null;
     const dx = e.clientX - s.x, dy = e.clientY - s.y;
     if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.4) go(dx < 0 ? 1 : -1);
+    else if (onDeck && Math.abs(dx) < 12 && Math.abs(dy) < 12) go(1); // слайдты басу — келесі қадам
   };
+  const cycleTheme = () => { const t = THEMES[(THEMES.findIndex((x) => x.id === theme) + 1) % THEMES.length].id; setTheme(t); store.set('fs-deck-theme', t); };
+  const maxStep = deck && onDeck ? stepsOf(deck.slides[i]) : 0;
 
   /* ───────── пернетақта, толық экран ───────── */
   const toggleFs = () => { if (document.fullscreenElement) document.exitFullscreen?.(); else document.documentElement.requestFullscreen?.().catch(() => {}); };
@@ -234,14 +257,15 @@ export default function Board() {
 
       <main className="bd-stage" ref={stageRef} onPointerDown={stDown} onPointerUp={stUp}>
         <div className={`bd-view${src === 'board' ? ' bd-view--white' : ''}`}>
-          {paged && list[i] && <img ref={imgRef} src={list[i]} alt={`${src === 'pres' ? 'Слайд' : 'Бет'} ${i + 1}`} draggable={false} onLoad={redraw} />}
+          {onDeck && <Deck data={deck!} index={i} step={step} theme={theme} stageRef={deckRef} />}
+          {paged && !onDeck && list[i] && <img ref={imgRef} src={list[i]} alt={`${src === 'pres' ? 'Слайд' : 'Бет'} ${i + 1}`} draggable={false} onLoad={redraw} />}
           {src === 'lab' && lab?.exp && <iframe src={`/lab/experiments/${lab.exp}?embed=1`} title="3D тәжірибе" allow="fullscreen" />}
         </div>
         <canvas ref={cvRef} className={`bd-ink${tool === 'hand' ? ' bd-ink--off' : ''}`} onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp} />
         {paged && <>
-          <button className="bd-nav bd-nav--prev" type="button" aria-label="Алдыңғы" disabled={i === 0} onClick={() => go(-1)}><IcChevronL /></button>
-          <button className="bd-nav bd-nav--next" type="button" aria-label="Келесі" disabled={i >= list.length - 1} onClick={() => go(1)}><IcChevronR /></button>
-          <div className="bd-pno">{i + 1} / {list.length}</div>
+          <button className="bd-nav bd-nav--prev" type="button" aria-label="Алдыңғы" disabled={i === 0 && (!onDeck || step === 0)} onClick={() => go(-1)}><IcChevronL /></button>
+          <button className="bd-nav bd-nav--next" type="button" aria-label="Келесі" disabled={i >= list.length - 1 && (!onDeck || step >= maxStep)} onClick={() => go(1)}><IcChevronR /></button>
+          <div className="bd-pno">{i + 1} / {list.length}{onDeck && maxStep > 0 && <span className="bd-steps">{Array.from({ length: maxStep }, (_, k) => <i key={k} className={k < step ? 'on' : ''} />)}</span>}</div>
         </>}
         <aside className={`bd-notes${notes ? ' bd-notes--open' : ''}`} aria-label="Сабақ сценарийі">
           {st ? <>
@@ -272,6 +296,7 @@ export default function Board() {
           <button className="bd-ib" type="button" onClick={clear} aria-label="Бетті тазалау">{S('M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3')}</button>
         </div>
         <div className="bd-grp" role="group" aria-label="Сынып құралдары">
+          {deck && src === 'pres' && <button className="bd-ib bd-theme" type="button" onClick={cycleTheme} aria-label={`Слайд стилі: ${THEMES.find((x) => x.id === theme)!.name}`} title={THEMES.find((x) => x.id === theme)!.name}><b>{theme.toUpperCase()}</b></button>}
           <button className="bd-ib" type="button" aria-pressed={notes} onClick={() => setNotes(!notes)} aria-label="Мұғалім жазбасы">{S('M5 4h14v16H5zM9 8h6M9 12h6M9 16h4')}</button>
           <button className="bd-ib" type="button" onClick={() => setPop('pick')} aria-label="Кездейсоқ оқушы">{S('M7 3h10a4 4 0 0 1 4 4v10a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V7a4 4 0 0 1 4-4zM8.5 8.5h.01M15.5 15.5h.01M12 12h.01')}</button>
           <button className="bd-ib" type="button" onClick={() => setPop('timer')} aria-label="Таймер">{S('M12 21a8 8 0 1 0 0-16 8 8 0 0 0 0 16zM12 9v4l2.5 2.5M9 2h6')}</button>

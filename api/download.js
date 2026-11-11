@@ -11,6 +11,16 @@ const MAX_PER_FILE = 5; // бір файлды бір мұғалім ең көб
 
 const ROOT = path.join(process.cwd(), 'materials');
 let MANIFEST, PREVIEWS, PLANS;
+const DECKS = {};
+// Анимациялы презентация (тақтаға): materials/decks/{нұсқа}-{n}.json
+function deck(v, n, grade) {
+  for (const k of [`${v}-${n}`, grade < 10 ? `${grade}-${n}` : null]) {
+    if (!k) continue;
+    if (!(k in DECKS)) { try { DECKS[k] = fs.readFileSync(path.join(ROOT, 'decks', k + '.json'), 'utf8'); } catch (_) { DECKS[k] = null; } }
+    if (DECKS[k]) return DECKS[k];
+  }
+  return null;
+}
 const FREE_PAGES = { kmzh: 1, pres: 3, ws: 1 }; // жазылымсыз қарауға болатын бет саны
 function previews() {
   if (!PREVIEWS) { try { PREVIEWS = JSON.parse(fs.readFileSync(path.join(ROOT, 'previews.json'), 'utf8')); } catch (_) { PREVIEWS = {}; } }
@@ -68,7 +78,7 @@ module.exports = async (req, res) => {
     const v = String(url.searchParams.get('v') || url.searchParams.get('grade') || '');
     const n = parseInt(url.searchParams.get('n'), 10);
     const kind = url.searchParams.get('kind');
-    if (!/^(7|8|9|10|11)(-(zhmb|kgb)-[123])?$/.test(v) || !(n > 0) || !['kmzh', 'pres', 'ws', 'plan'].includes(kind)) return fail(res, 400, 'Сұраныс қате.');
+    if (!/^(7|8|9|10|11)(-(zhmb|kgb)-[123])?$/.test(v) || !(n > 0) || !['kmzh', 'pres', 'ws', 'plan', 'deck'].includes(kind)) return fail(res, 400, 'Сұраныс қате.');
     const grade = parseInt(v, 10);
 
     const u = await sb('/auth/v1/user', token);
@@ -84,6 +94,16 @@ module.exports = async (req, res) => {
       res.setHeader('Content-Type', 'application/json; charset=utf-8');
       res.setHeader('Cache-Control', 'private, no-store');
       return res.end(JSON.stringify({ stages: st }));
+    }
+
+    if (kind === 'deck') {
+      const d = deck(v, n, grade);
+      if (!d) return fail(res, 404, 'Бұл сабақтың анимациялы презентациясы әзірге жоқ.');
+      if (!(await activeSub(user.id, grade, token))) return fail(res, 402, `Тақта жазылыммен ашылады: ${grade}-сынып.`);
+      res.statusCode = 200;
+      res.setHeader('Content-Type', 'application/json; charset=utf-8');
+      res.setHeader('Cache-Control', 'private, no-store');
+      return res.end(d);
     }
 
     const me = await profileName(user.id, token);
