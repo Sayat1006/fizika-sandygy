@@ -24,6 +24,8 @@ from lxml import etree
 FONT = 'Arial'
 C = dict(bg='FFFFFF', card='F2F4F7', ink='101418', ink2='4A525E', ink3='8A919C', accent='0A6CFF', on='FFFFFF',
          vec='0A6CFF', sca='7C4DFF', ok='1F9D55', err='E0443A', grid='E3E7EE', warn='E8A23A')
+# физикалық белгінің төменгі индексі: X_L, υ_орт, E_{k}
+SUB = re.compile(r'(?<=[^\W_]|\))_(\{[^}]*\}|[^\W_]+)')
 DIRS = {'right': 'оңға', 'left': 'солға', 'up': 'жоғары', 'down': 'төмен'}
 
 
@@ -123,10 +125,15 @@ class Page:
             if spacing:
                 p.line_spacing = spacing
             for txt, st in pr:
-                r_ = p.add_run(); r_.text = txt
-                f = r_.font; f.name = FONT; f.size = Pt(st.get('size', size) * 0.5)
-                f.bold = st.get('bold', bold); f.italic = st.get('italic', italic)
-                f.color.rgb = rgb(C.get(st.get('color', color), st.get('color', color)))
+                for k, piece in enumerate(SUB.split(txt)):
+                    if not piece:
+                        continue
+                    r_ = p.add_run(); r_.text = piece.strip('{}') if k % 2 else piece
+                    f = r_.font; f.name = FONT; f.size = Pt(st.get('size', size) * 0.5)
+                    f.bold = st.get('bold', bold); f.italic = st.get('italic', italic)
+                    f.color.rgb = rgb(C.get(st.get('color', color), st.get('color', color)))
+                    if k % 2:  # төменгі индекс
+                        r_._r.get_or_add_rPr().set('baseline', '-25000')
         return shp
 
     def picture(self, data_uri, x, y, w, h):

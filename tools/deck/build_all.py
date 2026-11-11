@@ -6,7 +6,7 @@
 Әр materials/decks/{v}-{n}.json → manifest-тегі pres жолы (materials/{g}/pres_NNN.pptx)
 → LibreOffice арқылы PDF → public/pv/<hash>/ ішіне 1000 px WebP (бұрынғы атаулар сақталады).
 """
-import glob, hashlib, json, os, subprocess, sys, tempfile
+import glob, hashlib, json, os, re, subprocess, sys, tempfile
 from PIL import Image
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -23,14 +23,21 @@ def main(only):
     prev = json.load(open(pj, encoding='utf-8'))
     decks = sorted(glob.glob(os.path.join(REPO, 'materials/decks/*.json')))
     done = 0
+    added = set()
     for dp in decks:
         key = os.path.basename(dp)[:-5]
         if only and key not in only:
             continue
         v, n = key.rsplit('-', 1)
         entry = man.get(f'{v}:{n}')
-        if not entry or 'pres' not in entry:
+        if not entry:
             print('manifest-те жоқ:', key); continue
+        if 'pres' not in entry:
+            # бұрын презентациясы жоқ сабақ (10–11-сынып): жаңа файл тіркейміз
+            D = json.load(open(dp, encoding='utf-8')); g = v.split('-')[0]
+            slug = re.sub(r'[^\w]+', '_', D['topic']).strip('_')[:60]
+            entry['pres'] = {'path': f'{g}/pres_{int(n):03d}.pptx', 'name': f'Презентация_{g}-сынып_{int(n):02d}_{slug}.pptx'}
+            added.add((v, int(n)))
         path = entry['pres']['path']
         out = os.path.join(REPO, 'materials', path)
         build_pptx.build(dp, out)
@@ -54,6 +61,15 @@ def main(only):
             prev[f'{v}:{n}:pres'] = {'dir': h, 'files': files, 'w': im.width, 'h': im.height}
         done += 1
     json.dump(prev, open(pj, 'w', encoding='utf-8'), ensure_ascii=False, separators=(',', ':'))
+    if added:
+        json.dump(man, open(os.path.join(REPO, 'materials/manifest.json'), 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
+        lp = os.path.join(REPO, 'public/lessons.json')
+        L = json.load(open(lp, encoding='utf-8'))
+        for x in L:
+            if (x['v'], x['n']) in added:
+                x['pres'] = True
+        json.dump(L, open(lp, 'w', encoding='utf-8'), ensure_ascii=False, separators=(',', ':'))
+        print('жаңа презентация тіркелді:', len(added))
     print('дайын:', done)
 
 
