@@ -1,0 +1,71 @@
+/* ═══════════ Сабақтас — дизайн токендері ═══════════
+   Бір жерде: түс, қаріп, өлшем, бұрыш, қозғалыс. Компоненттер тек осы айнымалыларды қолданады. */
+:root {
+  /* түс */
+  --bg: #ffffff;
+  --bg-2: #f5f5f7;
+  --bg-3: #e8e8ed;
+  --fg: #1d1d1f;
+  --fg-2: #6e6e73;
+  --fg-3: #86868b;
+  --line: #e5e5ea;
+  --accent: #0071e3;
+  --accent-hover: #0077ed;
+  --on-accent: #ffffff;
+  --ok: #248a3d;   --ok-bg: #e9f7ee;
+  --warn: #b25000; --warn-bg: #fff4e5;
+  --err: #c9302c;  --err-bg: #fdecec;
+  --glass: rgba(255, 255, 255, 0.78);
+  --scrim: rgba(0, 0, 0, 0.32);
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-2: 0 1px 2px rgba(0, 0, 0, 0.04), 0 12px 32px -12px rgba(0, 0, 0, 0.14);
+  --shadow-3: 0 24px 60px -20px rgba(0, 0, 0, 0.3);
+
+  /* қаріп: Apple құрылғыларында жүйелік SF Pro, қалған жерде Inter */
+  --font: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Inter', 'Segoe UI', system-ui, sans-serif;
+  --font-display: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter', 'Segoe UI', system-ui, sans-serif;
+  --t-display: clamp(44px, 8vw, 96px);
+  --t-title: clamp(30px, 4.6vw, 48px);
+  --t-headline: clamp(21px, 2.2vw, 26px);
+  --t-body: 17px;
+  --t-callout: 15px;
+  --t-footnote: 13px;
+
+  /* өлшем */
+  --s-1: 4px; --s-2: 8px; --s-3: 12px; --s-4: 16px; --s-5: 24px; --s-6: 32px; --s-7: 48px; --s-8: 72px; --s-9: 112px;
+  --r-s: 10px; --r-m: 14px; --r-l: 22px; --r-xl: 30px; --r-full: 999px;
+  --w-page: 1040px;
+  --w-text: 680px;
+  --hit: 44px;
+  --nav-h: 52px;
+
+  /* қозғалыс */
+  --ease: cubic-bezier(0.25, 0.1, 0.25, 1);
+  --out: cubic-bezier(0.2, 0.9, 0.25, 1);
+  --spring: cubic-bezier(0.34, 1.4, 0.5, 1);
+  --d-1: 0.18s; --d-2: 0.35s; --d-3: 0.6s;
+
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #000000;
+    --bg-2: #161617;
+    --bg-3: #232325;
+    --fg: #f5f5f7;
+    --fg-2: #a1a1a6;
+    --fg-3: #86868b;
+    --line: #2c2c2e;
+    --accent: #2997ff;
+    --accent-hover: #47a6ff;
+    --ok: #30d158;  --ok-bg: #0f2a18;
+    --warn: #ff9f0a; --warn-bg: #2a1f0e;
+    --err: #ff6961; --err-bg: #2e1413;
+    --glass: rgba(22, 22, 23, 0.78);
+    --scrim: rgba(0, 0, 0, 0.6);
+    --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.3);
+    --shadow-2: 0 1px 2px rgba(0, 0, 0, 0.3), 0 12px 32px -12px rgba(0, 0, 0, 0.6);
+    color-scheme: dark;
+  }
+}
