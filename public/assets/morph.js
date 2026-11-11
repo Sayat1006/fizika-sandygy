@@ -138,7 +138,7 @@
 
   /**
    * @param {HTMLCanvasElement} canvas
-   * @param {{ onShape?: (name: string, index: number) => void, hold?: number, morph?: number, THREE?: object, alpha?: number, inkVar?: string, distance?: number }} opts
+   * @param {{ onShape?: (name: string, index: number) => void, hold?: number, morph?: number, THREE?: object, alpha?: number, size?: number, inkVar?: string, distance?: number }} opts
    * @returns {{ next: () => void, dispose: () => void } | null}  null — WebGL жоқ
    */
   function mount(canvas, opts) {
@@ -172,7 +172,7 @@
     var mat = new THREE.ShaderMaterial({
       vertexShader: VERT, fragmentShader: FRAG, transparent: true, depthWrite: false,
       uniforms: {
-        uT: { value: 1 }, uTime: { value: 0 }, uSize: { value: small ? 5.2 : 4.6 }, uPx: { value: px },
+        uT: { value: 1 }, uTime: { value: 0 }, uSize: { value: (opts.size || 4.6) * (small ? 1.13 : 1) }, uPx: { value: px },
         uAccent: { value: new THREE.Color('#0071E3') }, uInk: { value: new THREE.Color('#1D1D1F') }, uAlpha: { value: opts.alpha || 0.9 }
       }
     });

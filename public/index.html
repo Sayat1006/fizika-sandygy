@@ -22,201 +22,49 @@
 <meta name="twitter:card" content="summary_large_image">
 <link rel="canonical" href="https://sabaqtas-kz.vercel.app/">
 <meta name="description" content="Физика пәні мұғалімдеріне: ҚМЖ тегін, кез келген тақырып. Презентация мен жұмыс парағы жазылыммен. 7–11-сынып.">
-<link rel="preload" href="/assets/fonts/inter-cyrillic-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="preload" href="/assets/fonts/inter-cyrillic-ext-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/assets/fonts.css">
 <link rel="stylesheet" href="/assets/base.css">
 <script src="/assets/motion.js"></script>
 <style>
-/* Басты бет — бенто-тор: әр тақташа бір ғана ойды айтады және нақты дерекпен жұмыс істейді. */
-body { background: var(--page); }
+/* Басты бет: бір ой, бір әрекет, бір көрнекі элемент. Артық ештеңе жоқ. */
 .nav { position: static; background: transparent; backdrop-filter: none; -webkit-backdrop-filter: none; border-bottom: 0; }
-.nav .wrap { height: 64px; }
-.wrap { max-width: 1120px; }
-.navlink { font-size: 14px; font-weight: 600; color: var(--fg-2); white-space: nowrap; }
+.nav .wrap { height: 56px; }
+.navlink { font-size: 13px; color: var(--fg-2); white-space: nowrap; }
 .navlink:hover { color: var(--fg); text-decoration: none; }
-.navlab { display: none; align-items: center; gap: 4px; height: 34px; padding: 0 10px; border-radius: 999px; background: var(--tile); color: var(--fg); font: 700 12px var(--text); }
-.navlab:hover { text-decoration: none; }
-.navlab svg { width: 16px; height: 16px; }
-@media (max-width: 560px) { .navlink { display: none; } .navlab { display: inline-flex; } .nav .right { gap: 8px; } }
-@media (max-width: 380px) { .navlab span { display: none; } .navlab { padding: 0 9px; } .nav .wrap { gap: 8px; } .nav .right { gap: 6px; } .brand { font-size: 15px; gap: 6px; } .nav .pill.sm { padding: 6px 11px; } }
+.lang { border: 0; background: none; padding: 6px 2px; color: var(--fg-2); font: 400 13px var(--text); cursor: pointer; }
+.lang:hover { color: var(--fg); }
+@media (max-width: 380px) { .nav .wrap { gap: 10px; } .nav .right { gap: 12px; } }
 
-/* ── Тор және тақташа ── */
-.bento { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); grid-auto-flow: dense; gap: 14px; padding-block: 8px 56px; }
-.t { position: relative; min-width: 0; min-height: 176px; padding: 18px; border-radius: 28px; background: var(--tile); display: flex; flex-direction: column; gap: 12px; overflow: hidden; }
-.t.w2 { grid-column: span 2; } .t.h2 { grid-row: span 2; }
-.t.dark { background: var(--ink); color: #fff; --fg: #fff; --fg-2: #A3A3A3; --fg-3: #6E6E6E; --accent: #A3E635; --line: #2A2A2A; }
-:root[data-theme="dark"] .t.dark { box-shadow: inset 0 0 0 1px #262626; }
-.in { background: var(--card); border-radius: 20px; padding: 16px; box-shadow: 0 1px 2px rgba(0, 0, 0, .04), 0 10px 24px -14px rgba(0, 0, 0, .16); min-width: 0; }
-.t.dark .in { background: #222; box-shadow: none; }
-.k { font: 600 13px var(--text); color: var(--fg-2); }
-.mid { margin-block: auto; }
-.ctr { align-items: center; justify-content: center; text-align: center; }
-a.t { color: inherit; } a.t:hover { text-decoration: none; }
-
-/* ── Ортақ ұсақ бөлшектер ── */
-.seg2 { position: relative; display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; background: var(--bg-2); border-radius: 999px; padding: 4px; isolation: isolate; }
-.t > .seg2 { background: color-mix(in srgb, var(--fg) 7%, var(--tile)); }
-.seg2 button { position: relative; z-index: 1; border: 0; background: none; color: var(--fg-2); font: 600 14px var(--text); min-height: 40px; border-radius: 999px; cursor: pointer; transition: color .3s var(--ease); white-space: nowrap; padding: 0 6px; }
-.seg2 button[aria-pressed="true"] { color: var(--fg); }
-.seg2 .thumb { position: absolute; z-index: 0; top: 4px; bottom: 4px; left: 4px; width: calc((100% - 8px) / var(--n)); border-radius: 999px; background: var(--card); box-shadow: 0 1px 3px rgba(0, 0, 0, .12), 0 6px 16px -8px rgba(0, 0, 0, .2); transform: translateX(calc(var(--i) * 100%)); transition: transform .5s var(--out); }
-.rb { width: 40px; height: 40px; flex: none; border-radius: 50%; border: 0; background: var(--card); color: var(--fg); font: 500 20px/1 var(--text); display: grid; place-items: center; cursor: pointer; box-shadow: 0 1px 2px rgba(0, 0, 0, .06), 0 6px 14px -8px rgba(0, 0, 0, .2); transition: transform .25s var(--out), background .2s var(--ease); }
-.rb:hover { transform: scale(1.06); } .rb:active { transform: scale(.92); } .rb:disabled { opacity: .35; cursor: default; transform: none; }
-.rb svg { width: 18px; height: 18px; }
-.rb.blk { background: var(--fg); color: var(--bg); }
-.t.dark .rb { background: #2A2A2A; color: #fff; box-shadow: none; }
-/* Айналатын сандар */
-.roll { display: inline-flex; font-variant-numeric: tabular-nums; }
-.roll .rd { display: inline-block; height: 1em; line-height: 1; overflow: hidden; }
-.roll .rc { display: flex; flex-direction: column; transition: transform .7s var(--out); }
-.roll .rc span, .roll .rs { display: block; height: 1em; line-height: 1; white-space: pre; }
-.ck { width: 22px; height: 22px; flex: none; border-radius: 7px; background: var(--grad); display: grid; place-items: center; transform: scale(0); transition: transform .5s cubic-bezier(.3, 1.6, .5, 1); }
-.ck svg { width: 13px; height: 13px; stroke: #0B2E13; }
-.is-in .ck, .ck.on { transform: scale(1); }
-.tag { font: 600 11.5px var(--text); border-radius: 999px; padding: 3px 9px; white-space: nowrap; }
-.tag.free { background: var(--grad); color: #0B2E13; } .tag.sub { background: var(--bg-2); color: var(--fg-2); }
-
-/* ── 1. Негізгі ой ── */
-.hero { justify-content: space-between; gap: 20px; padding: clamp(20px, 3vw, 30px); background: var(--card); box-shadow: var(--shadow); }
-.hero .eyebrow { font: 600 14px var(--text); color: var(--accent); }
-.hero h1 { font-size: clamp(40px, 5.6vw, 68px); font-weight: 700; line-height: 1; letter-spacing: -0.04em; }
-.hero p.sub { color: var(--fg-2); font-size: clamp(16px, 1.5vw, 19px); line-height: 1.4; max-width: 34ch; margin-top: 12px; }
-.hero .cta { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 22px; }
-.pill.lg { font-size: 16px; padding: 13px 24px; min-height: 50px; }
-.more { font: 600 15px var(--text); color: var(--fg); display: inline-flex; align-items: center; gap: 4px; min-height: 44px; }
+.hero { text-align: center; display: grid; justify-items: center; padding-top: clamp(40px, 9vh, 96px); }
+.eyebrow { color: var(--fg-2); font-size: clamp(15px, 1.5vw, 19px); font-weight: 500; }
+h1 { font-size: clamp(48px, 9vw, 104px); font-weight: 700; line-height: 1.02; letter-spacing: -0.035em; margin-top: 10px; }
+.sub { color: var(--fg-2); font-size: clamp(19px, 2.1vw, 26px); line-height: 1.3; letter-spacing: -0.01em; max-width: 30ch; margin-top: 18px; text-wrap: balance; }
+.cta { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px 28px; margin-top: 28px; }
+.pill.lg { font-size: 17px; padding: 12px 24px; min-height: 48px; }
+.more { font-size: 17px; display: inline-flex; align-items: center; gap: 4px; min-height: 44px; }
 .more::after { content: "›"; font-size: 1.2em; line-height: 1; transition: transform .2s var(--ease); }
 .more:hover { text-decoration: none; } .more:hover::after { transform: translateX(3px); }
-.free { font-size: 13px; color: var(--fg-3); margin-top: 10px; }
 
-/* ── 2. 3D морф ── */
-.morph { padding: 0; min-height: 300px; }
+.stage { position: relative; width: min(100%, 600px); aspect-ratio: 5 / 4; margin-top: clamp(8px, 3vh, 32px); }
 #atom { position: absolute; inset: 0; width: 100%; height: 100%; display: block; cursor: pointer; }
-.morph .cap { position: absolute; left: 18px; right: 18px; bottom: 16px; display: flex; align-items: center; justify-content: space-between; pointer-events: none; }
-.shape { font: 600 12px var(--text); letter-spacing: .08em; text-transform: uppercase; color: #A3A3A3; }
-.dots { display: flex; gap: 6px; }
-.dots i { width: 5px; height: 5px; border-radius: 99px; background: #3A3A3A; transition: width .5s var(--out), background .5s var(--out); }
-.dots i.on { width: 18px; background: var(--lime); }
 .atom-fallback { position: absolute; inset: 0; display: grid; place-items: center; }
-.atom-fallback svg { width: 60%; height: auto; color: #6E6E6E; }
+.atom-fallback svg { width: 56%; height: auto; color: var(--fg-3); }
 
-.gsum { display: grid; gap: 4px; }
-.gsum b { font: 700 clamp(28px, 3.6vw, 40px)/1 var(--text); letter-spacing: -0.03em; }
-
-/* ── 4. Прогресс шеңбері ── */
-.ring { position: relative; width: 116px; height: 116px; }
-.ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
-.ring circle { fill: none; stroke-width: 9; stroke-linecap: round; }
-.ring .bg { stroke: #2C2C2C; } .ring .fg { stroke: url(#rg); transition: stroke-dashoffset 1s var(--out); }
-.ring b { position: absolute; inset: 0; display: grid; place-items: center; font: 600 22px var(--text); letter-spacing: -0.02em; }
-
-/* ── 5. Күнтізбе ── */
-.cal-h { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-.cal-h b { font: 600 17px var(--text); letter-spacing: -0.01em; }
-.cal-h .rb { width: 32px; height: 32px; background: var(--bg-2); box-shadow: none; }
-.cal-g { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; margin-top: 10px; text-align: center; }
-.cal-g .wd { font: 600 11px var(--text); color: var(--fg-3); padding: 6px 0; }
-.cal-g .d { position: relative; aspect-ratio: 1; max-height: 40px; display: grid; place-items: center; border-radius: 50%; font: 500 14px var(--text); color: var(--fg-3); justify-self: center; width: 100%; max-width: 40px; }
-.cal-g .d.les { color: var(--fg); font-weight: 600; }
-.cal-g .d.les::after { content: ""; position: absolute; bottom: 4px; width: 4px; height: 4px; border-radius: 50%; background: var(--green); }
-.cal-g .d.wk { background: var(--bg-2); }
-.cal-g .d.today { background: var(--grad); color: #0B2E13; font-weight: 700; box-shadow: 0 6px 14px -6px rgba(34, 197, 94, .7); }
-.cal-g .d.today::after { display: none; }
-.cal-n { display: flex; align-items: center; gap: 8px; margin-top: 10px; padding: 10px 12px; border-radius: 12px; background: var(--bg-2); font: 500 13.5px var(--text); }
-.cal-n svg { width: 16px; height: 16px; flex: none; }
-
-/* ── 6. Осы апта ── */
-.wk { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
-.wk li { display: flex; align-items: center; gap: 10px; padding: 11px 14px; border-radius: 14px; background: var(--card); font: 500 14px/1.3 var(--text); box-shadow: 0 1px 2px rgba(0, 0, 0, .04); min-width: 0; }
-.wk li > span:not(.ck) { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.wk li small { color: var(--fg-3); font: 500 12px var(--text); white-space: nowrap; }
-.wk li.none { color: var(--fg-2); justify-content: center; box-shadow: none; background: none; }
-
-/* ── 7. Баға ── */
-.price { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
-.price .sum { font: 700 clamp(34px, 4.6vw, 52px)/1 var(--text); letter-spacing: -0.04em; display: flex; align-items: baseline; gap: 6px; }
-.price .sum i { font: 600 .5em var(--text); font-style: normal; color: var(--fg-2); }
-.price-c { text-align: center; }
-
-/* ── 8. Не кіреді ── */
-.inc { display: grid; gap: 12px; }
-.inc .r { display: flex; align-items: center; gap: 10px; }
-.inc .r > div { flex: 1; min-width: 0; display: grid; }
-.inc b { font: 600 14.5px var(--text); } .inc small { color: var(--fg-2); font: 500 12.5px var(--text); }
-
-/* ── 9. Айлар бойынша ── */
-.bars { display: flex; align-items: flex-end; gap: 6px; height: 74px; margin-top: auto; }
-.bars i { flex: 1; border-radius: 99px; background: color-mix(in srgb, var(--fg) 10%, var(--tile)); height: 8%; transition: height .9s var(--out); min-width: 0; }
-.bars i.cur { background: linear-gradient(0deg, #22C55E, #A3E635); }
-.big { font: 700 30px/1 var(--text); letter-spacing: -0.03em; }
-
-/* ── 10. Іздеу ── */
-.search { display: flex; align-items: center; gap: 10px; background: var(--card); border-radius: 999px; padding: 0 16px; box-shadow: 0 1px 2px rgba(0, 0, 0, .04), 0 10px 24px -14px rgba(0, 0, 0, .16); }
-.search svg { width: 18px; height: 18px; flex: none; color: var(--fg-3); }
-.search input { flex: 1; min-width: 0; border: 0; outline: 0; background: none; color: var(--fg); font: 500 16px var(--text); height: 50px; }
-.search input::placeholder { color: var(--fg-3); }
-.res { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
-.res a { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-radius: 14px; background: var(--card); color: var(--fg); font: 500 14px/1.3 var(--text); }
-.res a:hover { text-decoration: none; background: color-mix(in srgb, var(--green) 14%, var(--card)); }
-.res a span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.res small { color: var(--fg-3); font: 600 12px var(--text); white-space: nowrap; }
-.chips { display: flex; flex-wrap: wrap; gap: 6px; }
-.chips button { border: 0; cursor: pointer; background: var(--card); color: var(--fg); font: 600 13px var(--text); padding: 8px 14px; border-radius: 999px; box-shadow: 0 1px 2px rgba(0, 0, 0, .05); transition: transform .25s var(--out), background .2s; }
-.chips button:hover { transform: translateY(-1px); background: var(--grad); color: #0B2E13; }
-
-/* ── 11. Зертхана ── */
-.lab h3 { font: 700 22px/1.1 var(--text); letter-spacing: -0.02em; }
-.lab p { color: #A3A3A3; font-size: 14px; }
-.wave { display: flex; align-items: center; justify-content: space-between; height: 44px; margin-block: auto 0; }
-.wave i { width: 4px; flex: none; border-radius: 99px; background: var(--lime); height: 100%; transform-origin: center; animation: wave 1.6s ease-in-out infinite; animation-delay: calc(var(--k) * -0.09s); }
-.wave i:nth-child(n + 30) { background: #3A3A3A; }
-@keyframes wave { 0%, 100% { transform: scaleY(.18); } 50% { transform: scaleY(1); } }
-.lab .go { position: absolute; right: 18px; top: 18px; }
-
-/* ── 12. Қадамдар ── */
-.steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; }
-.steps li { position: relative; display: flex; align-items: center; gap: 10px; font: 600 14.5px var(--text); }
-.steps li:not(:last-child)::after { content: ""; position: absolute; left: 10px; top: 24px; width: 2px; height: 12px; border-radius: 2px; background: var(--green); }
-.steps .ck { border-radius: 50%; }
-
-/* ── 13. Тақырып ── */
-.tog { position: relative; display: grid; grid-template-columns: 1fr 1fr; width: 112px; padding: 4px; border-radius: 999px; background: color-mix(in srgb, var(--fg) 8%, var(--tile)); cursor: pointer; border: 0; }
-.tog span { position: relative; z-index: 1; height: 40px; display: grid; place-items: center; color: var(--fg-2); }
-.tog svg { width: 18px; height: 18px; }
-.tog::before { content: ""; position: absolute; top: 4px; left: 4px; width: 52px; height: 40px; border-radius: 999px; background: var(--card); box-shadow: 0 1px 3px rgba(0, 0, 0, .14); transition: transform .5s var(--out); }
-.tog[aria-checked="true"]::before { transform: translateX(52px); }
-
-/* ── 14. Сұрақтар ── */
-.faq { padding: 4px 16px; }
-.faq details { border-bottom: 1px solid var(--line); }
-.faq details:last-child { border-bottom: 0; }
-.faq summary { list-style: none; cursor: pointer; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 0; font: 600 15px var(--text); }
-.faq summary::-webkit-details-marker { display: none; }
-.faq summary svg { width: 16px; height: 16px; flex: none; transition: transform .4s var(--out); }
-.faq details[open] summary svg { transform: rotate(180deg); }
-.faq .a { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .45s var(--out); }
-.faq details[open] .a { grid-template-rows: 1fr; }
-.faq .a p { overflow: hidden; color: var(--fg-2); font-size: 14px; line-height: 1.45; }
-.faq details[open] .a p { padding-bottom: 14px; }
-
-/* ── 15. Байланыс ── */
-.contact { display: flex; gap: 10px; }
-.contact a { width: 52px; height: 52px; border-radius: 50%; display: grid; place-items: center; background: var(--card); color: var(--fg); box-shadow: 0 1px 2px rgba(0, 0, 0, .06), 0 8px 18px -10px rgba(0, 0, 0, .25); transition: transform .3s var(--out); }
-.contact a:first-child { background: var(--fg); color: var(--bg); }
-.contact a:hover { transform: translateY(-2px) scale(1.05); }
-.contact svg { width: 22px; height: 22px; }
+.lab { margin-block: clamp(24px, 6vh, 72px) clamp(40px, 8vh, 96px); padding: clamp(44px, 8vw, 88px) 24px; border-radius: 28px; background: var(--bg-2); text-align: center; display: grid; justify-items: center; gap: 10px; color: var(--fg); }
+.lab:hover { text-decoration: none; }
+.lab h2 { font-size: clamp(30px, 5vw, 56px); font-weight: 700; line-height: 1.06; letter-spacing: -0.03em; }
+.lab p { color: var(--fg-2); font-size: clamp(17px, 1.8vw, 21px); max-width: 30ch; }
+.lab .more { margin-top: 6px; color: var(--accent); }
+.lab:hover .more::after { transform: translateX(3px); }
 
 footer { background: none; }
 footer .wrap { border-top: 1px solid var(--line); }
 footer .wrap a { color: var(--fg-2); }
 footer .wrap > span:last-child { display: flex; flex-wrap: wrap; gap: 4px; }
 
-@media (max-width: 900px) {
-  .bento { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
-  .t { border-radius: 24px; padding: 14px; min-height: 160px; }
-  .hero { padding: 20px; }
-  .morph { min-height: 240px; }
-}
-@media (max-width: 380px) { .t.w1s { grid-column: span 2; } }
+.rise { animation: rise .9s var(--out) both; }
+.rise.d1 { animation-delay: .08s; } .rise.d2 { animation-delay: .16s; } .rise.d3 { animation-delay: .24s; } .rise.d4 { animation-delay: .4s; }
+@keyframes rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
 </style>
 <script defer src="/_vercel/insights/script.js"></script>
 </head>
@@ -228,154 +76,38 @@ footer .wrap > span:last-child { display: flex; flex-wrap: wrap; gap: 4px; }
       Сабақтас
     </a>
     <div class="right">
-      <div class="seg2" id="lang" role="group" aria-label="Тіл / Язык" style="--n:2;--i:0;width:104px">
-        <i class="thumb"></i>
-        <button type="button" data-lang="kk" aria-pressed="true" style="min-height:30px;font-size:12px">ҚАЗ</button>
-        <button type="button" data-lang="ru" aria-pressed="false" style="min-height:30px;font-size:12px">РУС</button>
-      </div>
       <a class="navlink" href="/lab" data-i="lab"></a>
-      <a class="navlab" href="/lab" aria-label="3D зертхана"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 3h6M10 3v6l-5 9a2 2 0 0 0 2 3h10a2 2 0 0 0 2-3l-5-9V3"/></svg><span>3D</span></a>
+      <button class="lang" id="lang" type="button"></button>
       <a class="pill sm" href="/app" data-i="login"></a>
     </div>
   </div>
 </header>
 
 <main class="wrap">
-  <div class="bento">
-
-    <section class="t w2 h2 hero" data-reveal="0">
-      <div>
-        <p class="eyebrow" data-i="eyebrow"></p>
-        <h1 data-i="h1"></h1>
-        <p class="sub" data-i="sub"></p>
+  <section class="hero">
+    <p class="eyebrow rise" data-i="eyebrow"></p>
+    <h1 class="rise d1" data-i="h1"></h1>
+    <p class="sub rise d2" data-i="sub"></p>
+    <div class="cta rise d3">
+      <a class="pill lg" href="/app?signup" data-i="signup"></a>
+      <a class="more" href="/samples" data-i="cta"></a>
+    </div>
+    <div class="stage rise d4" aria-hidden="true">
+      <canvas id="atom"></canvas>
+      <div class="atom-fallback" id="atom-fallback" hidden>
+        <svg viewBox="0 0 200 200" fill="none" stroke="currentColor" stroke-width="1.2"><ellipse cx="100" cy="100" rx="88" ry="32"/><ellipse cx="100" cy="100" rx="88" ry="32" transform="rotate(60 100 100)"/><ellipse cx="100" cy="100" rx="88" ry="32" transform="rotate(120 100 100)"/><circle cx="100" cy="100" r="13" fill="var(--accent)" stroke="none"/></svg>
       </div>
-      <div>
-        <div class="cta">
-          <a class="pill lg" href="/app?signup" data-i="signup"></a>
-          <a class="more" href="/samples" data-i="cta"></a>
-        </div>
-        <p class="free" data-i="free"></p>
-      </div>
-    </section>
+    </div>
+  </section>
 
-    <section class="t w2 h2 dark morph" data-reveal="1" aria-label="3D">
-      <canvas id="atom" aria-hidden="true"></canvas>
-      <div class="atom-fallback" id="atom-fallback" aria-hidden="true" hidden>
-        <svg viewBox="0 0 200 200" fill="none" stroke="currentColor" stroke-width="1.4"><ellipse cx="100" cy="100" rx="88" ry="32"/><ellipse cx="100" cy="100" rx="88" ry="32" transform="rotate(60 100 100)"/><ellipse cx="100" cy="100" rx="88" ry="32" transform="rotate(120 100 100)"/><circle cx="100" cy="100" r="14" fill="#A3E635" stroke="none"/></svg>
-      </div>
-      <div class="cap" aria-hidden="true"><span class="shape"><span id="shape" data-swap></span></span><div class="dots" id="dots"><i></i><i></i><i></i><i></i><i></i></div></div>
-    </section>
-
-    <section class="t w2" data-reveal="2">
-      <span class="k" data-i="pick"></span>
-      <div class="gsum mid"><b><span id="g-t" data-swap></span></b><span class="k" id="g-s"></span></div>
-      <div class="seg2" id="grades" role="group" style="--n:5;--i:0">
-        <i class="thumb"></i>
-        <button type="button" data-g="7">7</button><button type="button" data-g="8">8</button><button type="button" data-g="9">9</button><button type="button" data-g="10">10</button><button type="button" data-g="11">11</button>
-      </div>
-    </section>
-
-    <section class="t dark ctr" data-reveal="3">
-      <div class="ring">
-        <svg viewBox="0 0 120 120" aria-hidden="true"><defs><linearGradient id="rg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#22C55E"/><stop offset="1" stop-color="#A3E635"/></linearGradient></defs><circle class="bg" cx="60" cy="60" r="50"/><circle class="fg" id="ring" cx="60" cy="60" r="50" stroke-dasharray="314.16" stroke-dashoffset="314.16"/></svg>
-        <b><span class="roll" id="ring-n"></span></b>
-      </div>
-      <span class="k" data-i="ringK"></span>
-    </section>
-
-    <section class="t" data-reveal="3">
-      <span class="k" id="bars-k"></span>
-      <span class="big"><span class="roll" id="bars-n"></span></span>
-      <div class="bars" id="bars" aria-hidden="true"></div>
-    </section>
-
-    <section class="t w2 h2" data-reveal="2">
-      <div class="in" style="flex:1">
-        <div class="cal-h"><b id="cal-t"></b><span style="display:flex;gap:6px"><button class="rb" id="cal-p" type="button" aria-label="Алдыңғы ай"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></button><button class="rb" id="cal-x" type="button" aria-label="Келесі ай"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button></span></div>
-        <div class="cal-g" id="cal"></div>
-        <div class="cal-n"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="15" rx="3"/><path d="M8 3v4M16 3v4M4 10h16"/></svg><span id="cal-n"></span></div>
-      </div>
-    </section>
-
-    <section class="t w2" data-reveal="3">
-      <span class="k" id="wk-k"></span>
-      <ul class="wk" id="wk"></ul>
-      <a class="more" href="/app" style="margin-top:auto" data-i="wkAll"></a>
-    </section>
-
-    <section class="t w2" data-reveal="3">
-      <span class="k" data-i="incK"></span>
-      <div class="in inc">
-        <div class="r"><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span><div><b data-i="iKmzh"></b><small id="i-kmzh"></small></div><span class="tag free" data-i="tFree"></span></div>
-        <div class="r"><span class="ck" style="transition-delay:.12s"><svg viewBox="0 0 24 24" fill="none" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span><div><b data-i="iPres"></b><small id="i-pres"></small></div><span class="tag sub" data-i="tSub"></span></div>
-        <div class="r"><span class="ck" style="transition-delay:.24s"><svg viewBox="0 0 24 24" fill="none" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span><div><b data-i="iWs"></b><small id="i-ws"></small></div><span class="tag sub" data-i="tSub"></span></div>
-      </div>
-    </section>
-
-    <section class="t w2" data-reveal="2">
-      <div class="in price-c" style="flex:1;display:flex;flex-direction:column;justify-content:center;gap:10px">
-        <span class="k" id="price-k"></span>
-        <div class="price">
-          <button class="rb" id="cls-m" type="button" aria-label="Сынып санын азайту">−</button>
-          <span class="sum"><span class="roll" id="price"></span><i>₸</i></span>
-          <button class="rb" id="cls-p" type="button" aria-label="Сынып санын көбейту">+</button>
-        </div>
-        <span class="k" id="price-s"></span>
-      </div>
-      <div class="seg2" id="plan" role="group" style="--n:2;--i:0">
-        <i class="thumb"></i>
-        <button type="button" data-plan="month" data-i="pMonth"></button><button type="button" data-plan="year" data-i="pYear"></button>
-      </div>
-    </section>
-
-    <section class="t w2" data-reveal="2">
-      <label class="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input id="q" type="search" autocomplete="off" enterkeyhint="search"></label>
-      <span class="k" id="q-k"></span>
-      <ul class="res" id="res"></ul>
-      <div class="chips" id="q-chips"></div>
-    </section>
-
-    <a class="t w2 dark lab" href="/lab" data-reveal="3">
-      <span class="rb go" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7M9 7h8v8"/></svg></span>
-      <span class="k" data-i="labK"></span>
-      <h3 data-i="labT"></h3>
-      <p data-i="labP"></p>
-      <div class="wave" id="wave" aria-hidden="true"></div>
-    </a>
-
-    <section class="t w1s" data-reveal="2">
-      <span class="k" data-i="stK"></span>
-      <ol class="steps mid">
-        <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span><span data-i="s1"></span></li>
-        <li><span class="ck" style="transition-delay:.15s"><svg viewBox="0 0 24 24" fill="none" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span><span data-i="s2"></span></li>
-        <li><span class="ck" style="transition-delay:.3s"><svg viewBox="0 0 24 24" fill="none" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span><span data-i="s3"></span></li>
-      </ol>
-    </section>
-
-    <section class="t ctr w1s" data-reveal="3">
-      <span><b style="font:600 15px var(--text);display:block" data-i="thK"></b><span class="k" id="th-s"></span></span>
-      <button class="tog" id="theme" type="button" role="switch" aria-checked="false">
-        <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5L19 19M19 5l-1.5 1.5M6.5 17.5L5 19"/></svg></span>
-        <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg></span>
-      </button>
-    </section>
-
-    <section class="t w2 h2" data-reveal="2">
-      <div class="in faq" id="faq" style="flex:1"></div>
-    </section>
-
-    <section class="t w2 ctr" data-reveal="3" style="flex-direction:row;justify-content:space-between;min-height:0;padding:22px">
-      <span class="k" data-i="ask" style="font-size:15px;color:var(--fg)"></span>
-      <div class="contact">
-        <a id="wa-link" target="_blank" rel="noopener" aria-label="WhatsApp"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20l1.3-4A8 8 0 1 1 8.2 19z"/><path d="M9 9.5c0 3 2.5 5.5 5.5 5.5l1-1.5-2-1-1 .8a4 4 0 0 1-1.800-1.800l.8-1-1-2z"/></svg></a>
-        <a id="tg-link" target="_blank" rel="noopener" aria-label="Telegram"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 4L3 11l6 2.5M21 4l-3.5 15L9 13.500M21 4L9 13.5V19l3.2-3.200"/></svg></a>
-      </div>
-    </section>
-
-  </div>
+  <a class="lab" href="/lab" data-reveal>
+    <h2 data-i="labT"></h2>
+    <p data-i="labP"></p>
+    <span class="more" data-i="labGo"></span>
+  </a>
 </main>
 
-<footer><div class="wrap"><span>© 2026 Сабақтас</span><span><a href="/samples" data-i="fSamples"></a> · <a href="/lab" data-i="lab"></a> · <a href="/oferta">Оферта</a> · <a href="/privacy" data-i="fPriv"></a></span></div></footer>
+<footer><div class="wrap"><span>© 2026 Сабақтас</span><span><a id="wa-link" target="_blank" rel="noopener">WhatsApp</a> · <a id="tg-link" target="_blank" rel="noopener">Telegram</a> · <a href="/oferta">Оферта</a> · <a href="/privacy" data-i="priv"></a></span></div></footer>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" defer></script>
 <script src="/assets/morph.js" defer></script>
@@ -384,217 +116,36 @@ footer .wrap > span:last-child { display: flex; flex-wrap: wrap; gap: 4px; }
 const C = window.FS_CONFIG;
 const T = {
   kk: {
-    login: 'Кіру', lab: '3D зертхана', eyebrow: 'Физика · 7–11-сынып', h1: 'ҚМЖ — тегін.',
-    sub: 'Кез келген тақырыптың ҚМЖ-сын тегін жүктеңіз. Презентация мен жұмыс парағы жазылыммен.',
-    cta: 'Алдымен үлгіні көру', signup: 'Тегін ҚМЖ алу', free: 'Тіркелу 1 минут. Карта керек емес.',
-    pick: 'Сыныпты таңдаңыз', gSum: (n, y) => `ҚТЖ бойынша ${n} сабақ · ${y} оқу жылы`, ringK: 'ҚТЖ бойынша өтілді', wkAll: 'Барлық тақырып кабинетте',
-    wkNow: g => `Осы аптаның сабақтары · ${g}`, wkNext: g => `Келесі сабақтар · ${g}`, wkNone: 'Бұл аптада сабақ жоқ',
-    calNote: (n, g) => n ? `Осы аптада ${n} сабақ · ${g}` : `Осы аптада сабақ жоқ · ${g}`,
-    barsK: m => `${m} айында`, les: 'сабақ', pMonth: 'Айына', pYear: 'Жылына',
-    priceK: n => `${n} сыныпқа жазылым`, priceS: (p, per) => `бір сыныпқа ${p} / ${per}`, perM: 'ай', perY: 'жыл',
-    incK: 'Әр сабаққа не кіреді', iKmzh: 'ҚМЖ', iPres: 'Презентация', iWs: 'Жұмыс парағы', tFree: 'тегін', tSub: 'жазылым',
-    cnt: (n, g) => `${n} дайын · ${g}`,
-    qPh: 'Тақырып іздеу: мысалы, Ом заңы', qHint: 'Барлық сыныптан іздейді', qFound: n => `${n} тақырып табылды`, qNone: 'Ештеңе табылмады',
-    qChips: ['Архимед', 'Ом заңы', 'линза', 'маятник', 'энергия'],
-    labK: 'Оқушыларға', labT: '3D виртуалды зертхана', labP: 'Тәжірибе жасау, өлшеу, график және есеп. Тіркелусіз.',
-    stK: 'Қалай басталады', s1: 'Үлгіні көру', s2: 'Тіркелу', s3: 'ҚМЖ жүктеу',
-    thK: 'Көрініс', thL: 'Жарық', thD: 'Қараңғы', ask: 'Сұрақ болса', fSamples: 'Тегін үлгілер', fPriv: 'Құпиялылық',
-    months: ['Қаңтар', 'Ақпан', 'Наурыз', 'Сәуір', 'Мамыр', 'Маусым', 'Шілде', 'Тамыз', 'Қыркүйек', 'Қазан', 'Қараша', 'Желтоқсан'],
-    wd: ['Дс', 'Сс', 'Ср', 'Бс', 'Жм', 'Сб', 'Жс'], grade: g => `${g}-сынып`,
-    shapes: { atom: 'Атом', wave: 'Толқын', spring: 'Серіппе', field: 'Магнит өрісі', planet: 'Ғаламшар' },
-    faq: (m, y) => [
-      ['ҚМЖ шынымен тегін бе?', 'Иә. Тіркелген мұғалімге кез келген тақырыптың ҚМЖ-сы тегін, шектеусіз.'],
-      ['Жазылым не береді?', `Презентация мен жұмыс парағын. Бір сыныпқа айына ${m} немесе жылына ${y}.`],
-      ['Алдымен сынап көруге бола ма?', 'Иә. Тіркелгенде барлық сыныпқа 3 күн тегін сынақ ашылады.'],
-      ['Қалай төлеймін?', 'Kaspi арқылы. Чекті Telegram-ботқа жібересіз, растаудан кейін жазылым ашылады.']
-    ]
+    login: 'Кіру', lab: '3D зертхана', other: 'Рус', eyebrow: 'Физика · 7–11-сынып',
+    h1: 'ҚМЖ — тегін.', sub: 'Кез келген тақырыпқа. Презентация мен жұмыс парағы жазылыммен.',
+    signup: 'Тегін ҚМЖ алу', cta: 'Үлгіні көру',
+    labT: '3D зертхана.', labP: 'Оқушы тәжірибе жасайды, өлшейді, есеп алады.', labGo: 'Зертхананы ашу', priv: 'Құпиялылық'
   },
   ru: {
-    login: 'Войти', lab: '3D лаборатория', eyebrow: 'Физика · 7–11 классы', h1: 'ҚМЖ — бесплатно.',
-    sub: 'ҚМЖ по любой теме скачивайте бесплатно. Презентации и рабочие листы — по подписке.',
-    cta: 'Сначала посмотреть образец', signup: 'Получить ҚМЖ бесплатно', free: 'Регистрация за 1 минуту. Карта не нужна.',
-    pick: 'Выберите класс', gSum: (n, y) => `${n} уроков по КТП · ${y} учебный год`, ringK: 'Пройдено по КТП', wkAll: 'Все темы — в кабинете',
-    wkNow: g => `Уроки этой недели · ${g}`, wkNext: g => `Ближайшие уроки · ${g}`, wkNone: 'На этой неделе уроков нет',
-    calNote: (n, g) => n ? `На этой неделе уроков: ${n} · ${g}` : `На этой неделе уроков нет · ${g}`,
-    barsK: m => `${m}`, les: 'уроков', pMonth: 'В месяц', pYear: 'В год',
-    priceK: n => `Подписка на классов: ${n}`, priceS: (p, per) => `за один класс ${p} / ${per}`, perM: 'мес', perY: 'год',
-    incK: 'Что входит в каждый урок', iKmzh: 'ҚМЖ', iPres: 'Презентация', iWs: 'Рабочий лист', tFree: 'бесплатно', tSub: 'подписка',
-    cnt: (n, g) => `готово: ${n} · ${g}`,
-    qPh: 'Поиск темы на казахском: Ом заңы', qHint: 'Ищет по всем классам', qFound: n => `Найдено тем: ${n}`, qNone: 'Ничего не найдено',
-    qChips: ['Архимед', 'Ом заңы', 'линза', 'маятник', 'энергия'],
-    labK: 'Ученикам', labT: '3D виртуальная лаборатория', labP: 'Опыты, измерения, график и отчёт. Без регистрации.',
-    stK: 'С чего начать', s1: 'Посмотреть образец', s2: 'Зарегистрироваться', s3: 'Скачать ҚМЖ',
-    thK: 'Оформление', thL: 'Светлое', thD: 'Тёмное', ask: 'Есть вопросы', fSamples: 'Бесплатные образцы', fPriv: 'Конфиденциальность',
-    months: ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'],
-    wd: ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'], grade: g => `${g} класс`,
-    shapes: { atom: 'Атом', wave: 'Волна', spring: 'Пружина', field: 'Магнитное поле', planet: 'Планета' },
-    faq: (m, y) => [
-      ['ҚМЖ действительно бесплатно?', 'Да. Зарегистрированному учителю ҚМЖ по любой теме — бесплатно и без ограничений.'],
-      ['Что даёт подписка?', `Презентации и рабочие листы. За один класс ${m} в месяц или ${y} в год.`],
-      ['Можно сначала попробовать?', 'Да. При регистрации на все классы открывается бесплатный пробный период на 3 дня.'],
-      ['Как оплатить?', 'Через Kaspi. Чек отправляете в Telegram-бот, после подтверждения подписка открывается.']
-    ]
+    login: 'Войти', lab: '3D лаборатория', other: 'Қаз', eyebrow: 'Физика · 7–11 классы',
+    h1: 'ҚМЖ — бесплатно.', sub: 'По любой теме. Презентации и рабочие листы по подписке.',
+    signup: 'Получить ҚМЖ', cta: 'Посмотреть образец',
+    labT: '3D лаборатория.', labP: 'Ученик ставит опыт, измеряет и получает отчёт.', labGo: 'Открыть лабораторию', priv: 'Конфиденциальность'
   }
 };
 const $ = id => document.getElementById(id);
-const money = n => n.toLocaleString('ru-RU').replace(/\s/g, '\u00a0');
-const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-const store = { get(k, d) { try { return localStorage.getItem(k) || d; } catch (_) { return d; } }, set(k, v) { try { localStorage.setItem(k, v); } catch (_) {} } };
-
-let lang = store.get('fs-lang', 'kk') === 'ru' ? 'ru' : 'kk';
-let grade = 7, plan = 'month', classes = 1, shapeName = '', lessons = [], query = '';
-const W = window.FS_WEEK();                       // { today, from, to } — кабинеттегі ережемен бірдей
-let calY = +W.today.slice(0, 4), calM = +W.today.slice(5, 7) - 1;
-
-/* Айналатын сандар: әр цифр 0–9 бағанасы, мәні өзгергенде тік сырғиды */
-function roll(el, str) {
-  str = String(str);
-  const sig = str.replace(/\d/g, '0');
-  if (el._sig !== sig) {
-    el._sig = sig; el._c = []; el.textContent = '';
-    for (const ch of str) {
-      if (/\d/.test(ch)) {
-        const d = document.createElement('span'), c = document.createElement('span');
-        d.className = 'rd'; c.className = 'rc';
-        for (let i = 0; i < 10; i++) { const s = document.createElement('span'); s.textContent = i; c.appendChild(s); }
-        d.appendChild(c); el.appendChild(d); el._c.push(c);
-      } else { const s = document.createElement('span'); s.className = 'rs'; s.textContent = ch; el.appendChild(s); el._c.push(null); }
-    }
-  }
-  el.setAttribute('aria-label', str);
-  [...str].forEach((ch, i) => { if (el._c[i]) el._c[i].style.transform = `translateY(-${+ch * 10}%)`; });
-}
-// Іздеу реті: сөздің басынан сәйкестік жоғары тұрады
-function rank(topic, q) { const s = topic.toLowerCase(), i = s.indexOf(q); return i === 0 ? 0 : /[\s«(.,–-]/.test(s[i - 1]) ? 1 : 2; }
-function seg(el, i) {
-  el.style.setProperty('--i', i);
-  [...el.querySelectorAll('button')].forEach((b, k) => b.setAttribute('aria-pressed', k === i));
-}
-
-/* Таңдалған сыныптың ҚТЖ-сы: 10–11-сыныпта дайын нұсқаның біріншісі алынады */
-function ofGrade() {
-  const all = lessons.filter(l => l.grade === grade);
-  const v = all.length ? all[0].v : '';
-  return all.filter(l => l.v === v);
-}
-
+let lang = 'kk';
+try { if (localStorage.getItem('fs-lang') === 'ru') lang = 'ru'; } catch (_) {}
 function render() {
-  const t = T[lang], L = ofGrade(), gName = t.grade(grade);
+  const t = T[lang];
   document.documentElement.lang = lang;
-  document.querySelectorAll('[data-i]').forEach(el => { const v = t[el.dataset.i]; if (typeof v === 'string') el.textContent = v; });
-  seg($('lang'), lang === 'kk' ? 0 : 1);
-  seg($('grades'), grade - 7);
-  seg($('plan'), plan === 'month' ? 0 : 1);
-  if (shapeName) $('shape').textContent = t.shapes[shapeName];
-
-  const yrs = L.length ? `${L[0].date.slice(0, 4)}–${L[L.length - 1].date.slice(0, 4)}` : '';
-  FSMotion.swap($('g-t'), gName);
-  $('g-s').textContent = L.length ? t.gSum(L.length, yrs) : '';
-
-  // Прогресс: ҚТЖ бойынша бүгінге дейін өтілген сабақтар
-  const done = L.filter(l => l.date <= W.today).length;
-  roll($('ring-n'), `${done}/${L.length || 0}`);
-  $('ring').style.strokeDashoffset = 314.16 * (1 - (L.length ? done / L.length : 0));
-
-  // Айлар бойынша сабақ саны (қыркүйек–мамыр)
-  const order = [8, 9, 10, 11, 0, 1, 2, 3, 4], per = order.map(m => L.filter(l => +l.date.slice(5, 7) - 1 === m).length);
-  const max = Math.max(1, ...per), curM = +W.today.slice(5, 7) - 1, ci = order.indexOf(curM);
-  if (!$('bars').children.length) order.forEach(() => $('bars').appendChild(document.createElement('i')));
-  [...$('bars').children].forEach((b, i) => { b.style.height = Math.max(8, per[i] / max * 100) + '%'; b.classList.toggle('cur', i === ci); });
-  $('bars-k').textContent = t.barsK(t.months[curM]);
-  roll($('bars-n'), `${ci >= 0 ? per[ci] : 0}`);
-
-  // Күнтізбе
-  const days = new Set(L.map(l => l.date)), first = new Date(Date.UTC(calY, calM, 1)), pad = (first.getUTCDay() + 6) % 7;
-  const total = new Date(Date.UTC(calY, calM + 1, 0)).getUTCDate();
-  let html = t.wd.map(d => `<span class="wd">${d}</span>`).join('') + '<span></span>'.repeat(pad);
-  for (let d = 1; d <= total; d++) {
-    const iso = `${calY}-${String(calM + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-    const cls = ['d', days.has(iso) ? 'les' : '', iso >= W.from && iso <= W.to ? 'wk' : '', iso === W.today ? 'today' : ''].join(' ');
-    html += `<span class="${cls}">${d}</span>`;
-  }
-  $('cal').innerHTML = html;
-  $('cal-t').textContent = `${t.months[calM]} ${calY}`;
-  const week = L.filter(l => l.date >= W.from && l.date <= W.to);
-  $('cal-n').textContent = t.calNote(week.length, gName);
-
-  // Осы аптаның тақырыптары (жоқ болса — ең жақын келесі сабақтар)
-  const show = week.length ? week : L.filter(l => l.date > W.to).slice(0, 4);
-  $('wk-k').textContent = (week.length ? t.wkNow : t.wkNext)(gName);
-  $('wk').innerHTML = show.length
-    ? show.slice(0, 5).map(l => `<li><span class="ck on"><svg viewBox="0 0 24 24" fill="none" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span><span>${esc(l.topic)}</span><small>${+l.date.slice(8)}.${l.date.slice(5, 7)}</small></li>`).join('')
-    : `<li class="none">${t.wkNone}</li>`;
-
-  // Әр сабаққа не кіреді — таңдалған сыныптағы дайын материал саны
-  $('i-kmzh').textContent = t.cnt(L.filter(l => l.kmzh).length, gName);
-  $('i-pres').textContent = t.cnt(L.filter(l => l.pres).length, gName);
-  $('i-ws').textContent = t.cnt(L.filter(l => l.ws).length, gName);
-
-  // Баға: config.js ішіндегі бағалар × сынып саны
-  const unit = C.prices[plan];
-  roll($('price'), money(unit * classes));
-  $('price-k').textContent = t.priceK(classes);
-  $('price-s').textContent = t.priceS(money(unit) + ' ₸', plan === 'month' ? t.perM : t.perY);
-  $('cls-m').disabled = classes <= 1; $('cls-p').disabled = classes >= 5;
-
-  // Іздеу
-  $('q').placeholder = t.qPh;
-  const q = query.trim().toLowerCase();
-  if (q.length < 2) {
-    $('q-k').textContent = t.qHint; $('res').innerHTML = '';
-    $('q-chips').innerHTML = t.qChips.map(c => `<button type="button">${esc(c)}</button>`).join(''); $('q-chips').hidden = false;
-  } else {
-    const hit = lessons.filter(l => l.topic.toLowerCase().includes(q))
-      .sort((a, b) => rank(a.topic, q) - rank(b.topic, q));
-    $('q-k').textContent = hit.length ? t.qFound(hit.length) : t.qNone;
-    $('res').innerHTML = hit.slice(0, 5).map(l => `<li><a href="/app"><span>${esc(l.topic)}</span><small>${t.grade(l.grade)}</small></a></li>`).join('');
-    $('q-chips').hidden = true;
-  }
-
-  // Сұрақтар (ашық тұрғаны сақталады)
-  const open = [...$('faq').children].findIndex(d => d.open);
-  $('faq').innerHTML = t.faq(money(C.prices.month) + ' ₸', money(C.prices.year) + ' ₸').map(([q, a], i) =>
-    `<details${i === (open < 0 ? 0 : open) ? ' open' : ''}><summary>${esc(q)}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></summary><div class="a"><p>${esc(a)}</p></div></details>`).join('');
-
-  const dark = FSMotion.isDark();
-  $('theme').setAttribute('aria-checked', dark); $('theme').setAttribute('aria-label', t.thK);
-  $('th-s').textContent = dark ? t.thD : t.thL;
+  document.querySelectorAll('[data-i]').forEach(el => { el.textContent = t[el.dataset.i]; });
+  $('lang').textContent = t.other;
+  $('lang').setAttribute('aria-label', lang === 'kk' ? 'Русский язык' : 'Қазақ тілі');
   $('wa-link').href = 'https://wa.me/' + C.whatsapp; $('tg-link').href = 'https://t.me/' + C.telegram;
 }
-
-document.addEventListener('click', e => {
-  const b = e.target.closest('button'); if (!b) return;
-  if (b.dataset.lang) { lang = b.dataset.lang; store.set('fs-lang', lang); }
-  else if (b.dataset.g) grade = +b.dataset.g;
-  else if (b.dataset.plan) plan = b.dataset.plan;
-  else if (b.id === 'cls-m') classes = Math.max(1, classes - 1);
-  else if (b.id === 'cls-p') classes = Math.min(5, classes + 1);
-  else if (b.id === 'cal-p') { if (--calM < 0) { calM = 11; calY--; } }
-  else if (b.id === 'cal-x') { if (++calM > 11) { calM = 0; calY++; } }
-  else if (b.id === 'theme') FSMotion.setTheme(FSMotion.isDark() ? 'light' : 'dark');
-  else if (b.parentElement.id === 'q-chips') { query = b.textContent; $('q').value = query; }
-  else return;
-  render();
-});
-$('q').addEventListener('input', e => { query = e.target.value; render(); });
-// Аккордеон: бір уақытта бір жауап ашық
-$('faq').addEventListener('toggle', e => { if (e.target.open) [...$('faq').children].forEach(d => { if (d !== e.target) d.open = false; }); }, true);
-for (let k = 0; k < (innerWidth < 600 ? 34 : 46); k++) { const i = document.createElement('i'); i.style.setProperty('--k', k); $('wave').appendChild(i); }
-
+$('lang').addEventListener('click', () => { lang = lang === 'kk' ? 'ru' : 'kk'; try { localStorage.setItem('fs-lang', lang); } catch (_) {} render(); });
 render();
-fetch('/lessons.json').then(r => r.json()).then(d => { lessons = d; render(); }).catch(() => {});
 
 window.addEventListener('load', function () {
-  const canvas = $('atom'), dots = $('dots').children;
-  const morph = window.FSMorph && FSMorph.mount(canvas, {
-    inkVar: '--fg-3',
-    onShape(name, i) {
-      shapeName = name;
-      FSMotion.swap($('shape'), T[lang].shapes[name]);
-      for (let k = 0; k < dots.length; k++) dots[k].classList.toggle('on', k === i);
-    }
-  });
-  if (!morph) { canvas.hidden = true; $('atom-fallback').hidden = false; $('dots').hidden = true; }
+  const canvas = $('atom');
+  const morph = window.FSMorph && FSMorph.mount(canvas, { hold: 4.2, morph: 2.2, size: 3.4 });
+  if (!morph) { canvas.hidden = true; $('atom-fallback').hidden = false; }
 });
 </script>
 </body>
