@@ -51,6 +51,7 @@ export default function Board() {
   const [zoom, setZoomS] = useState(() => Math.min(1.5, Math.max(1, +store.get('fs-bd-zoom', '1') || 1)));
   const setZoom = (z: number) => { const v = Math.round(Math.min(1.5, Math.max(1, z)) * 100) / 100; setZoomS(v); store.set('fs-bd-zoom', String(v)); };
   const online = useOnline();
+  const [more, setMore] = useState(false);
 
   /* ───────── жүктеу ───────── */
   useEffect(() => {
@@ -274,11 +275,18 @@ export default function Board() {
             {running ? S('M7 5h4v14H7zM13 5h4v14h-4z', true) : S('M8 5v14l11-7z', true)}
           </button>
         </div>
-        <div className="bd-zoom" role="group" aria-label="Мәтін өлшемі">
-          <button type="button" onClick={() => setZoom(zoom - 0.1)} disabled={zoom <= 1} aria-label="Мәтінді кішірейту" title="Мәтінді кішірейту (−)">A−</button>
-          <button type="button" onClick={() => setZoom(zoom + 0.1)} disabled={zoom >= 1.5} aria-label="Мәтінді үлкейту" title="Мәтінді үлкейту (+)">A+</button>
+        <div className="bd-more">
+          <button className="bd-ib" type="button" aria-haspopup="menu" aria-expanded={more} onClick={() => setMore(!more)} aria-label="Қосымша баптаулар" title="Қосымша">{S('M5 12h.01M12 12h.01M19 12h.01')}</button>
+          {more && (
+            <div className="bd-more__pop" role="menu" onPointerLeave={() => setMore(false)}>
+              <div className="bd-more__row"><span>Мәтін өлшемі</span>
+                <div className="bd-zoom"><button type="button" onClick={() => setZoom(zoom - 0.1)} disabled={zoom <= 1} aria-label="Кішірейту">A−</button><b className="tabular">{Math.round(zoom * 100)}%</b><button type="button" onClick={() => setZoom(zoom + 0.1)} disabled={zoom >= 1.5} aria-label="Үлкейту">A+</button></div>
+              </div>
+              <button type="button" role="menuitem" className="bd-more__item" onClick={() => { setMore(false); setDark(true); }}><span>Экранды қарайту</span><kbd>B</kbd></button>
+              <p className="bd-more__hint">Пульт: PageDown / PageUp — алға / артқа · F — толық экран</p>
+            </div>
+          )}
         </div>
-        <button className="bd-ib" type="button" onClick={() => setDark(true)} aria-label="Экранды қарайту (B)" title="Экранды қарайту (B)">{S('M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9z')}</button>
         <button className="bd-ib" type="button" aria-pressed={fs} onClick={toggleFs} aria-label="Толық экран" title="Толық экран (F)">{S('M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5')}</button>
       </header>
 

@@ -14,6 +14,7 @@ export default function LessonActions({ l, grade, onView, onLock, layout = 'grid
   const { subOf } = useAccount();
   const ok = !!subOf(grade), lab = labOf(l);
   const kinds = (['kmzh', 'pres', 'ws'] as Kind[]).filter((k) => l[k]);
+  if (compact) return null; // кең экран: карточка тек таңдау үшін, әрекеттер оң жақтағы панельде
   return (
     <div className={`acts acts--${layout}`}>
       {ok
