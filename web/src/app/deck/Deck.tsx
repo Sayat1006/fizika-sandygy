@@ -241,9 +241,9 @@ function SlideView({ s, step, custom }: { s: Slide; step: number; custom: boolea
       return (
         <div className="dk-pad">
           <Head tag={s.tag} time={s.time} title={s.title} />
-          <div className={vis ? `dk-split dk-split--th${s.illus ? ' dk-split--ill' : ''}` : 'dk-solo'}>
+          <div className={vis ? `dk-split dk-split--th${s.illus ? ' dk-split--thill' : ''}` : 'dk-solo'}>
             <ul className="dk-bul">{s.items.map((t, i) => <In as="li" key={i} on={step > i}><Rich t={t} /></In>)}</ul>
-            {vis && <div className="dk-card dk-pic"><VisualView v={s} />{s.caption && s.img && <span className="dk-cap">{s.caption}</span>}</div>}
+            {vis && <div className="dk-card dk-pic"><VisualView v={s} />{s.caption && s.img && !s.illus && <span className="dk-cap">{s.caption}</span>}</div>}
           </div>
         </div>
       );

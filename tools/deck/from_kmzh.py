@@ -142,6 +142,7 @@ def build(g, n, S):
     pic = None
     if main and 'img' in main:
         th['img'] = main['img']; th['caption'] = d.get('fc') or ''
+        if main.get('illus'): th['illus'] = main['illus']
         pic = extra
     else:
         if main: th.update(main)

@@ -271,3 +271,5 @@ svg .dk-step { transform: none; }
 .dk-out small { font-size: 20px; }
 .dk-out b { font-size: 30px; }
 .dk-ctl__seg button, .dk-ctl__btn { font-size: 22px; }
+.dk-split--thill { grid-template-columns: 1fr 1080px; gap: 44px; }
+.dk-split--thill .dk-bul li { font-size: 32px; }

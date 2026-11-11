@@ -190,7 +190,7 @@ export default function Board() {
 
   // «Басқару» режимінде слайдты саусақпен сырғыту
   const swipe = useRef<{ x: number; y: number } | null>(null);
-  const stDown = (e: React.PointerEvent) => { if (tool === 'hand' && !(e.target as HTMLElement).closest('button, iframe, .bd-notes')) swipe.current = { x: e.clientX, y: e.clientY }; };
+  const stDown = (e: React.PointerEvent) => { if (tool === 'hand' && !(e.target as HTMLElement).closest('button, iframe, input, select, .bd-notes, .dk-ill, .dk-cardf')) swipe.current = { x: e.clientX, y: e.clientY }; };
   const stUp = (e: React.PointerEvent) => {
     const s = swipe.current; if (!s) return; swipe.current = null;
     const dx = e.clientX - s.x, dy = e.clientY - s.y;
