@@ -32,8 +32,8 @@
       "destination": "/lab"
     },
     {
-      "source": "/((?!api/|lab$|lab/|assets/).*)",
-      "destination": "/index.html"
+      "source": "/((?!api/|assets/|lab).*)",
+      "destination": "/"
     }
   ]
 }
