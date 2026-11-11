@@ -174,3 +174,70 @@ svg .dk-step { transform: none; }
   .dk-popd { animation: none; opacity: 1; }
 }
 .dk-meters text { paint-order: stroke; stroke: var(--d-card); stroke-width: 14px; stroke-linejoin: round; }
+
+/* ═══ автоматты шаблондар ═══ */
+.dk-paras { display: grid; gap: 22px; margin-top: 34px; font-size: 40px; line-height: 1.35; max-width: 1500px; }
+.dk-paras p { margin: 0; }
+.dk-taskbox { margin-top: 36px; padding: 30px 36px; border-radius: var(--d-r); background: var(--d-card); font-size: 36px; line-height: 1.35; max-width: 1500px; box-shadow: inset 6px 0 0 var(--d-accent); }
+.dk-taskbox small { display: block; font: 700 24px var(--d-body); color: var(--d-accent); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 8px; }
+.dk-hook { display: grid; grid-template-columns: 1fr 520px; gap: 60px; flex: 1; align-items: center; }
+.dk-hook__txt { display: grid; gap: 40px; }
+.dk-hook__txt p { margin: 0; font-size: 50px; line-height: 1.28; font-weight: 500; }
+.dk-hook__txt .dk-hand { font-size: 54px; }
+.dk-hookart { width: 520px; height: 520px; }
+.dk-solo { margin-top: 36px; }
+.dk-split--th { grid-template-columns: 1fr 900px; }
+.dk-split--chart { grid-template-columns: 1000px 1fr; }
+.dk-bul { list-style: none; padding: 0; margin: 0; display: grid; gap: 24px; align-content: start; }
+.dk-bul li { position: relative; padding-left: 40px; font-size: 36px; line-height: 1.32; }
+.dk-solo .dk-bul li { font-size: 42px; }
+.dk-bul li::before { content: ""; position: absolute; left: 4px; top: .5em; width: 16px; height: 16px; border-radius: 50%; background: var(--d-accent); }
+.dk-pic { display: grid; place-items: center; }
+.dk-img { position: absolute; inset: 4%; width: 92%; height: 84%; max-width: none; object-fit: contain; }
+.dk--b .dk-img { filter: invert(.9) hue-rotate(180deg) brightness(1.05); mix-blend-mode: screen; }
+.dk-cap { position: absolute; left: 24px; right: 24px; bottom: 16px; text-align: center; font-size: 22px; color: var(--d-ink-3); }
+.dk-forms { display: grid; gap: 26px; margin-top: 44px; }
+.dk-form { display: flex; gap: 30px; align-items: center; padding: 26px 34px; border-radius: var(--d-r); background: var(--d-card); font: 600 44px/1.3 var(--d-body); }
+.dk-equip { display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px; margin-top: 50px; }
+.dk-equip div { display: flex; align-items: center; gap: 26px; padding: 30px 34px; border-radius: var(--d-r); background: var(--d-card); font: 700 38px var(--d-body); }
+.dk-equip svg { width: 76px; height: 76px; flex: none; color: var(--d-accent); }
+.dk-goals--proc { gap: 22px; margin-top: 40px; }
+.dk-goals--proc li { font-size: 38px; }
+.dk-table { width: 100%; margin-top: 44px; border-collapse: separate; border-spacing: 0; font-size: 30px; border-radius: var(--d-r); overflow: hidden; background: var(--d-card); }
+.dk-table th { background: var(--d-accent); color: var(--d-on); font-weight: 700; padding: 22px 18px; text-align: center; }
+.dk-table td { height: 92px; border-top: 2px solid var(--d-bg); border-left: 2px solid var(--d-bg); text-align: center; color: var(--d-ink-3); }
+.dk-table td:first-child { border-left: 0; font-weight: 700; width: 80px; }
+.dk-break { display: flex; gap: 50px; align-items: center; margin-top: 60px; }
+.dk-break p { margin: 0; font-size: 46px; line-height: 1.32; max-width: 1200px; }
+.dk-breakart { width: 300px; height: 300px; flex: none; }
+.dk-refl { padding: 44px; font-size: 38px; line-height: 1.4; align-self: start; }
+
+/* сызбалар: карточкалар, схема, график */
+.dk-vtitle { display: block; text-align: center; font: 800 32px var(--d-body); margin-bottom: 22px; }
+.dk-vcards { width: 92%; }
+.dk-vcards > div { display: grid; gap: 16px; }
+.dk-vcard { display: grid; gap: 8px; align-content: center; text-align: center; padding: 24px 16px; min-height: 150px; border-radius: 18px; background: var(--d-bg); box-shadow: inset 0 0 0 3px var(--c); animation: dk-pop .55s cubic-bezier(.3, 1.4, .5, 1) both; }
+.dk-vcard b { font: 800 30px var(--d-body); color: var(--c); }
+.dk-vcard span { font-size: 24px; line-height: 1.3; white-space: pre-line; color: var(--d-ink-2); }
+.dk-c0 { --c: #1565c0; } .dk-c1 { --c: #e65100; } .dk-c2 { --c: #2e7d32; } .dk-c3 { --c: #6a1b9a; } .dk-c4 { --c: #c62828; } .dk-c5 { --c: #00838f; }
+.dk--b .dk-c0 { --c: #64b5f6; } .dk--b .dk-c1 { --c: #ffb74d; } .dk--b .dk-c2 { --c: #81c784; } .dk--b .dk-c3 { --c: #ce93d8; } .dk--b .dk-c4 { --c: #ef9a9a; } .dk--b .dk-c5 { --c: #4dd0e1; }
+.dk-vflow { width: 94%; }
+.dk-vflow > div { display: flex; flex-wrap: wrap; gap: 14px 46px; justify-content: center; }
+.dk-vflow span { position: relative; padding: 24px 26px; border-radius: 18px; background: var(--d-bg); box-shadow: inset 0 0 0 3px var(--c); color: var(--c); font: 800 28px var(--d-body); text-align: center; white-space: pre-line; animation: dk-pop .5s cubic-bezier(.3, 1.4, .5, 1) both; }
+.dk-vflow span + span::before { content: "→"; position: absolute; left: -40px; top: 50%; transform: translateY(-50%); color: var(--d-ink-3); }
+.dk-chart { width: 96%; height: 96%; }
+.dk-ax { font: 600 26px var(--d-body); fill: var(--d-ink-2); }
+.dk-axl { font-weight: 800; fill: var(--d-ink); }
+.dk-ser0 { --s: var(--d-vec); } .dk-ser1 { --s: var(--d-err); } .dk-ser2 { --s: var(--d-ok); } .dk-ser3 { --s: var(--d-sca); }
+.dk-ser polyline { stroke: var(--s); }
+.dk-dot { fill: var(--s); stroke: var(--d-card); stroke-width: 4; animation: dk-fadein .4s 1s both; }
+.dk-bar { fill: var(--s); transform-box: fill-box; transform-origin: bottom; animation: dk-grow .7s cubic-bezier(.3, 1.2, .5, 1) both; }
+@keyframes dk-grow { from { transform: scaleY(0); } }
+@keyframes dk-fadein { from { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .dk-vcard, .dk-vflow span, .dk-bar, .dk-dot { animation: none; } }
+.dk-title h1.dk-tl2 { font-size: 100px; } .dk-title h1.dk-tl3 { font-size: 84px; } .dk-title h1.dk-tl4 { font-size: 68px; }
+.dk-task-row--solo { grid-template-columns: 1fr; max-width: 1500px; }
+.dk-task-row--solo .dk-qtext { font-size: 46px; }
+.dk-spin { transform-origin: 380px 380px; animation: dk-rot 40s linear infinite; }
+@keyframes dk-rot { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .dk-spin { animation: none; } }

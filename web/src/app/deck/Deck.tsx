@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
-import type { DeckData, Dir, Quote, Scale, Slide, Vec } from './types';
+import type { Chart, DeckData, Dir, Quote, Scale, Slide, Vec, Visual } from './types';
 import './deck.css';
 
 /* Анимациялы слайд: 1920×1080 сахна, контейнерге сыйғызылады. step — неше рет басылды. */
@@ -19,7 +19,7 @@ export default function Deck({ data, index, step, theme, stageRef }: { data: Dec
     <div className="dk-box" ref={box}>
       <div ref={stageRef} className={`dk dk--${theme}`} style={{ transform: `translate(${fit.x}px, ${fit.y}px) scale(${fit.k})`, visibility: fit.k ? 'visible' : 'hidden' }}>
         <section className="dk-slide" key={index}>
-          <SlideView s={s} step={step} />
+          <SlideView s={s} step={step} custom={!!data.custom} />
           {s.t !== 'title' && s.t !== 'end' && <div className="dk-foot"><span>{data.topic}</span><span>{index + 1}</span></div>}
         </section>
       </div>
@@ -39,16 +39,16 @@ function Head({ tag, time, title }: { tag?: string; time?: string; title?: strin
   );
 }
 
-function SlideView({ s, step }: { s: Slide; step: number }) {
+function SlideView({ s, step, custom }: { s: Slide; step: number; custom: boolean }) {
   switch (s.t) {
     case 'title':
       return (
         <div className="dk-pad dk-title">
           <div className="dk-kicker">{s.kicker}</div>
-          <h1>{s.title}</h1>
+          <h1 className={`dk-tl${s.title.length > 70 ? '4' : s.title.length > 48 ? '3' : s.title.length > 30 ? '2' : ''}`}>{s.title}</h1>
           <p className="dk-sub">{s.sub}</p>
           {s.foot && <p className="dk-value">{s.foot}</p>}
-          <TitleArt />
+          {custom ? <TitleArt /> : <AtomArt />}
         </div>
       );
     case 'goals':
@@ -113,7 +113,7 @@ function SlideView({ s, step }: { s: Slide; step: number }) {
         <div className="dk-pad">
           <Head tag={s.tag} time={s.time} title={s.title} />
           <div className="dk-split">
-            <div className="dk-card dk-pic"><VecAdd /></div>
+            <div className="dk-card dk-pic">{hasVisual(s) ? <VisualView v={s} /> : <VecAdd />}</div>
             <div className="dk-qs">
               {s.items.map((t, i) => <In key={i} on={step > i} className="dk-q"><span className="dk-num">?</span>{t}</In>)}
               {s.note && <p className="dk-hand">{s.note}</p>}
@@ -127,7 +127,7 @@ function SlideView({ s, step }: { s: Slide; step: number }) {
           <Head tag={s.tag} time={s.time} title={s.title} />
           <div className="dk-split dk-split--qr">
             <ol className="dk-goals">{s.items.map((t, i) => <li key={i} className="dk-step dk-in"><span className="dk-num">{i + 1}</span>{t}</li>)}</ol>
-            <div className="dk-qr">{s.qr && <img src={s.qr} alt="QR-код" />}<span>{s.url.replace(/^https?:\/\//, '')}</span></div>
+            <div className="dk-qr">{s.qr && <img src={s.qr} alt="QR-код" />}<span>{s.url.replace(/^https?:\/\//, '').replace(/\/$/, '')}</span></div>
           </div>
         </div>
       );
@@ -149,8 +149,9 @@ function SlideView({ s, step }: { s: Slide; step: number }) {
       return (
         <div className="dk-pad">
           <Head tag={s.tag} time={s.time} title={s.title} />
-          <div className="dk-rules">{s.rules.map(([a, b], i) => <div key={i} className={`dk-rule dk-rule--${i ? 'n' : 'y'}`}><b>{a}</b><span>{b}</span></div>)}</div>
-          <ol className="dk-goals dk-goals--sm">{s.items.map((t, i) => <li key={i} className="dk-step dk-in"><span className="dk-num">{i + 1}</span>{t}</li>)}</ol>
+          {s.text && <div className="dk-break"><BreakArt /><p><Rich t={s.text} /></p></div>}
+          {s.rules && <div className="dk-rules">{s.rules.map(([a, b], i) => <div key={i} className={`dk-rule dk-rule--${i ? 'n' : 'y'}`}><b>{a}</b><span>{b}</span></div>)}</div>}
+          {s.items && <ol className="dk-goals dk-goals--sm">{s.items.map((t, i) => <li key={i} className="dk-step dk-in"><span className="dk-num">{i + 1}</span>{t}</li>)}</ol>}
         </div>
       );
     case 'levels':
@@ -167,15 +168,15 @@ function SlideView({ s, step }: { s: Slide; step: number }) {
       return (
         <div className="dk-pad">
           <Head tag={s.tag} time={s.time} />
-          <div className="dk-task-row">
+          <div className={`dk-task-row${s.illus || s.vectors ? '' : ' dk-task-row--solo'}`}>
             <div className="dk-qs">
               <div className="dk-lvl">{s.level}</div>
               <p className="dk-qtext">{s.q}</p>
               <In on={step >= 1} className="dk-answer"><small>Жауабы</small>{s.answer}</In>
             </div>
-            <div className="dk-card dk-gridbox">
+            {(s.illus || s.vectors) && <div className="dk-card dk-gridbox">
               {s.illus === 'track' ? <Track run={step >= 1} /> : s.vectors && s.scale ? <VectorGrid scale={s.scale} vectors={s.vectors} shown={step >= 1 ? s.vectors.length : 0} /> : null}
-            </div>
+            </div>}
           </div>
         </div>
       );
@@ -189,7 +190,7 @@ function SlideView({ s, step }: { s: Slide; step: number }) {
                 <div key={i} className="dk-yn__row"><span className="dk-yn__n">{i + 1}</span><span className="dk-yn__t">{q}</span><span className={`dk-yn__a dk-yn__a--v${step > i ? ' dk-pop' : ''}`}>{a}</span></div>
               ))}
             </div>
-            {s.qr && <div className="dk-qr"><img src={s.qr} alt="QR-код" /><span>Socrative</span></div>}
+            {s.qr && <div className="dk-qr"><img src={s.qr} alt="QR-код" /><span>{s.qrLabel || 'Socrative'}</span></div>}
           </div>
         </div>
       );
@@ -198,7 +199,8 @@ function SlideView({ s, step }: { s: Slide; step: number }) {
         <div className="dk-pad">
           <Head tag={s.tag} time={s.time} title={s.title} />
           <div className="dk-split">
-            <div className="dk-fingers">{s.fingers.map(([a, b], i) => <div key={i}><Hand n={i} /><b>{a}</b><span>{b}</span></div>)}</div>
+            {s.fingers ? <div className="dk-fingers">{s.fingers.map(([a, b], i) => <div key={i}><Hand n={i} /><b>{a}</b><span>{b}</span></div>)}</div>
+              : <div className="dk-card dk-refl"><Rich t={s.text || ''} /></div>}
             <div className="dk-scale">{s.scale.map(([a, b], i) => <div key={i} className={`dk-scale--${i}`}><b>{a} балл</b><span>{b}</span></div>)}</div>
           </div>
         </div>
@@ -210,10 +212,85 @@ function SlideView({ s, step }: { s: Slide; step: number }) {
           <div className="dk-levels dk-levels--hw">{s.items.map(([k, t], i) => <div key={k} className={`dk-level dk-level--${i} dk-step dk-in`}><b>{k}</b><span>{t}</span></div>)}</div>
         </div>
       );
+    case 'text':
+      return (
+        <div className="dk-pad">
+          <Head tag={s.tag} time={s.time} title={s.title} />
+          {s.sub && <p className="dk-lead">{s.sub}</p>}
+          <div className="dk-paras">{s.paras.map((t, i) => <p key={i}><Rich t={t} /></p>)}</div>
+          {s.task && <div className="dk-taskbox"><small>Тапсырма</small><Rich t={s.task.replace(/^\*\*Тапсырма:\*\*\s*/, '')} /></div>}
+          {s.quote && <QuoteView q={s.quote} small />}
+        </div>
+      );
+    case 'hook':
+      return (
+        <div className="dk-pad">
+          <Head tag={s.tag} time={s.time} />
+          <div className="dk-hook">
+            <div className="dk-hook__txt">
+              <p><Rich t={s.text} /></p>
+              <In on={step >= 1} as="p" className="dk-hand">{s.ask}</In>
+            </div>
+            <HookArt />
+          </div>
+        </div>
+      );
+    case 'theory': {
+      const vis = hasVisual(s);
+      return (
+        <div className="dk-pad">
+          <Head tag={s.tag} time={s.time} title={s.title} />
+          <div className={vis ? 'dk-split dk-split--th' : 'dk-solo'}>
+            <ul className="dk-bul">{s.items.map((t, i) => <In as="li" key={i} on={step > i}><Rich t={t} /></In>)}</ul>
+            {vis && <div className="dk-card dk-pic"><VisualView v={s} />{s.caption && s.img && <span className="dk-cap">{s.caption}</span>}</div>}
+          </div>
+        </div>
+      );
+    }
+    case 'formulas':
+      return (
+        <div className="dk-pad">
+          <Head tag={s.tag} time={s.time} title={s.title} />
+          <div className="dk-forms">{s.items.map((t, i) => <In key={i} on={step > i} className="dk-form"><span className="dk-num">{i + 1}</span><Rich t={t} /></In>)}</div>
+        </div>
+      );
+    case 'equip':
+      return (
+        <div className="dk-pad">
+          <Head tag={s.tag} time={s.time} title={s.title} />
+          <div className="dk-equip">{s.items.map((t, i) => <div key={i} className="dk-step dk-in" style={{ transitionDelay: `${i * 0.08}s` }}><EquipIcon name={t} />{t[0].toUpperCase() + t.slice(1)}</div>)}</div>
+        </div>
+      );
+    case 'procedure':
+      return (
+        <div className="dk-pad">
+          <Head tag={s.tag} time={s.time} title={s.title} />
+          <ol className="dk-goals dk-goals--proc">{s.items.map((t, i) => <In as="li" key={i} on={step > i}><span className="dk-num">{i + 1}</span><Rich t={t} /></In>)}</ol>
+        </div>
+      );
+    case 'table':
+      return (
+        <div className="dk-pad">
+          <Head tag={s.tag} time={s.time} title={s.title} />
+          <table className="dk-table"><thead><tr><th>№</th>{s.head.map((h, i) => <th key={i}>{h}</th>)}</tr></thead>
+            <tbody>{Array.from({ length: s.rows }, (_, r) => <tr key={r}><td>{r + 1}</td>{s.head.map((_, i) => <td key={i} />)}</tr>)}</tbody></table>
+          {s.note && <p className="dk-hand dk-note">{s.note}</p>}
+        </div>
+      );
+    case 'chart':
+      return (
+        <div className="dk-pad">
+          <Head tag={s.tag} time={s.time} title={s.title} />
+          <div className="dk-split dk-split--chart">
+            <div className="dk-card dk-pic"><ChartView c={s.chart} /></div>
+            <ol className="dk-goals dk-goals--sm">{s.items.map((t, i) => <li key={i} className="dk-step dk-in"><span className="dk-num">{i + 1}</span>{t}</li>)}</ol>
+          </div>
+        </div>
+      );
     case 'end':
       return (
         <div className="dk-pad dk-end">
-          <TitleArt small />
+          {custom ? <TitleArt small /> : <AtomArt small />}
           <h1>{s.title}</h1>
           {s.quote && <QuoteView q={s.quote} />}
         </div>
@@ -390,4 +467,113 @@ function Track({ run }: { run: boolean }) {
 
 function Hand({ n }: { n: number }) {
   return <svg viewBox="0 0 60 60" aria-hidden><circle cx="30" cy="30" r="28" className={n % 2 ? 'dk-fs' : 'dk-fv'} opacity=".14" /><text x="30" y="41" textAnchor="middle" className={`dk-lbl ${n % 2 ? 'dk-fs' : 'dk-fv'}`} fontSize="30">{n + 1}</text></svg>;
+}
+
+/* ───────── мәтін: **қалың** ───────── */
+function Rich({ t }: { t: string }) {
+  const parts = t.split(/\*\*(.+?)\*\*/g);
+  return <>{parts.map((p, i) => (i % 2 ? <b key={i}>{p}</b> : p))}</>;
+}
+
+const hasVisual = (v: Visual) => !!(v.img || v.cards || v.flow || v.chart);
+
+function VisualView({ v }: { v: Visual }) {
+  if (v.cards) {
+    const n = v.cards.items.length, cols = n === 4 || n === 2 ? 2 : 3;
+    return (
+      <div className="dk-vcards">
+        <b className="dk-vtitle">{v.cards.title}</b>
+        <div style={{ gridTemplateColumns: `repeat(${cols}, 1fr)` }}>
+          {v.cards.items.map(([h, b], i) => <div key={i} className={`dk-vcard dk-c${i % 6}`} style={{ animationDelay: `${0.15 + i * 0.12}s` }}><b>{h}</b><span>{b}</span></div>)}
+        </div>
+      </div>
+    );
+  }
+  if (v.flow) {
+    return (
+      <div className="dk-vflow">
+        <b className="dk-vtitle">{v.flow.title}</b>
+        <div>{v.flow.items.map((t, i) => <span key={i} className={`dk-c${i % 6}`} style={{ animationDelay: `${0.15 + i * 0.2}s` }}>{t}</span>)}</div>
+      </div>
+    );
+  }
+  if (v.chart) return <ChartView c={v.chart} />;
+  if (v.img) return <img className="dk-img" src={v.img.svg} alt="" draggable={false} />;
+  return null;
+}
+
+/** График: сызық немесе бағана, біртіндеп «сызылады» */
+function ChartView({ c }: { c: Chart }) {
+  const W = 900, H = 600, L = 110, R = 30, T = 70, B = 90;
+  const all = c.series.flatMap((s) => s.values), max0 = Math.max(0, ...all), min = Math.min(0, ...all);
+  const step = niceStep((max0 - min) / 5), max = Math.ceil(max0 / step) * step || step;
+  const x = (i: number) => c.type === 'bar' ? L + ((i + 0.5) * (W - L - R)) / c.labels.length : L + (i * (W - L - R)) / Math.max(1, c.labels.length - 1);
+  const y = (v: number) => T + ((max - v) * (H - T - B)) / (max - min || 1);
+  const ticks: number[] = []; for (let v = min; v <= max + 1e-9; v += step) ticks.push(+v.toFixed(6));
+  const every = Math.ceil(c.labels.length / 12);
+  const bw = ((W - L - R) / c.labels.length) * 0.7 / c.series.length;
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} className="dk-chart" aria-label={c.title}>
+      {ticks.map((v) => <g key={v}><line x1={L} x2={W - R} y1={y(v)} y2={y(v)} className="dk-sg" strokeWidth="2" /><text x={L - 14} y={y(v) + 9} textAnchor="end" className="dk-ax">{fmt(v)}</text></g>)}
+      <line x1={L} x2={W - R} y1={y(0)} y2={y(0)} className="dk-si" strokeWidth="3" />
+      <line x1={L} x2={L} y1={T - 10} y2={H - B} className="dk-si" strokeWidth="3" />
+      {c.labels.map((l, i) => i % every === 0 && <text key={i} x={x(i)} y={H - B + 36} textAnchor="middle" className="dk-ax">{l}</text>)}
+      <text x={(L + W - R) / 2} y={H - 18} textAnchor="middle" className="dk-ax dk-axl">{c.xl}</text>
+      <text x={L - 4} y={T - 30} textAnchor="start" className="dk-ax dk-axl">{c.yl}</text>
+      {c.series.map((s, k) => c.type === 'bar'
+        ? <g key={k} className={`dk-ser dk-ser${k}`}>{s.values.map((v, i) => <rect key={i} x={x(i) - (bw * c.series.length) / 2 + k * bw} width={bw - 4} y={Math.min(y(v), y(0))} height={Math.abs(y(v) - y(0))} rx="6" className="dk-bar" style={{ animationDelay: `${i * 0.06}s` }} />)}</g>
+        : <g key={k} className={`dk-ser dk-ser${k}`}>
+            <polyline points={s.values.map((v, i) => `${x(i)},${y(v)}`).join(' ')} fill="none" strokeWidth="7" strokeLinejoin="round" strokeLinecap="round" className="dk-draw" pathLength={1} style={{ '--len': 1, animationDelay: `${k * 0.4}s` } as CSSProperties} />
+            {s.values.length < 14 && s.values.map((v, i) => <circle key={i} cx={x(i)} cy={y(v)} r="9" className="dk-dot" />)}
+          </g>)}
+      {c.series.length > 1 && <g>{c.series.map((s, k) => <g key={k} transform={`translate(${W - R - (c.series.length - k) * 250} ${T - 40})`} className={`dk-ser${k}`}><rect width="28" height="10" y="-8" rx="5" className="dk-bar" /><text x="38" y="2" className="dk-ax">{s.name}</text></g>)}</g>}
+    </svg>
+  );
+}
+function niceStep(r: number) { const p = 10 ** Math.floor(Math.log10(r || 1)), m = r / p; return (m <= 1 ? 1 : m <= 2 ? 2 : m <= 5 ? 5 : 10) * p; }
+const fmt = (v: number) => (Math.abs(v) >= 1000 ? v.toLocaleString('ru-RU') : String(+v.toFixed(3))).replace('.', ',');
+
+function HookArt() {
+  return (
+    <svg className="dk-hookart" viewBox="0 0 500 500" aria-hidden>
+      <circle cx="250" cy="250" r="200" className="dk-sg" fill="none" strokeWidth="3" strokeDasharray="6 14" />
+      <g className="dk-float"><text x="250" y="330" textAnchor="middle" className="dk-lbl dk-fa" fontSize="280">?</text></g>
+      <circle cx="120" cy="140" r="16" className="dk-fs" /><circle cx="390" cy="380" r="22" className="dk-fv" opacity=".5" /><circle cx="400" cy="120" r="10" className="dk-fv" />
+    </svg>
+  );
+}
+
+function BreakArt() {
+  return <svg className="dk-breakart" viewBox="0 0 200 200" aria-hidden><circle cx="100" cy="100" r="90" className="dk-fa" opacity=".12" /><g className="dk-float"><circle cx="100" cy="58" r="20" className="dk-fa" /><path d="M100 82v52M100 134l-28 40M100 134l28 40M60 96l40 10 40-10" className="dk-sa" strokeWidth="12" strokeLinecap="round" fill="none" /></g></svg>;
+}
+
+const EQUIP: [RegExp, string][] = [
+  [/сызғыш|рулетка/, 'M3 16 16 3l5 5L8 21zM7 12l2 2M10 9l2 2M13 6l2 2'],
+  [/мензурка|цилиндр|стакан|стақан|ыдыс|колба/, 'M8 3h8M9 3v6L5 19a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2l-4-10V3M7 15h10'],
+  [/термометр/, 'M14 14V5a2 2 0 0 0-4 0v9a4 4 0 1 0 4 0zM12 9v6'],
+  [/секундомер|сағат/, 'M12 21a8 8 0 1 0 0-16 8 8 0 0 0 0 16zM12 9v4l2 2M10 2h4'],
+  [/динамометр|серіппе/, 'M12 2v3M8 5h8l-6 3 6 3-6 3 6 3H8M12 17v5'],
+  [/таразы|гир/, 'M12 3v18M5 7h14M5 7l-3 7a3 3 0 0 0 6 0zM19 7l-3 7a3 3 0 0 0 6 0zM8 21h8'],
+  [/амперметр|вольтметр|мультиметр|гальванометр/, 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 12l4-4M8 16h8'],
+  [/батарея|ток көзі|аккумулятор/, 'M3 8h16v8H3zM19 11h2v2h-2M7 12h4M9 10v4'],
+  [/шам|лампа/, 'M9 18h6M10 21h4M12 3a6 6 0 0 0-4 10.5V16h8v-2.5A6 6 0 0 0 12 3z'],
+  [/магнит/, 'M5 4v8a7 7 0 0 0 14 0V4h-4v8a3 3 0 0 1-6 0V4z'],
+  [/линза|айна|экран|призма/, 'M12 3c3 4 3 14 0 18-3-4-3-14 0-18z'],
+  [/сым|кілт|реостат|резистор/, 'M2 12h4l2-4 3 8 3-8 3 8 2-4h3'],
+];
+function EquipIcon({ name }: { name: string }) {
+  const d = (EQUIP.find(([r]) => r.test(name.toLowerCase())) || [null, 'M4 7h16v12H4zM9 7V4h6v3'])[1];
+  return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d={d} /></svg>;
+}
+
+function AtomArt({ small }: { small?: boolean }) {
+  return (
+    <svg className={`dk-titleart${small ? ' dk-titleart--sm' : ''}`} viewBox="0 0 760 760" aria-hidden>
+      <g className="dk-spin">
+        {[0, 60, 120].map((r, k) => <ellipse key={r} cx="380" cy="380" rx="300" ry="114" transform={`rotate(${r} 380 380)`} fill="none" className={['dk-sv', 'dk-ss', 'dk-sa'][k]} strokeWidth="10" />)}
+        <circle r="18" className="dk-fs"><animateMotion dur="5s" repeatCount="indefinite" path="M680 380a300 114 0 1 1-600 0a300 114 0 1 1 600 0" /></circle>
+      </g>
+      <circle cx="380" cy="380" r="44" className="dk-fv" />
+    </svg>
+  );
 }

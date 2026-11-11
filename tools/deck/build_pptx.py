@@ -13,6 +13,10 @@ from pptx.util import Emu, Pt
 from pptx.dml.color import RGBColor
 from pptx.enum.shapes import MSO_SHAPE, MSO_CONNECTOR
 from pptx.enum.dml import MSO_LINE
+from pptx.chart.data import CategoryChartData
+from pptx.enum.chart import XL_CHART_TYPE, XL_LEGEND_POSITION
+import os, re
+REPO = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from pptx.enum.text import PP_ALIGN, MSO_ANCHOR
 from pptx.oxml.ns import qn
 from lxml import etree
@@ -33,9 +37,9 @@ def rgb(h):
 
 def steps_of(s):
     t = s['t']
-    if t in ('goals', 'picture', 'yesno', 'sort', 'qa', 'levels'):
+    if t in ('goals', 'picture', 'yesno', 'sort', 'qa', 'levels', 'theory', 'formulas', 'procedure'):
         return len(s['items'])
-    return {'problem': 2, 'compare': 3 if s.get('note') else 2, 'vectors': len(s.get('vectors', [])), 'task': 1}.get(t, 0)
+    return {'problem': 2, 'hook': 1, 'compare': 3 if s.get('note') else 2, 'vectors': len(s.get('vectors', [])), 'task': 1}.get(t, 0)
 
 
 class Page:
@@ -104,7 +108,7 @@ class Page:
         tf.margin_left = tf.margin_right = tf.margin_top = tf.margin_bottom = 0
         tf.vertical_anchor = {'t': MSO_ANCHOR.TOP, 'm': MSO_ANCHOR.MIDDLE, 'b': MSO_ANCHOR.BOTTOM}[anchor]
         if isinstance(runs, str):
-            runs = [(runs, {})]
+            runs = [(x, {'bold': True} if i % 2 else {}) for i, x in enumerate(re.split(r'\*\*(.+?)\*\*', runs)) if x]
         paras = [[]]
         for txt, st in runs:
             parts = txt.split('\n')
@@ -270,13 +274,30 @@ def title_art(pg, x, y, size, auto=True):
 
 
 # ───────── шаблондар ─────────
+def title_size(t):
+    n = len(t)
+    return 116 if n <= 30 else 96 if n <= 48 else 80 if n <= 70 else 66
+
+
+def atom_art(pg, cx, cy, r):
+    for k, rot in enumerate((0, 60, 120)):
+        e = pg.sh.add_shape(MSO_SHAPE.OVAL, px(cx - r), px(cy - r * 0.38), px(2 * r), px(0.76 * r))
+        e.fill.background(); e.line.color.rgb = rgb((C['vec'], C['sca'], C['accent'])[k]); e.line.width = px(10); e.rotation = rot; e.shadow.inherit = False
+    pg.oval(cx, cy, r * 0.28, C['vec'])
+    pg.oval(cx + r * 0.98, cy, r * 0.12, C['sca'])
+
+
 def s_title(pg, s, D):
-    pg.text(128, 290, 1100, 50, s['kicker'].upper(), 30, color='accent', bold=True)
-    pg.text(128, 350, 1150, 330, s['title'], 116, bold=True, spacing=0.95)
-    pg.text(128, 700, 1100, 60, s['sub'], 38, color='ink2')
+    fs = title_size(s['title'])
+    pg.text(128, 250, 1100, 50, s['kicker'].upper(), 30, color='accent', bold=True)
+    pg.text(128, 320, 1100, 470, s['title'], fs, bold=True, spacing=0.95, anchor='m')
+    pg.text(128, 810, 1100, 100, s['sub'], 34, color='ink2')
     if s.get('foot'):
         pg.text(128, 990, 1300, 40, s['foot'], 26, color='ink3')
-    title_art(pg, 1180, 170, 720)
+    if D.get('custom'):
+        title_art(pg, 1180, 170, 720)
+    else:
+        atom_art(pg, 1530, 540, 300)
 
 
 def s_goals(pg, s, D):
@@ -396,7 +417,8 @@ def vecadd(pg, x, y, W, H):
 
 def s_picture(pg, s, D):
     head(pg, s)
-    vecadd(pg, 128, 270, 860, 535)
+    if not visual(pg, s, 128, 270, 860, 600):
+        vecadd(pg, 128, 270, 860, 535)
     for i, t in enumerate(s['items']):
         g = pg.group()
         num(pg, 1060, 290 + i * 150, '?', into=g.shapes)
@@ -418,7 +440,7 @@ def s_link(pg, s, D):
         num(pg, 128, 300 + i * 130, str(i + 1))
         pg.text(228, 304 + i * 130, 1050, 110, t, 40)
     if s.get('qr'):
-        qr(pg, s['qr'], 1372, 280, s['url'].replace('https://', ''))
+        qr(pg, s['qr'], 1372, 280, s['url'].replace('https://', '').rstrip('/'))
     else:
         pg.text(128, 720, 1200, 50, s['url'], 30, color='accent')
 
@@ -443,12 +465,17 @@ def s_vectors(pg, s, D):
 
 def s_break(pg, s, D):
     head(pg, s)
-    for i, (a, b) in enumerate(s['rules']):
+    if s.get('text'):
+        pg.oval(330, 520, 300, C['accent']).fill.fore_color.brightness = 0.85
+        pg.oval(330, 440, 60, C['accent'])
+        pg.line(330, 470, 330, 560, C['accent'], 14); pg.line(330, 560, 290, 630, C['accent'], 14); pg.line(330, 560, 370, 630, C['accent'], 14); pg.line(270, 495, 390, 495, C['accent'], 14)
+        pg.text(560, 330, 1230, 400, s['text'], 46, anchor='m', spacing=1.1)
+    for i, (a, b) in enumerate(s.get('rules') or []):
         x = 128 + i * 852
         pg.rect(x, 270, 812, 180, C['ok'] if i == 0 else C['err'], r=28)
         pg.text(x + 44, 296, 720, 64, a, 44, color='FFFFFF', bold=True)
         pg.text(x + 44, 370, 720, 56, b, 36, color='FFFFFF')
-    for i, t in enumerate(s['items']):
+    for i, t in enumerate(s.get('items') or []):
         num(pg, 128, 520 + i * 120, str(i + 1))
         pg.text(228, 526 + i * 120, 1500, 70, t, 38)
 
@@ -508,9 +535,12 @@ def track(pg, x, y, W, H):
 
 def s_task(pg, s, D):
     head(pg, s)
+    vis = s.get('illus') or s.get('vectors')
+    W = 680 if vis else 1664
     pg.text(128, 250, 300, 130, s['level'], 110, color='accent', bold=True)
-    pg.text(128, 400, 680, 360, s['q'], 38, spacing=1.05)
-    ans = pg.text(128, 790, 680, 170, [('Жауабы\n', {'size': 24}), (s['answer'], {'bold': True})], 34, color='on', fill=C['accent'], r=28, anchor='m')
+    pg.text(128, 400, W, 330, s['q'], 38 if vis else 44, spacing=1.05)
+    ah = 120 + 46 * (len(s['answer']) // (34 if vis else 80))
+    ans = pg.text(128, min(960 - ah, 760), W, ah, [('Жауабы\n', {'size': 24}), (s['answer'], {'bold': True})], 34, color='on', fill=C['accent'], r=28, anchor='m')
     ans.text_frame.margin_left = ans.text_frame.margin_right = px(32)
     if s.get('illus') == 'track':
         trail, res = track(pg, 860, 250, 932, 621)
@@ -529,12 +559,14 @@ def s_qa(pg, s, D):
     head(pg, s)
     rows_with_pills(pg, s['items'], 290, 110, 22, 1180, lambda a: ('accent', a))
     if s.get('qr'):
-        qr(pg, s['qr'], 1372, 280, 'Socrative')
+        qr(pg, s['qr'], 1372, 280, s.get('qrLabel') or 'Socrative')
 
 
 def s_reflect(pg, s, D):
     head(pg, s)
-    for i, (a, b) in enumerate(s['fingers']):
+    if not s.get('fingers'):
+        pg.text(128, 290, 880, 560, s.get('text', ''), 38, fill=C['card'], r=28, spacing=1.1).text_frame.margin_left = px(44)
+    for i, (a, b) in enumerate(s.get('fingers') or []):
         y = 290 + i * 116
         num(pg, 128, y, str(i + 1), fill='sca' if i % 2 else 'vec')
         pg.text(222, y + 6, 330, 60, a, 34, bold=True)
@@ -553,14 +585,188 @@ def s_homework(pg, s, D):
 
 
 def s_end(pg, s, D):
-    title_art(pg, 820, 140, 280)
+    if D.get('custom'):
+        title_art(pg, 820, 140, 280)
+    else:
+        atom_art(pg, 960, 300, 140)
     pg.text(160, 450, 1600, 260, s['title'], 88, bold=True, align='c', spacing=0.95)
     if s.get('quote'):
         q = s['quote']
         pg.text(260, 740, 1400, 150, [('«' + q['text'] + '»', {'bold': True}), ('\n— ' + q['by'], {'color': 'ink3', 'size': 30})], 42, align='c')
 
 
-T = dict(title=s_title, goals=s_goals, yesno=s_yesno, problem=s_problem, compare=s_compare, picture=s_picture, link=s_link,
+def visual(pg, s, x, y, W, H):
+    """Сызба: карточкалар / схема / график — өз пішіндерімен; сурет — PNG (300 dpi)"""
+    if s.get('cards'):
+        cv = s['cards']; items = cv['items']; n = len(items); cols = 2 if n in (2, 4) else 3; rows = -(-n // cols)
+        pg.rect(x, y, W, H, C['card'], r=28)
+        pg.text(x, y + 26, W, 50, cv['title'], 32, bold=True, align='c')
+        gw, gh = (W - 60 - (cols - 1) * 16) / cols, min(190, (H - 120 - (rows - 1) * 16) / rows)
+        cols6 = ['1565C0', 'E65100', '2E7D32', '6A1B9A', 'C62828', '00838F']
+        for i, (hd, body) in enumerate(items):
+            cx, cy = x + 30 + (i % cols) * (gw + 16), y + 100 + (i // cols) * (gh + 16)
+            g = pg.group(); G = g.shapes
+            pg.rect(cx, cy, gw, gh, 'FFFFFF', r=18, line=cols6[i % 6], lw=3, into=G)
+            pg.text(cx + 10, cy + 14, gw - 20, 44, hd, 28, color=cols6[i % 6], bold=True, align='c', into=G)
+            pg.text(cx + 10, cy + 62, gw - 20, gh - 70, body.replace('\n', ' '), 22, color='ink2', align='c', into=G)
+        return True
+    if s.get('flow'):
+        fv = s['flow']; items = fv['items']; n = len(items)
+        pg.rect(x, y, W, H, C['card'], r=28)
+        pg.text(x, y + 26, W, 50, fv['title'], 32, bold=True, align='c')
+        cols6 = ['1565C0', 'E65100', '2E7D32', '6A1B9A', 'C62828', '00838F']
+        per = min(n, 3); bw = (W - 60 - (per - 1) * 60) / per
+        for i, t in enumerate(items):
+            r_, c_ = divmod(i, per); bx, by = x + 30 + c_ * (bw + 60), y + 130 + r_ * 170
+            pg.text(bx, by, bw, 130, t.replace('\n', ' '), 28, color=cols6[i % 6], bold=True, align='c', anchor='m', fill='FFFFFF', r=18)
+            if c_ < per - 1 and i < n - 1:
+                pg.line(bx + bw + 8, by + 65, bx + bw + 52, by + 65, C['ink3'], 5, arrow=True)
+        return True
+    if s.get('chart'):
+        chart(pg, s['chart'], x, y, W, H); return True
+    if s.get('img') and s['img'].get('png'):
+        pg.rect(x, y, W, H, 'FFFFFF', r=28, line=C['grid'], lw=2)
+        iw, ih = s['img']['w'], s['img']['h']; k = min((W - 40) / iw, (H - 40) / ih)
+        pg.sh.add_picture(os.path.join(REPO, s['img']['png']), px(x + (W - iw * k) / 2), px(y + (H - ih * k) / 2), px(iw * k), px(ih * k))
+        return True
+    return False
+
+
+def chart(pg, c, x, y, W, H):
+    pg.rect(x, y, W, H, C['card'], r=28)
+    cd = CategoryChartData(); cd.categories = c['labels']
+    for se in c['series']:
+        cd.add_series(se['name'], se['values'])
+    gf = pg.sh.add_chart(XL_CHART_TYPE.COLUMN_CLUSTERED if c['type'] == 'bar' else XL_CHART_TYPE.LINE_MARKERS, px(x + 20), px(y + 20), px(W - 40), px(H - 40), cd)
+    ch = gf.chart
+    ch.has_title = True; ch.chart_title.text_frame.text = c['title']
+    tp = ch.chart_title.text_frame.paragraphs[0].runs[0].font; tp.size = Pt(16); tp.bold = True; tp.name = FONT
+    ch.has_legend = len(c['series']) > 1
+    if ch.has_legend:
+        ch.legend.position = XL_LEGEND_POSITION.BOTTOM; ch.legend.include_in_layout = False; ch.legend.font.size = Pt(13); ch.legend.font.name = FONT
+    cols = [C['vec'], C['err'], C['ok'], C['sca']]
+    for i, pl in enumerate(ch.plots[0].series):
+        if c['type'] == 'bar':
+            pl.format.fill.solid(); pl.format.fill.fore_color.rgb = rgb(cols[i % 4])
+        else:
+            pl.format.line.color.rgb = rgb(cols[i % 4]); pl.format.line.width = Pt(3.5); pl.smooth = False
+            pl.marker.format.fill.solid(); pl.marker.format.fill.fore_color.rgb = rgb(cols[i % 4]); pl.marker.size = 8
+    for ax, label in ((ch.category_axis, c['xl']), (ch.value_axis, c['yl'])):
+        ax.tick_labels.font.size = Pt(13); ax.tick_labels.font.name = FONT
+        if label:
+            ax.has_title = True; ax.axis_title.text_frame.text = label
+            f = ax.axis_title.text_frame.paragraphs[0].runs[0].font; f.size = Pt(14); f.bold = True; f.name = FONT
+    ch.value_axis.has_major_gridlines = True
+    ch.value_axis.major_gridlines.format.line.color.rgb = rgb(C['grid'])
+    return gf
+
+
+def s_text(pg, s, D):
+    head(pg, s)
+    y = 250
+    if s.get('sub'):
+        sh_ = 50 + 44 * (len(s['sub']) // 85)
+        pg.text(128, y, 1664, sh_, s['sub'], 34, color='ink2'); y += sh_ + 30
+    body = '\n'.join(s['paras'])
+    h = 120 + 56 * (len(body) // 70)
+    pg.text(128, y, 1500, h, body, 40, spacing=1.1); y += h + 30
+    if s.get('task'):
+        t = re.sub(r'^\*\*Тапсырма:\*\*\s*', '', s['task'])
+        hh = 130 + 50 * (len(t) // 75)
+        box = pg.text(128, y, 1500, hh, [('ТАПСЫРМА\n', {'color': 'accent', 'bold': True, 'size': 24})] + [(x_, {'bold': True} if i % 2 else {}) for i, x_ in enumerate(re.split(r'\*\*(.+?)\*\*', t)) if x_], 36,
+                      fill=C['card'], r=28, anchor='m', spacing=1.1)
+        box.text_frame.margin_left = box.text_frame.margin_right = px(36)
+    if s.get('quote'):
+        q = s['quote']
+        pg.text(128, 880, 1664, 100, [('«' + q['text'] + '»', {'bold': True}), ('\n— ' + q['by'], {'color': 'ink3', 'size': 24})], 30, color='ink2')
+
+
+def s_hook(pg, s, D):
+    head(pg, s)
+    pg.text(128, 250, 1100, 470, s['text'], 50, anchor='m', spacing=1.08)
+    a = pg.text(128, 760, 1100, 150, s['ask'], 42, color='accent', bold=True, italic=True)
+    ring = pg.oval(1530, 560, 440, C['bg'], line=C['grid'], lw=3); ring.fill.background(); ring.line.dash_style = MSO_LINE.DASH
+    pg.text(1330, 330, 400, 420, '?', 300, color='accent', bold=True, align='c', anchor='m')
+    pg.oval(1390, 400, 30, C['sca']); pg.oval(1690, 760, 44, C['vec']); pg.oval(1720, 400, 20, C['vec'])
+    pg.click(a)
+
+
+def s_theory(pg, s, D):
+    head(pg, s)
+    has = any(s.get(k) for k in ('img', 'cards', 'flow', 'chart'))
+    W = 860 if has else 1600; fs = 34 if has else 40
+    y = 270
+    for t in s['items']:
+        lines = 1 + len(re.sub(r'\*\*', '', t)) // (40 if has else 70)
+        h = lines * fs * 1.35 + 16
+        g = pg.group()
+        pg.oval(148, y + fs * 0.62, 18, C['accent'], into=g.shapes)
+        pg.text(180, y, W - 52, h, t, fs, spacing=1.05, into=g.shapes)
+        pg.click(g); y += h + 18
+    if has:
+        visual(pg, s, 1060, 260, 732, 640)
+
+
+def s_formulas(pg, s, D):
+    head(pg, s)
+    for i, t in enumerate(s['items']):
+        y = 280 + i * 150
+        g = pg.group()
+        pg.rect(128, y, 1664, 128, C['card'], r=28, into=g.shapes)
+        num(pg, 160, y + 32, str(i + 1), into=g.shapes)
+        pg.text(260, y, 1500, 128, t, 40, bold=True, anchor='m', into=g.shapes)
+        pg.click(g)
+
+
+def s_equip(pg, s, D):
+    head(pg, s)
+    for i, t in enumerate(s['items']):
+        x, y = 128 + (i % 3) * 568, 300 + (i // 3) * 170
+        pg.rect(x, y, 540, 140, C['card'], r=28)
+        pg.oval(x + 70, y + 70, 70, C['accent'])
+        pg.text(x + 130, y, 390, 140, t[0].upper() + t[1:], 36, bold=True, anchor='m')
+
+
+def s_procedure(pg, s, D):
+    head(pg, s)
+    n = len(s['items']); gap = min(120, 640 / max(1, n))
+    for i, t in enumerate(s['items']):
+        g = pg.group()
+        num(pg, 128, 280 + i * gap, str(i + 1), into=g.shapes)
+        pg.text(228, 284 + i * gap, 1560, gap - 6, t, 36, into=g.shapes)
+        pg.click(g)
+
+
+def s_table(pg, s, D):
+    head(pg, s)
+    cols = ['№'] + s['head']; rows = s['rows'] + 1
+    tb = pg.sh.add_table(rows, len(cols), px(128), px(280), px(1664), px(90 * rows)).table
+    tb.columns[0].width = px(90)
+    for j in range(1, len(cols)):
+        tb.columns[j].width = px((1664 - 90) / (len(cols) - 1))
+    for i in range(rows):
+        tb.rows[i].height = px(90)
+        for j in range(len(cols)):
+            cell = tb.cell(i, j); cell.fill.solid(); cell.fill.fore_color.rgb = rgb(C['accent'] if i == 0 else (C['card'] if i % 2 else 'FFFFFF'))
+            tf = cell.text_frame; tf.text = cols[j] if i == 0 else (str(i) if j == 0 else '')
+            cell.vertical_anchor = MSO_ANCHOR.MIDDLE
+            for p in tf.paragraphs:
+                p.alignment = PP_ALIGN.CENTER
+                for r_ in p.runs:
+                    r_.font.size = Pt(14); r_.font.name = FONT; r_.font.bold = i == 0; r_.font.color.rgb = rgb('FFFFFF' if i == 0 else C['ink'])
+    if s.get('note'):
+        pg.text(128, 300 + 90 * rows + 30, 1664, 60, s['note'], 36, color='accent', italic=True, bold=True)
+
+
+def s_chart(pg, s, D):
+    head(pg, s)
+    chart(pg, s['chart'], 128, 260, 1000, 700)
+    for i, t in enumerate(s['items']):
+        num(pg, 1180, 290 + i * 150, str(i + 1))
+        pg.text(1270, 294 + i * 150, 520, 130, t, 34)
+
+
+T = dict(text=s_text, hook=s_hook, theory=s_theory, formulas=s_formulas, equip=s_equip, procedure=s_procedure, table=s_table, chart=s_chart, title=s_title, goals=s_goals, yesno=s_yesno, problem=s_problem, compare=s_compare, picture=s_picture, link=s_link,
          vectors=s_vectors, **{'break': s_break}, levels=s_levels, sort=s_sort, task=s_task, qa=s_qa, reflect=s_reflect, homework=s_homework, end=s_end)
 
 
