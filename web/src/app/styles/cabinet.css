@@ -228,16 +228,7 @@
 @keyframes morph-in { from { opacity: 0; transform: translateY(10px); filter: blur(3px); } }
 @media (prefers-reduced-motion: reduce) { ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation: none !important; } }
 
-/* ═══════════ Режимдер: «Сабақтан тыс» / «Сабақ барысы» ═══════════ */
-.modes { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px; margin-top: var(--s-4); border-radius: var(--r-l); background: var(--bg-2); }
-.modes button { display: grid; gap: 2px; padding: 10px 14px; border: 0; border-radius: calc(var(--r-l) - 4px); background: none; color: var(--fg-2); text-align: center; cursor: pointer; transition: background var(--d-2) var(--out), color var(--d-1), box-shadow var(--d-2); }
-.modes button b { font-size: 16px; font-weight: 600; }
-.modes button small { font-size: 12px; color: var(--fg-3); }
-.modes button[aria-selected="true"] { background: var(--bg); color: var(--fg); box-shadow: 0 1px 3px rgba(0,0,0,.08), 0 6px 18px -10px rgba(0,0,0,.25); view-transition-name: mode-pill; }
-.modes button[aria-selected="true"]:last-child { background: var(--accent); color: var(--on-accent); }
-.modes button[aria-selected="true"]:last-child small { color: color-mix(in srgb, var(--on-accent) 80%, transparent); }
-body.mode-class .footer, body.mode-class footer { display: none; }
-
+/* ═══════════ «Сабақ барысы» экраны (ауыстырғыш — жоғарғы жолақта, ui/Layout.tsx) ═══════════ */
 .cab--class { max-width: 1280px; }
 .cm { display: grid; gap: var(--s-4); padding: var(--s-5) 0 var(--s-8); }
 .cm__head { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--s-4); }

@@ -7,6 +7,7 @@ import { useToast } from '../../ui/kit';
 import { AccountNav, Footer } from '../../ui/Layout';
 import { AuthView, RecoverView } from '../Auth';
 import Lessons from './Lessons';
+import { useMode } from '../../lib/mode';
 import ClassMode from './ClassMode';
 import LessonPane, { morph, useWide } from './LessonPane';
 import { ClassesSheet, ProfileSheet, SubscribeSheet, TelegramSheet, ViewerSheet } from './Sheets';
@@ -49,10 +50,7 @@ function Teacher() {
   const [preset, setPreset] = useState<number | null>(null);
   const [viewing, setViewing] = useState<Lesson | null>(null);
   const wide = useWide();
-  // Екі режим: «Сабақтан тыс» (дайындық: қарау, жүктеу) және «Сабақ барысы» (тек тақта). Құрылғыда есте қалады.
-  const [mode, setModeS] = useState<'prep' | 'class'>(() => { try { return localStorage.getItem('fs-app-mode') === 'class' ? 'class' : 'prep'; } catch { return 'prep'; } });
-  const setMode = (m: 'prep' | 'class') => { morph(() => setModeS(m)); try { localStorage.setItem('fs-app-mode', m); } catch { /* */ } };
-  useEffect(() => { document.body.classList.toggle('mode-class', mode === 'class'); return () => document.body.classList.remove('mode-class'); }, [mode]);
+  const mode = useMode(); // «Сабақтан тыс» / «Сабақ барысы» — жоғарғы жолақтағы ауыстырғыш
   const [sel, setSel] = useState<Lesson | null>(null);
   const [tab, setTab] = useState<'pres' | 'kmzh'>('pres');
   const select = (l: Lesson | null, auto?: boolean) => { if (auto || !sel) setSel(l); else if (l && (l.v !== sel.v || l.n !== sel.n)) morph(() => setSel(l)); };
@@ -81,15 +79,8 @@ function Teacher() {
   const clsSum = [[7, 8, 9].filter((g) => vs.includes(String(g))).join(', ') + ([7, 8, 9].some((g) => vs.includes(String(g))) ? '-сынып' : ''),
     ...vs.filter((v) => v.includes('-')).map((v) => { const [g, d, h] = v.split('-'); return `${g} ${DIRN[d]} ${h} сағ.`; })].filter(Boolean).join(' · ');
 
-  const modes = (
-    <div className="modes" role="tablist" aria-label="Режим">
-      <button type="button" role="tab" aria-selected={mode === 'prep'} onClick={() => setMode('prep')}><b>Сабақтан тыс</b><small>Қарау, жүктеу, дайындық</small></button>
-      <button type="button" role="tab" aria-selected={mode === 'class'} onClick={() => setMode('class')}><b>Сабақ барысы</b><small>Интерактивті тақта</small></button>
-    </div>
-  );
   if (mode === 'class') return (
     <div className="cab cab--class">
-      {modes}
       <ClassMode lessons={lessons} onLock={lock} />
       <SubscribeSheet open={sheet === 'subscribe'} onClose={() => setSheet(null)} preset={preset} />
     </div>
@@ -97,7 +88,6 @@ function Teacher() {
   return (
     <div className={`cab${wide ? ' cab--split' : ''}`}>
       <div className="cab__main">
-      {modes}
       <header className="hello">
         <Suspense fallback={<div style={{ width: 88, height: 88 }} />}><Logo3D /></Suspense>
         <h1 className="t-title rise rise-1">Қайырлы {dayPart()}{name ? `, ${name}` : ''}!</h1>

@@ -1,7 +1,8 @@
 import type { ReactNode } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAccount } from '../lib/account';
 import { sb } from '../lib/data';
+import { setMode, useMode, type Mode } from '../lib/mode';
 import { Mark } from './icons';
 
 export function Brand() {
@@ -14,9 +15,28 @@ export function Nav({ plain, children }: { plain?: boolean; children?: ReactNode
     <header className={`nav${plain ? ' nav--plain' : ''}`}>
       <div className="container nav__in">
         <Brand />
+        <ModeSwitch />
         <div className="nav__right">{children}</div>
       </div>
     </header>
+  );
+}
+
+/** «Сабақтан тыс | Сабақ барысы»: бүкіл сайттың режимі. «Сабақ барысы» таңдалса — кабинетке (бүгінгі сабақтар) */
+export function ModeSwitch() {
+  const mode = useMode();
+  const nav = useNavigate();
+  const { pathname } = useLocation();
+  const go = (m: Mode, e: React.MouseEvent<HTMLButtonElement>) => {
+    const r = e.currentTarget.getBoundingClientRect();
+    setMode(m, { x: r.left + r.width / 2, y: r.top + r.height / 2 }, () => { if (m === 'class' && pathname !== '/app') nav('/app'); });
+  };
+  return (
+    <div className={`mswitch mswitch--${mode}`} role="radiogroup" aria-label="Сайт режимі">
+      <i className="mswitch__thumb" aria-hidden />
+      <button type="button" role="radio" aria-checked={mode === 'prep'} onClick={(e) => go('prep', e)}><span className="mswitch__l">Сабақтан тыс</span><span className="mswitch__s">Дайындық</span></button>
+      <button type="button" role="radio" aria-checked={mode === 'class'} onClick={(e) => go('class', e)}><span className="mswitch__l">Сабақ барысы</span><span className="mswitch__s">Сабақ</span></button>
+    </div>
   );
 }
 
