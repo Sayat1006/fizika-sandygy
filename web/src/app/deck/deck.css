@@ -242,3 +242,34 @@ svg .dk-step { transform: none; }
 @keyframes dk-rot { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .dk-spin { animation: none; } }
 .dk sub { font-size: .62em; vertical-align: -.25em; line-height: 0; }
+
+/* ═══ интерактивті модельдер ═══ */
+.dk-ill { position: absolute; inset: 0; display: grid; grid-template-rows: 1fr auto auto; padding: 16px 18px 18px; gap: 10px; }
+.dk-ill__svg { width: 100%; height: 100%; min-height: 0; overflow: visible; }
+.dk-ill__out { display: flex; flex-wrap: wrap; gap: 10px; }
+.dk-out { padding: 8px 16px; border-radius: 14px; background: var(--d-bg); display: grid; }
+.dk-out small { font-size: 18px; color: var(--d-ink-3); font-weight: 600; }
+.dk-out b { font: 800 26px var(--d-body); font-variant-numeric: tabular-nums; }
+.dk-out--a b { color: var(--d-accent); }
+.dk-ctl { display: flex; flex-wrap: wrap; gap: 10px 22px; align-items: center; }
+.dk-ctl__s { display: grid; gap: 4px; flex: 1 1 200px; min-width: 180px; font-size: 20px; color: var(--d-ink-2); font-weight: 600; }
+.dk-ctl__s b { color: var(--d-ink); }
+.dk-ctl__s input { width: 100%; height: 40px; accent-color: var(--d-accent); cursor: pointer; }
+.dk-ctl__s input::-webkit-slider-thumb { width: 34px; height: 34px; }
+.dk-ctl__seg { display: flex; gap: 4px; padding: 4px; border-radius: 14px; background: var(--d-bg); }
+.dk-ctl__seg button, .dk-ctl__btn { border: 0; border-radius: 10px; padding: 10px 16px; font: 700 20px var(--d-body); background: none; color: var(--d-ink-2); cursor: pointer; min-height: 48px; }
+.dk-ctl__seg button[aria-pressed="true"] { background: var(--d-accent); color: var(--d-on); }
+.dk-ctl__btn { background: var(--d-bg); color: var(--d-ink); }
+.dk-ctl__btn.on { background: var(--d-accent); color: var(--d-on); }
+.dk-ferr { fill: var(--d-err); } .dk-serr { stroke: var(--d-err); }
+.dk-glow { fill: #ffd60a; filter: blur(10px); transition: opacity .3s; }
+.dk-pic:has(.dk-ill) { place-items: stretch; }
+.dk-pic .dk-ill svg.dk-ill__svg, .dk-gridbox .dk-ill svg.dk-ill__svg { position: static; inset: auto; width: 100%; height: 100%; }
+.dk-split--ill { grid-template-columns: 1240px 1fr; gap: 50px; }
+.dk-split--ill .dk-q { font-size: 34px; }
+.dk-ctl__s { font-size: 24px; }
+.dk-out small { font-size: 20px; }
+.dk-out b { font-size: 30px; }
+.dk-ctl__seg button, .dk-ctl__btn { font-size: 22px; }
+.dk-split--thill { grid-template-columns: 1fr 1080px; gap: 44px; }
+.dk-split--thill .dk-bul li { font-size: 32px; }

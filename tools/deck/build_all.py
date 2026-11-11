@@ -36,7 +36,8 @@ def main(only):
             # бұрын презентациясы жоқ сабақ (10–11-сынып): жаңа файл тіркейміз
             D = json.load(open(dp, encoding='utf-8')); g = v.split('-')[0]
             slug = re.sub(r'[^\w]+', '_', D['topic']).strip('_')[:60]
-            entry['pres'] = {'path': f'{g}/pres_{int(n):03d}.pptx', 'name': f'Презентация_{g}-сынып_{int(n):02d}_{slug}.pptx'}
+            folder = os.path.dirname(entry['kmzh']['path']) if entry.get('kmzh') else g  # нұсқаның өз папкасы (10-kgb-2/…)
+            entry['pres'] = {'path': f'{folder}/pres_{int(n):03d}.pptx', 'name': f'Презентация_{g}-сынып_{int(n):02d}_{slug}.pptx'}
             added.add((v, int(n)))
         path = entry['pres']['path']
         out = os.path.join(REPO, 'materials', path)

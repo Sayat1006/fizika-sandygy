@@ -370,7 +370,7 @@ def main():
     items = [dict(x) for x in KTZH[variant]]
     site = {'7': '7', '8': '8', '9': '9', '10': '10-zhmb-2', '11': '11-zhmb-3'}.get(variant, variant)
     try:
-        LS = {l['n']: l for l in json.load(open('/home/claude/fizika-sandygy/public/lessons.json')) if l['v'] == site}
+        LS = {l['n']: l for l in json.load(open(os.path.join(os.path.dirname(os.path.dirname(ROOT)), 'public', 'lessons.json'))) if l['v'] == site}
     except Exception: LS = {}
     for it in items:
         l = LS.get(it['n'])

@@ -55,6 +55,10 @@ def draw(spec, base):
     return {'svg': 'data:image/svg+xml;base64,' + base64.b64encode(svg).decode(), 'png': os.path.relpath(base + '.png', REPO), 'w': round(w * 100), 'h': round(h * 100)}
 
 
+ILLUS = {'circuit', 'solenoid', 'field_lines', 'charges', 'block_forces', 'waves', 'oscillation', 'pendulum', 'spring', 'lens', 'eye', 'mirror',
+         'refraction', 'reflection', 'archimedes', 'floating', 'particles', 'projectile', 'lever', 'hydraulic', 'decay', 'induction'}
+
+
 def visual(spec, base):
     """Дерекпен салынатын сызбалар — өз пішіндерімен; қалғаны — сурет"""
     if not spec or spec[0] == 'tjb':
@@ -70,7 +74,10 @@ def visual(spec, base):
         xs = ser[0][1]
         return {'chart': {'type': 'bar' if bars else 'line', 'title': title, 'xl': xl, 'yl': yl, 'labels': [f'{x:g}' if isinstance(x, (int, float)) else str(x) for x in xs],
                           'series': [{'name': s[0] or yl, 'values': [float(v) for v in s[2]]} for s in ser if len(s[1]) == len(xs)]}}
-    return {'img': draw(spec, base)}
+    out = {'img': draw(spec, base)}
+    if k in ILLUS:  # тақтада интерактивті модель (Illus.tsx), .pptx-те — сурет
+        out['illus'] = {'k': k, 'a': json.loads(json.dumps(list(spec[1:])))}
+    return out
 
 
 def answer_split(q):
@@ -101,15 +108,26 @@ def quote_of(s):
     return {'text': m.group(1).rstrip('.'), 'by': m.group(2)} if m else {'text': s.strip('«»'), 'by': ''}
 
 
+def false_kw(kw, tl):
+    """кілт сөздің жалған сәйкестігі: «ток көзі» ≠ көз, «магнит индукциясы» ≠ электромагниттік индукция"""
+    if kw == 'көз' and re.search(r'ток\s+көз|көзде', tl):
+        return True
+    if kw == 'индукция' and 'магнит индукция' in tl and 'электромагнит' not in tl:
+        return True
+    return False
+
+
 def build(g, n, S):
     d = json.load(open(os.path.join(PJ, f'{g}_{n:02d}.json'), encoding='utf-8'))
-    spec = S[n]
+    spec = S[n] if S is not None else {'f': tuple(d['f_spec']) if d.get('f_spec') else None}
     v = SITE.get(g, g)
+    kgb = '-kgb-' in g
     disp = d['disp'].lstrip('0') or '0'
     main = visual(spec.get('f'), os.path.join(FIG, f'{g}-{n}-main'))
     ex_spec = None
+    tl = d['topic'].lower().replace('i', 'і')
     for kw, sp in export_pres.EXTRA:
-        if kw in d['topic'].lower().replace('i', 'і'):
+        if kw in tl and not false_kw(kw, tl):
             ex_spec = sp; break
     extra = None
     if ex_spec and not (spec.get('f') and ex_spec[0] == spec['f'][0] and tuple(ex_spec[1:]) == tuple(spec['f'][1:])):
@@ -124,6 +142,7 @@ def build(g, n, S):
     pic = None
     if main and 'img' in main:
         th['img'] = main['img']; th['caption'] = d.get('fc') or ''
+        if main.get('illus'): th['illus'] = main['illus']
         pic = extra
     else:
         if main: th.update(main)
@@ -143,8 +162,12 @@ def build(g, n, S):
         slides.append({'t': 'chart', **T('Графикпен жұмыс', 'Сабақтың ортасы · 12 мин'), 'title': d['chart']['title'], 'chart': d['chart'],
                        'items': ['Осьтерде қандай шамалар және бірліктер берілген?', 'Шамалар қалай тәуелді?', 'Графиктен бір мәнді оқып, формуламен тексер.']})
     if pic:
-        slides.append({'t': 'picture', **T('Суретпен жұмыс', 'Сабақтың ортасы · 12 мин'), 'title': 'Суретте не бейнеленген?', **pic,
-                       'items': ['Қандай физикалық шамалар көрсетілген?', 'Олар қалай байланысқан?', 'Өз сөзіңмен түсіндір.']})
+        if pic.get('illus'):
+            slides.append({'t': 'picture', **T('Модельмен жұмыс', 'Сабақтың ортасы · 12 мин'), 'title': 'Интерактивті модель', **pic,
+                           'items': ['Параметрлерді өзгертіп көр: не өзгереді?', 'Қандай заңдылықты байқадың?', 'Нәтижені формуламен тексер.']})
+        else:
+            slides.append({'t': 'picture', **T('Суретпен жұмыс', 'Сабақтың ортасы · 12 мин'), 'title': 'Суретте не бейнеленген?', **pic,
+                           'items': ['Қандай физикалық шамалар көрсетілген?', 'Олар қалай байланысқан?', 'Өз сөзіңмен түсіндір.']})
     if d.get('ph'):
         slides.append({'t': 'link', **T('Виртуалды зертхана', 'Сабақтың ортасы · 12 мин'), 'title': 'PhET симуляциясы',
                        'items': ['Симуляцияны QR-код арқылы ашыңдар', 'Параметрлерді өзгертіп, нәтижені бақылаңдар', 'Қандай шама қалай өзгереді? Қорытындыны дәптерге жазыңдар'],
@@ -156,9 +179,11 @@ def build(g, n, S):
     if d.get('energizer'):
         slides.append({'t': 'break', **T('Сергіту сәті', 'Сабақтың ортасы · 2 мин'), 'title': 'Сергіп алайық', 'text': d['energizer']})
     lv = [('A', 'білу, түсіну'), ('B', 'қолдану'), ('C', 'талдау, бағалау' if lab else 'талдау, жинақтау')]
+    if kgb:  # ҚГБ: ҚМЖ-дағыдай C деңгейі жоқ
+        lv = lv[:2]
     slides.append({'t': 'levels', **T('Нәтижені талдау: деңгейлік сұрақтар' if lab else 'Деңгейлік тапсырмалар', 'Сабақтың ортасы · 11 мин'), 'title': 'Деңгейіңді таңда', 'items': [list(x) for x in lv],
                    'note': 'А деңгейін орындасаң — В деңгейіне өт!'})
-    names = {'A': 'А деңгейі: білу, түсіну', 'B': 'В деңгейі: қолдану', 'C': 'С деңгейі: ' + lv[2][1]}
+    names = {'A': 'А деңгейі: білу, түсіну', 'B': 'В деңгейі: қолдану', 'C': 'С деңгейі: ' + ('талдау, бағалау' if lab else 'талдау, жинақтау')}
     for i, (k, _) in enumerate(lv):
         task = ' '.join(d[k.lower()])
         if not task.strip():
@@ -168,15 +193,15 @@ def build(g, n, S):
     slides.append({'t': 'qa', **T('Бекіту: ' + d['cons'] + ' викторинасы', 'Сабақтың соңы · 7 мин'), 'title': 'Тез жауап бер', 'items': qa, 'qr': qr_uri(d.get('cons_qr')), 'qrLabel': d['cons']})
     slides.append({'t': 'reflect', **T('Рефлексия', 'Сабақтың соңы · 7 мин'), 'title': d['refl'], 'text': d['refl_text'],
                    'scale': [['9–10', 'Өте жақсы'], ['7–8', 'Жақсы'], ['5–6', 'Қанағаттанарлық'], ['0–4', 'Қолдау қажет']]})
-    slides.append({'t': 'homework', **T('Үй тапсырмасы', 'Сабақтың соңы'), 'title': 'Үйде орында', 'items': [[k, t] for k, t in zip('ABC', d['hw'])]})
+    slides.append({'t': 'homework', **T('Үй тапсырмасы', 'Сабақтың соңы'), 'title': 'Үйде орында', 'items': [[k, t] for k, t in zip('AB' if kgb else 'ABC', d['hw'])]})
     slides.append({'t': 'end', 'title': 'Сабаққа белсенді қатысқандарыңа рахмет!', 'quote': quote_of(d['quote'])})
-    return {'v': v, 'n': n, 'grade': int(g), 'topic': d['topic'], 'slides': slides}
+    return {'v': v, 'n': n, 'grade': int(g.split('-')[0]), 'topic': d['topic'], 'slides': slides}
 
 
 def main():
     done = 0
     for g in ARGS:
-        S = specs_of(g)
+        S = specs_of(g) if '-' not in g else None
         for f in sorted(os.listdir(PJ)):
             m = re.match(rf'^{g}_(\d+)\.json$', f)
             if not m:
