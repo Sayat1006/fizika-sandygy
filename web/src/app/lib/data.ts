@@ -84,3 +84,11 @@ export async function accountFn(body: Record<string, unknown>, session?: Session
 }
 
 export const tgPayLink = (id: string) => `https://t.me/${CONFIG.telegramBot}?start=p${String(id).replace(/-/g, '')}`;
+
+/** Анимациялы презентация (бар болса). Жоқ болса — null, тақта слайд суреттерін көрсетеді. */
+export async function lessonDeck(v: string, n: number): Promise<import('../deck/types').DeckData | null> {
+  try {
+    const r = await fetch(url(v, n, 'deck'), { headers: { Authorization: 'Bearer ' + (await token()) } });
+    return r.ok ? await r.json() : null;
+  } catch { return null; }
+}
