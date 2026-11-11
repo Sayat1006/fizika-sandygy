@@ -39,7 +39,9 @@ export interface Chart { type: 'line' | 'bar'; title: string; xl: string; yl: st
 export interface Quote { text: string; by: string }
 export interface Col { name: string; def: string; ex: (string | number)[][] }
 export interface Scale { cell: number; unit: string }
-export interface DeckData { v: string; n: number; grade: number; topic: string; slides: Slide[]; custom?: boolean }
+export interface DeckData { v: string; n: number; grade: number; topic: string; slides: Slide[]; custom?: boolean;
+  /** Сабақтың тесті: [сұрақ, нұсқалар, дұрыс жауап] (tools/quiz/add_quiz.py) */
+  quiz?: [string, string[], string][] }
 
 /** Слайдтағы «басу» саны: әр басу келесі элементті көрсетеді. build_pptx.py-дағы steps_of() осымен бірдей. */
 export function stepsOf(s: Slide): number {

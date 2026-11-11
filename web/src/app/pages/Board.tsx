@@ -277,7 +277,7 @@ export default function Board() {
             <h3>Оқушының әрекеті</h3>{st.student.map((t, k) => <p key={k}>{t}</p>)}
           </> : <p>Бұл сабақтың сценарийі жоқ.</p>}
         </aside>
-        <LivePanel open={liveOpen} onClose={() => setLiveOpen(false)} slides={onDeck && deck ? deck.slides : null} at={i} title={lesson?.topic || ''} onNames={setNames} />
+        <LivePanel open={liveOpen} onClose={() => setLiveOpen(false)} deck={onDeck ? deck : null} at={i} title={lesson?.topic || ''} onNames={setNames} />
       </main>
 
       <div className="bd-tools">
