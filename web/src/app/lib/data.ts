@@ -19,7 +19,7 @@ export interface Lesson { grade: number; n: number; disp: string; topic: string;
 let lessonsP: Promise<Lesson[]> | null = null;
 /** ҚТЖ: барлық нұсқаның сабақтары (бір рет жүктеледі) */
 export function loadLessons() {
-  if (!lessonsP) lessonsP = fetch('/lessons.json').then((r) => r.json()).catch(() => { lessonsP = null; return []; });
+  if (!lessonsP) lessonsP = fetch('/lessons.json').then((r) => r.json()).then((a: Lesson[]) => a.map((l) => ({ ...l, topic: l.topic.replace(/[.\s]+$/, '') }))).catch(() => { lessonsP = null; return []; });
   return lessonsP;
 }
 

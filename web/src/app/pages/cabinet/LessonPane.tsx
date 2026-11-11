@@ -82,27 +82,23 @@ export default function LessonPane({ lesson, onLock, tab, setTab }: { lesson: Le
 
 /** Анимациялы презентация: элементтер өздігінен шығады, слайдтар morph-пен ауысады */
 function DeckPlayer({ deck }: { deck: DeckData }) {
+  // Алдын ала қарау: әр слайд толық күйінде (бос слайд көрінбеуі үшін), слайдтар morph-пен ауысады
   const [at, setAt] = useState(0);
-  const [step, setStep] = useState(0);
   const [play, setPlay] = useState(true);
   const list = useRef<HTMLOListElement>(null);
   const n = deck.slides.length;
-  const go = (i: number) => morph(() => { setAt((i + n) % n); setStep(0); });
+  const go = (i: number) => morph(() => setAt((i + n) % n));
   useEffect(() => {
     if (!play) return;
-    const t = setInterval(() => {
-      if (document.hidden) return;
-      const max = stepsOf(deck.slides[at]);
-      if (step < max) setStep(step + 1); else go(at + 1);
-    }, step === 0 ? 1800 : 1300);
-    return () => clearInterval(t);
-  }, [play, at, step]); // eslint-disable-line react-hooks/exhaustive-deps
+    const t = setTimeout(() => { if (!document.hidden) go(at + 1); }, 4500);
+    return () => clearTimeout(t);
+  }, [play, at]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { list.current?.querySelector<HTMLElement>('[aria-current="true"]')?.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); }, [at]);
   const th = theme();
   return (
     <div className="player">
-      <div className={`pane__stage pane__stage--${th}`} onClick={() => { setPlay(false); const max = stepsOf(deck.slides[at]); if (step < max) setStep(step + 1); else go(at + 1); }}>
-        <Suspense fallback={<i className="pane__spin" />}><Deck data={deck} index={at} step={step} theme={th} /></Suspense>
+      <div className={`pane__stage pane__stage--${th}`} onClick={() => { setPlay(false); go(at + 1); }} title="Келесі слайд">
+        <Suspense fallback={<i className="pane__spin" />}><Deck data={deck} index={at} step={stepsOf(deck.slides[at])} theme={th} /></Suspense>
       </div>
       <div className="player__bar">
         <button type="button" className="player__b" onClick={() => { setPlay(false); go(at - 1); }} aria-label="Алдыңғы слайд">‹</button>
