@@ -83,6 +83,7 @@ def st(stage, minutes, sub, teacher, student, assess, res):
 
 
 NTOT = 68
+HIST = []  # (тақырып, кодтар) — коды жоқ сабаққа жақын тақырыпты табу үшін
 QCODES = []  # тоқсанда өткен оқу мақсаттары (ТЖБ мен кодсыз қайталау сабақтарына)
 
 
@@ -405,7 +406,7 @@ def main():
     outdir = os.path.join(OUTROOT, variant); os.makedirs(outdir, exist_ok=True)
     jdir = os.path.join(ROOT, 'json_v2'); os.makedirs(jdir, exist_ok=True)
     stats = {}; index = {}
-    QCODES.clear()
+    QCODES.clear(); HIST.clear()
     global NTOT; NTOT = len(items)
     for i, item in enumerate(items):
         n = item['n']
@@ -417,6 +418,24 @@ def main():
         if not spec and kind_of(clean_topic(item['topic'])) != 'tjb': print('  no spec', variant, n); continue
         prev = clean_topic(items[i - 1]['topic']) if i else 'Физика пәніне кіріспе'
         own = item.get('codes') or spec.get('codes') or []
+        if own and not any(re.search(r'\d+\.\s*\d+\.\s*\d+', c) for c in own) and kind_of(clean_topic(item['topic'])) != 'tjb':
+            # КТЖ-да код жоқ (мыс. қорытынды физикалық практикум): тақырыбы ең жақын өткен сабақтың нақты коды
+            STOP = {'анықт', 'жұмыс', 'зертт', 'зерде', 'қолда', 'есепт', 'практ', 'сабақ', 'құрыл', 'принц', 'танысу', 'таныс', 'жинау', 'тәжір', 'бойын', 'зертх', 'өлшеу', 'шығар', 'негіз', 'көмег', 'арқыл'}
+            stems = lambda t: {w[:5].lower() for w in re.findall(r'[А-Яа-яӘәҒғҚқҢңӨөҰұҮүҺһІі]{5,}', t)} - STOP
+            mine = stems(clean_topic(item['topic']))
+            # мағынасы жақын, бірақ сөзі басқа тақырыптар (практикум → бағдарламадағы негізгі сабақ)
+            ALIAS = {'толқындарының ұзынд': 'Дифракциялық тор', 'индуктивт': 'активті және реактивті кедергі', 'сыйымдылығын': 'активті және реактивті кедергі',
+                     'Астрономиялық карта': 'Жұлдыздар әлемі', 'сциллограф': 'тербелмелі контур'}
+            alias = next((v_ for k_, v_ in ALIAS.items() if k_ in item['topic']), None)
+            pick = [h for h in HIST if alias and alias in h[0]]
+            best = pick[-1] if pick else max(HIST, key=lambda h: len(mine & stems(h[0])), default=None)
+            if pick: mine = stems(best[0])
+            if best and mine & stems(best[0]):
+                item = {**item, 'codes': best[1] + [own[0].split(':')[0] + ': ' + own[0].split(':', 1)[-1].strip()]}
+                if os.environ.get('FS_DEBUG'): print('  код:', clean_topic(item['topic'])[:40], '←', best[0][:40], '|', best[1][0][:30])
+                own = item['codes']
+        if any(re.search(r'\d+\.\s*\d+\.\s*\d+', c) for c in own):
+            HIST.append((clean_topic(item['topic']), [c for c in own if re.search(r'\d+\.\s*\d+\.\s*\d+', c)][:2]))
         if own and kind_of(clean_topic(item['topic'])) != 'tjb':
             QCODES.extend(c for c in own if c not in QCODES)
         elif QCODES:
