@@ -83,6 +83,28 @@ def st(stage, minutes, sub, teacher, student, assess, res):
 
 
 NTOT = 68
+HIST = []  # (тақырып, кодтар) — коды жоқ сабаққа жақын тақырыпты табу үшін
+QCODES = []  # тоқсанда өткен оқу мақсаттары (ТЖБ мен кодсыз қайталау сабақтарына)
+
+
+def norm_code(c):
+    """Оқу мақсатының коды: бос орындарды алып тастау, кодтан кейін «–»"""
+    c = re.sub(r'^\s*(\d+)\s*\.\s*(\d+)\s*\.\s*(\d+)\s*\.\s*(\d+)\s*\.?', r'\1.\2.\3.\4', c.strip())
+    c = re.sub(r'^(\d+\.\d+\.\d+\.\d+)\s*[-–—:]?\s*', r'\1 – ', c)
+    return c
+
+
+def stage_form(stages):
+    """130-бұйрық нысаны: «Сабақтың кезеңі» бағанында — басы / ортасы / соңы; әдіс атауы — астында"""
+    for x in stages:
+        name = re.sub(r'\*', '', x['stage'][0])
+        if name in ('Сабақтың басы', 'Сабақтың ортасы', 'Сабақтың соңы'):
+            continue
+        sub_ = re.sub(r'\*', '', x['stage'][2]) if len(x['stage']) > 2 else ''
+        if name == 'Бөлім бойынша жиынтық бағалау':
+            name = 'Бөлім бойынша жиынтық бағалау (БЖБ)'
+        x['stage'] = ['**Сабақтың ортасы**', x['stage'][1], f'*{name}' + (f'. {sub_}' if sub_ else '') + '*']
+    return stages
 
 
 def build(variant, item, spec, v, idx, prev_topic, kgb=False):
@@ -100,7 +122,9 @@ def build(variant, item, spec, v, idx, prev_topic, kgb=False):
     co = CONSOLIDATE[(r * 3 + 2) % len(CONSOLIDATE)]; rf = REFLECT[(r * 7 + 5) % len(REFLECT)]
     sen1, sen2 = SEN[r % len(SEN)], SEN[(r + 3) % len(SEN)]
     val, quote = VALUES[mon]
-    s = spec.get('s', []) or ['тоқсан бойынша меңгерген білімін көрсетеді']
+    s = spec.get('s', []) or (['тоқсан бойы өткен бөлімдер бойынша негізгі ұғымдар мен заңдарды қолданады',
+                               'есептерді шығаруда формулалар мен өлшем бірліктерін дұрыс пайдаланады',
+                               'тапсырмаларды берілген уақытта өз бетінше орындайды'] if kind == 'tjb' else ['тоқсан бойынша меңгерген білімін көрсетеді'])
     d = pick_design(kind, topic, idx, spec, v)
     tag = variant.replace('-', '_')
     f1 = figure(spec.get('f'), f'{tag}_{n:03d}.png', '1-сурет. ' + spec.get('fc', topic)) if spec.get('f') else []
@@ -148,7 +172,7 @@ def build(variant, item, spec, v, idx, prev_topic, kgb=False):
                   [f'{co[0]} (QR)', 'Kundelik.kz'])
 
     def energizer():
-        return st('Сергіту сәті', 1 if kgb else 2, None, [en], ['Қимылмен орындайды.'], ['–'], ['–'])
+        return st('Сергіту сәті', 1 if kgb else 2, None, [en], ['Қимылмен орындайды.'], ['Бағаланбайды: белсенділік пен көңіл-күй бақыланады'], ['Тақтадағы нұсқаулық', 'Музыка (қалауынша)'])
 
     def bjb_stage(minutes):
         return st('Бөлім бойынша жиынтық бағалау', minutes, None,
@@ -160,12 +184,12 @@ def build(variant, item, spec, v, idx, prev_topic, kgb=False):
 
     if d == 'tjb':
         stages = [st('Сабақтың басы', 3, None, ['Сәлемдесу, түгендеу, оқушыларды жеке отырғызу.', '**Нұсқаулық:** ТЖБ уақыты, тапсырмалар саны, балл қою тәртібі. Құндылық: адалдық, өз бетінше жұмыс.'],
-                     ['Нұсқаулықты тыңдап, сұрақ қояды.'], ['–'], ['ТЖБ спецификациясы']),
+                     ['Нұсқаулықты тыңдап, сұрақ қояды.'], ['Нұсқаулықты түсінгенін ауызша тексеру'], ['ТЖБ спецификациясы']),
                   st('Сабақтың ортасы', 34 if not kgb else 35, 'Тоқсандық жиынтық бағалау',
                      [f'**ТЖБ** ҚР ОАМ «Бағалау шараларының спецификациясы» негізінде өткізіледі. Тоқсан бөлімдері: {spec.get("quarter_topics", "тоқсанда өткен бөлімдер")}.',
                       '- Тапсырмалар 2 нұсқада беріледі; түрлері: көп таңдаулы, қысқа жауапты, құрылымдық, есептер.', '- Уақыт 10 және 5 минут қалғанда ескертіледі.', sen_line + ' Спецификацияға сәйкес бейімделген нұсқа.'] + f1,
-                     ['ТЖБ тапсырмаларын өз бетінше орындайды.'], ['Балл қою кестесі (спецификация бойынша)'], ['ТЖБ тапсырма парақтары', 'Таймер']),
-                  st('Сабақтың соңы', 3 if not kgb else 2, None, ['Жұмыстарды жинау.', f'**Рефлексия {rf[0]}:** {rf[1]}', 'ТЖБ нәтижесі мен талдауы келесі сабақта хабарланады.'],
+                     ['ТЖБ тапсырмаларын өз бетінше орындайды.'], ['**Дескриптор:** спецификациядағы әр тапсырманың дескрипторы бойынша', 'Балл қою кестесі (спецификация бойынша)'], ['ТЖБ тапсырма парақтары', 'Таймер']),
+                  st('Сабақтың соңы', 3 if not kgb else 2, None, ['Жұмыстарды жинау.', f'**Рефлексия {rf[0]}:** {rf[1]}', '**Үй тапсырмасы:** ТЖБ-да қиын болған тапсырма түрлерін оқулықтан қайталау; келесі бөлімнің кіріспе тақырыбын оқып келу.', 'ТЖБ нәтижесі мен талдауы келесі сабақта хабарланады.'],
                      ['Жұмысын тапсырады, рефлексия жасайды.'], ['Өзін-өзі бағалау'], ['Стикерлер'])]
     elif d == 'lab':
         stages = [opening(4 if not short else 3, ['**Қауіпсіздік техникасы:** зертханалық жұмыс ережелері қайталанады; топта «қауіпсіздік жауаптысы» тағайындалады.']),
@@ -289,6 +313,7 @@ def build(variant, item, spec, v, idx, prev_topic, kgb=False):
             stages = [x for x in stages if x is not bj[0]]; stages.insert(len(stages) - 1, bj[0])
 
     # ---------------- sections after the lesson table
+    stages = stage_form(stages)
     sections = []
     if v.get('m'):
         sections.append({'title': 'Мұғалімге ескерту: оқушылар жиі жіберетін қателер', 'type': 'text', 'lines': bul(v['m'])})
@@ -299,7 +324,8 @@ def build(variant, item, spec, v, idx, prev_topic, kgb=False):
         krows += [[f'**Қосымша {i}**', a] for i, (_, a) in enumerate(X, 1)]
         if ex: krows.append(['**Үлгі есеп**', ex[2]])
         sections.append({'title': 'Тапсырмалардың жауап кілті', 'cols': ['Тапсырма', 'Жауабы'], 'widths': [2200, 13200], 'rows': krows})
-        hand = ['**Аты-жөні:** ______________________  **Сынып:** ______  **Күні:** ________', '']
+        # астын сызу таңбасы (_) markdown-пен қақтығысады — нүктелі сызық
+        hand = ['**Аты-жөні:** ……………………………………  **Сынып:** …………  **Күні:** ……………', '']
         line = '_' * 92
         hand += ['**А деңгейі**'] + A + [line, line] + ['', '**В деңгейі**'] + B + [line, line, line]
         if not kgb: hand += ['', '**С деңгейі**'] + C + [line, line, line]
@@ -345,7 +371,7 @@ def build(variant, item, spec, v, idx, prev_topic, kgb=False):
     sections.append({'title': 'Сандық ресурстар (QR-кодтар)', 'type': 'qr', 'items': items[:4]})
     hdr_val = [f'«Адал азамат» бағдарламасы бойынша: **{val}**.', f'*{quote}*',
                spec.get('v', 'Құндылық топтық жұмыстағы жауапкершілік пен өзара құрмет арқылы жүзеге асады.')]
-    codes = item.get('codes') or spec.get('codes') or (['Тоқсанда өткен оқу мақсаттары (ТЖБ спецификациясы бойынша)'] if kind == 'tjb' else ['Бөлімде өткен оқу мақсаттарын қайталау және жүйелеу'])
+    codes = [norm_code(c) for c in (item.get('codes') or spec.get('codes') or [])] or (['Тоқсанда өткен оқу мақсаттары (ТЖБ спецификациясы бойынша)'] if kind == 'tjb' else ['Бөлімде өткен оқу мақсаттарын қайталау және жүйелеу'])
     return {'no': str(disp), 'zam': '____________________', 'teacher': '', 'date': datestr, 'grade': item.get('gradeLabel', g),
             'bolim': clean_bolim(item['bolim']), 'topic': topic, 'objectives': codes, 'smart': bul(s),
             'extraHeader': [['Құндылықтарға баулу:', hdr_val]], 'stages': stages, 'sections': sections}, disp, d
@@ -381,6 +407,7 @@ def main():
     outdir = os.path.join(OUTROOT, variant); os.makedirs(outdir, exist_ok=True)
     jdir = os.path.join(ROOT, 'json_v2'); os.makedirs(jdir, exist_ok=True)
     stats = {}; index = {}
+    QCODES.clear(); HIST.clear()
     global NTOT; NTOT = len(items)
     for i, item in enumerate(items):
         n = item['n']
@@ -391,6 +418,31 @@ def main():
         spec.update(v.get('spec', {}))
         if not spec and kind_of(clean_topic(item['topic'])) != 'tjb': print('  no spec', variant, n); continue
         prev = clean_topic(items[i - 1]['topic']) if i else 'Физика пәніне кіріспе'
+        own = item.get('codes') or spec.get('codes') or []
+        if own and not any(re.search(r'\d+\.\s*\d+\.\s*\d+', c) for c in own) and kind_of(clean_topic(item['topic'])) != 'tjb':
+            # КТЖ-да код жоқ (мыс. қорытынды физикалық практикум): тақырыбы ең жақын өткен сабақтың нақты коды
+            STOP = {'анықт', 'жұмыс', 'зертт', 'зерде', 'қолда', 'есепт', 'практ', 'сабақ', 'құрыл', 'принц', 'танысу', 'таныс', 'жинау', 'тәжір', 'бойын', 'зертх', 'өлшеу', 'шығар', 'негіз', 'көмег', 'арқыл'}
+            stems = lambda t: {w[:5].lower() for w in re.findall(r'[А-Яа-яӘәҒғҚқҢңӨөҰұҮүҺһІі]{5,}', t)} - STOP
+            mine = stems(clean_topic(item['topic']))
+            # мағынасы жақын, бірақ сөзі басқа тақырыптар (практикум → бағдарламадағы негізгі сабақ)
+            ALIAS = {'толқындарының ұзынд': 'Дифракциялық тор', 'индуктивт': 'активті және реактивті кедергі', 'сыйымдылығын': 'активті және реактивті кедергі',
+                     'Астрономиялық карта': 'Жұлдыздар әлемі', 'сциллограф': 'тербелмелі контур'}
+            alias = next((v_ for k_, v_ in ALIAS.items() if k_ in item['topic']), None)
+            pick = [h for h in HIST if alias and alias in h[0]]
+            best = pick[-1] if pick else max(HIST, key=lambda h: len(mine & stems(h[0])), default=None)
+            if pick: mine = stems(best[0])
+            if best and mine & stems(best[0]):
+                item = {**item, 'codes': best[1] + [own[0].split(':')[0] + ': ' + own[0].split(':', 1)[-1].strip()]}
+                if os.environ.get('FS_DEBUG'): print('  код:', clean_topic(item['topic'])[:40], '←', best[0][:40], '|', best[1][0][:30])
+                own = item['codes']
+        if any(re.search(r'\d+\.\s*\d+\.\s*\d+', c) for c in own):
+            HIST.append((clean_topic(item['topic']), [c for c in own if re.search(r'\d+\.\s*\d+\.\s*\d+', c)][:2]))
+        if own and kind_of(clean_topic(item['topic'])) != 'tjb':
+            QCODES.extend(c for c in own if c not in QCODES)
+        elif QCODES:
+            item = {**item, 'codes': QCODES[-8:]}
+        if kind_of(clean_topic(item['topic'])) == 'tjb':
+            QCODES.clear()
         data, disp, d = build(variant, item, spec, v, i, prev, kgb)
         stats[d] = stats.get(d, 0) + 1
         jp = os.path.join(jdir, f'{variant}_{n:03d}.json'); json.dump(data, open(jp, 'w'), ensure_ascii=False)

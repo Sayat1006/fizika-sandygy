@@ -31,6 +31,9 @@ for n, fname in sorted(index.items(), key=lambda x: int(x[0])):
     entry['kmzh'] = {'path': path, 'name': fname}
     copied.append((key, path))
 print('copied', len(copied))
+# қайталанған суреттерді біріктіру (көлем ~40%-ға азаяды)
+sys.path.insert(0, os.path.dirname(HERE)); import slim_docx
+for _, p in copied: slim_docx.slim(f'{SITE}/materials/{p}')
 
 # PDF in one soffice run
 subprocess.run(['soffice', '--headless', '--convert-to', 'pdf', '--outdir', pdfdir] + [f'{SITE}/materials/{p}' for _, p in copied],
@@ -53,7 +56,7 @@ for key, path in copied:
         for i, p in enumerate(sorted(glob.glob(f'{t}/p*.png')), 1):
             im = Image.open(p).convert('RGB')
             if im.width > 820: im = im.resize((820, round(im.height * 820 / im.width)), Image.LANCZOS)
-            fn = f"{i}-{hashlib.sha256((SECRET + path + 'v2' + str(i)).encode()).hexdigest()[:10]}.webp"
+            fn = f"{i}-{hashlib.sha256((SECRET + path + 'v3' + str(i)).encode()).hexdigest()[:10]}.webp"
             im.save(f'{out}/{fn}', 'WEBP', quality=58, method=5); files.append(fn)
     prev[f'{key}:kmzh'] = {'dir': h, 'files': files, 'w': im.width, 'h': im.height}
 

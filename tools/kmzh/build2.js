@@ -75,15 +75,8 @@ const children = [];
 children.push(para('Бекітемін:'));
 children.push(para(`Оқу ісі жөніндегі орынбасары: ${L.zam}`));
 children.push(para(''));
-// 130-бұйрық, 4-қосымша (2023 ж. №68 редакциясы): нысанның тақырыптық бөлігі
-const C = { align: AlignmentType.CENTER };
-children.push(para('Қазақстан Республикасы Оқу-ағарту министрлігі', C));
-children.push(para(L.school || '______________________________________________', C));
-children.push(para('*(білім беру ұйымының атауы)*', C));
-children.push(para('**Қысқа мерзімді (сабақ) жоспары**', C));
-children.push(para(L.topic, C));
-children.push(para('*(сабақтың тақырыбы)*', C));
-children.push(para(''));
+// Нысанның тақырыптық бөлігі (министрлік, ұйым атауы, «Қысқа мерзімді (сабақ) жоспары», тақырып) алынды:
+// тақырып пен барлық деректер төмендегі кестеде бар (мұғалімдердің өтінішімен — артық бет орны жоқ).
 
 const hdrRows = [];
 const two = (k, v) => new TableRow({ children: [cell(HEAD + k + HEAD, H[0]), cell(v, H[1] + H[2], { span: 2 })] });
@@ -98,7 +91,7 @@ for (const [k, v] of L.extraHeader) hdrRows.push(two(k, v));
 children.push(table(H, hdrRows));
 children.push(para('**Сабақтың барысы:**', { keepNext: true }));
 
-const W = [1100, 4560, 2000, 1790, 1016];
+const W = [1560, 4000, 1900, 1740, 1266]; // кезең мен ресурс бағаны сөз бөлінбейтіндей кең
 const sRows = [new TableRow({ tableHeader: true, children: [
   'Сабақтың кезеңі/ уақыт', 'Педагогтің әрекеті', 'Оқушының әрекеті', 'Бағалау', 'Ресурстар',
 ].map((t, i) => cell(`**${t}**`, W[i], { fill: 'D9E2F3', align: AlignmentType.CENTER })) })];
