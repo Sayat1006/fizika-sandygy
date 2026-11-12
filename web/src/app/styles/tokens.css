@@ -15,7 +15,7 @@
   --ok: #248a3d;   --ok-bg: #e9f7ee;
   --warn: #b25000; --warn-bg: #fff4e5;
   --err: #c9302c;  --err-bg: #fdecec;
-  --glass: rgba(255, 255, 255, 0.78);
+  --glass: rgba(255, 255, 255, 0.9);
   --scrim: rgba(0, 0, 0, 0.32);
   --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.04);
   --shadow-2: 0 1px 2px rgba(0, 0, 0, 0.04), 0 12px 32px -12px rgba(0, 0, 0, 0.14);
@@ -62,7 +62,7 @@
     --ok: #30d158;  --ok-bg: #0f2a18;
     --warn: #ff9f0a; --warn-bg: #2a1f0e;
     --err: #ff6961; --err-bg: #2e1413;
-    --glass: rgba(22, 22, 23, 0.78);
+    --glass: rgba(10, 10, 11, 0.9);
     --scrim: rgba(0, 0, 0, 0.6);
     --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.3);
     --shadow-2: 0 1px 2px rgba(0, 0, 0, 0.3), 0 12px 32px -12px rgba(0, 0, 0, 0.6);

@@ -212,3 +212,11 @@
 .bd-x { display: grid; place-items: center; } .bd-x svg { width: 20px; height: 20px; }
 .bd-live__more svg { width: 18px; height: 18px; color: var(--ink-2); transition: transform var(--d-2); } .bd-live__more svg.up { transform: rotate(180deg); }
 .bd-wall__x { color: #9aa6c6; }
+/* телефон: тақта экраннан шықпайды */
+.bd { grid-template-columns: minmax(0, 1fr); }
+.bd-top, .bd-tools, .bd-stages, .bd-snow { min-width: 0; }
+@media (max-width: 760px) { .bd-clock { padding-left: 10px; } .bd-tools { justify-content: center; } .bd-pen { order: 3; overflow-x: auto; max-width: 100%; } .bd-more__pop { width: min(300px, 86vw); } }
+.bd-live__end { flex: none; padding: 8px 0 2px; }
+.bd-ttl small, .bd-snow small { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bd-clock, .bd-more, .bd-top > .bd-ib { flex: none; }
+.bd-snow small { flex: none; overflow: visible; }

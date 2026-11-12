@@ -280,3 +280,6 @@
 .adm__rvi { display: grid; gap: 8px; padding: 16px 18px; border-radius: var(--r-m); background: var(--bg-2); }
 .adm__rvi.on { box-shadow: inset 3px 0 0 var(--ok); }
 .adm__rvi p { margin: 0; } .adm__rvi small { color: var(--fg-2); }
+/* үлгілер: телефонда сыныптар жолағы экраннан шықпайды */
+.samples-head { min-width: 0; } .samples-head > * { max-width: 100%; min-width: 0; }
+.samples-head .seg { max-width: calc(100vw - 44px); }

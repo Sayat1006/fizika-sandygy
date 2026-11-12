@@ -1,8 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useAccount } from '../../lib/account';
-import { CONFIG, week } from '../../lib/config';
+import { week } from '../../lib/config';
 import { dayPart, firstName, loadLessons, type Lesson } from '../../lib/data';
-import { IcCard, IcList, IcSend, IcUser, Mark } from '../../ui/icons';
 import { useToast } from '../../ui/kit';
 import { AccountNav, Footer } from '../../ui/Layout';
 import { AuthView, RecoverView } from '../Auth';
@@ -79,11 +78,6 @@ function Teacher() {
   const name = firstName(profile.full_name);
   const lock = (g: number) => { setViewing(null); setPreset(g); setSheet('subscribe'); toast('Материалдар жазылыммен ашылады'); };
   const open = (id: SheetId) => { setPreset(null); setSheet(id); };
-  const okS = subs.filter((x) => x.paid_until >= today);
-  const DIRN: Record<string, string> = { zhmb: 'ЖМБ', kgb: 'ҚГБ' };
-  const vs = profile.variants || [];
-  const clsSum = [[7, 8, 9].filter((g) => vs.includes(String(g))).join(', ') + ([7, 8, 9].some((g) => vs.includes(String(g))) ? '-сынып' : ''),
-    ...vs.filter((v) => v.includes('-')).map((v) => { const [g, d, h] = v.split('-'); return `${g} ${DIRN[d]} ${h} сағ.`; })].filter(Boolean).join(' · ');
 
   if (mode === 'class') return (
     <div className="cab cab--class">
@@ -99,7 +93,6 @@ function Teacher() {
     <div className={`cab${wide ? ' cab--split' : ''}`}>
       <div className="cab__main">
       <header className="hello">
-        <span className="hello__mark" aria-hidden><Mark /></span>
         <h1 className="t-title rise rise-1">Қайырлы {dayPart()}{name ? `, ${name}` : ''}!</h1>
         {(left !== null || !(profile.phone || '').trim()) && (
           <p className="hello__sub rise rise-2">
@@ -117,15 +110,6 @@ function Teacher() {
 
       <Lessons lessons={lessons} onView={view} onLock={lock} onClasses={() => open('classes')} sel={wide && sel ? `${sel.v}|${sel.n}` : null} onSelect={wide ? select : undefined} />
 
-      <section className="settings">
-        <h2 className="t-headline">Басқару</h2>
-        <div className="group">
-          <button className="group__row" type="button" onClick={() => open('subscribe')}><span className="group__ic" style={{ background: '#0071E3' }}><IcCard /></span><span className="group__t">Жазылым</span><span className="group__v">{okS.length ? (okS.some((x) => !x.trial) ? `${okS.filter((x) => !x.trial).length} сынып белсенді` : 'Тегін сынақ') : 'Жазылым жоқ'}</span></button>
-          <button className="group__row" type="button" onClick={() => open('classes')}><span className="group__ic" style={{ background: '#5E5CE6' }}><IcList /></span><span className="group__t">Менің сыныптарым</span><span className="group__v">{profile.classes_set ? clsSum || 'Таңдалмаған' : 'Бекітілмеген'}</span></button>
-          {CONFIG.telegramBot && <button className="group__row" type="button" onClick={() => open('tg')}><span className="group__ic" style={{ background: '#229ED9' }}><IcSend /></span><span className="group__t">Telegram</span><span className="group__v">{profile.tg_chat_id ? 'Қосылған' : 'Қосылмаған'}</span></button>}
-          <button className="group__row" type="button" onClick={() => open('profile')}><span className="group__ic" style={{ background: '#8E8E93' }}><IcUser /></span><span className="group__t">Профиль</span><span className="group__v">{profile.full_name}</span></button>
-        </div>
-      </section>
       </div>
       {wide && <LessonPane lesson={sel} onLock={lock} tab={tab} setTab={setTab} />}
 

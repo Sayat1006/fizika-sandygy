@@ -7,9 +7,10 @@ import { IcBoard, IcBusy, IcDone, IcEye, IcLab, IcLock, KindIcon } from '../../u
 import { useToast } from '../../ui/kit';
 
 /** Сабақтың әрекеттері: тақтада ашу, 3D тәжірибе, қарау, файлдарды жүктеу. Жазылымсыз — құлып. */
-export default function LessonActions({ l, grade, onView, onLock, layout = 'grid', noView, compact }: {
+export default function LessonActions({ l, grade, onView, onLock, layout = 'grid', noView, compact, brief }: {
   l: Lesson; grade: number; onView: (l: Lesson) => void; onLock: (grade: number) => void; layout?: 'grid' | 'row'; noView?: boolean;
   /** кең экранның карточкасы: жүктеу мен қарау оң жақтағы панельде */ compact?: boolean;
+  /** телефондағы апта карточкасы: «Тақтада ашу» мен «Қарау» (жүктеу — қарау терезесінде) */ brief?: boolean;
 }) {
   const { subOf } = useAccount();
   const ok = !!subOf(grade), lab = labOf(l);
@@ -23,7 +24,7 @@ export default function LessonActions({ l, grade, onView, onLock, layout = 'grid
       {lab?.exp && <a className="act act--dark act--wide" href={`/lab/experiments/${lab.exp}`}><IcLab />3D тәжірибе</a>}
       {compact ? null : <>
       {!noView && <button className="act" type="button" onClick={() => onView(l)}><IcEye />Қарау</button>}
-      {kinds.map((k) => ok ? <DownloadAct key={k} l={l} kind={k} /> : (
+      {!brief && kinds.map((k) => ok ? <DownloadAct key={k} l={l} kind={k} /> : (
         <button key={k} className="act act--lock" type="button" title="Жазылыммен ашылады" onClick={() => onLock(grade)}><IcLock />{KIND_LABEL[k]}</button>
       ))}
       </>}
