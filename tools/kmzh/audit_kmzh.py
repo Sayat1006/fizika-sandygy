@@ -104,6 +104,9 @@ def audit(path):
         issues.append('рефлексия жоқ')
     if not re.search(r'[Үү]й тапсырмасы', full) and not is_rep:
         issues.append('үй тапсырмасы жоқ')
+    tabs = '\n'.join(cells_text(c) for t in tables for r in t.rows for c in r.cells)
+    if re.search(r'\*\*|(?<!_)__(?!_)', body + '\n' + tabs):
+        issues.append('өңделмеген белгі (** немесе __)')
     if re.search(r'\bNone\b|undefined|TODO|nan\b', full):
         issues.append('бөтен мәтін (None/TODO)')
     stats = {'mins': total, 'stages': len(stages), 'chars': len(full), 'pages_est': round(len(full) / 2600, 1)}

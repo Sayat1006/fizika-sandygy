@@ -31,6 +31,9 @@ for n, fname in sorted(index.items(), key=lambda x: int(x[0])):
     entry['kmzh'] = {'path': path, 'name': fname}
     copied.append((key, path))
 print('copied', len(copied))
+# қайталанған суреттерді біріктіру (көлем ~40%-ға азаяды)
+sys.path.insert(0, os.path.dirname(HERE)); import slim_docx
+for _, p in copied: slim_docx.slim(f'{SITE}/materials/{p}')
 
 # PDF in one soffice run
 subprocess.run(['soffice', '--headless', '--convert-to', 'pdf', '--outdir', pdfdir] + [f'{SITE}/materials/{p}' for _, p in copied],

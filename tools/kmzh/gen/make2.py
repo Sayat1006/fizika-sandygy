@@ -324,7 +324,8 @@ def build(variant, item, spec, v, idx, prev_topic, kgb=False):
         krows += [[f'**Қосымша {i}**', a] for i, (_, a) in enumerate(X, 1)]
         if ex: krows.append(['**Үлгі есеп**', ex[2]])
         sections.append({'title': 'Тапсырмалардың жауап кілті', 'cols': ['Тапсырма', 'Жауабы'], 'widths': [2200, 13200], 'rows': krows})
-        hand = ['**Аты-жөні:** ______________________  **Сынып:** ______  **Күні:** ________', '']
+        # астын сызу таңбасы (_) markdown-пен қақтығысады — нүктелі сызық
+        hand = ['**Аты-жөні:** ……………………………………  **Сынып:** …………  **Күні:** ……………', '']
         line = '_' * 92
         hand += ['**А деңгейі**'] + A + [line, line] + ['', '**В деңгейі**'] + B + [line, line, line]
         if not kgb: hand += ['', '**С деңгейі**'] + C + [line, line, line]
