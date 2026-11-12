@@ -250,15 +250,34 @@ def aim(t):
     return t[0].upper() + t[1:] if t else t
 
 
-def keep_from(old):
-    """ескі (v2 немесе v3) файлдан сақталатын бөліктер"""
+V2 = 'f9d88fbb'  # презентациялар әлі ескі (v2) үлгіде болған соңғы коммит — интерактивті модельдің бастапқы көзі
+
+
+def v2_of(path):
+    import subprocess
+    rel = os.path.relpath(path, REPO)
+    try:
+        return json.loads(subprocess.run(['git', 'show', f'{V2}:{rel}'], cwd=REPO, capture_output=True, check=True).stdout)
+    except Exception:
+        return {}
+
+
+def keep_from(old, path=None):
+    """ескі файлдан сақталатын бөліктер; интерактивті модель — тек v2 файлынан (v3-тегі өзі жасаған модельді қайта алмаймыз)"""
+    if old.get('ver') == 3 and path:
+        src = v2_of(path)
+        if src:
+            k2 = keep_from(src)
+            k = keep_from(dict(old, ver=None))
+            k['illus'] = k2['illus']
+            return k
     k = {'link': None, 'lab': [], 'illus': None, 'quiz': old.get('quiz') or []}
     for s in old.get('slides', []):
         if s['t'] == 'link' and not k['link']:
             k['link'] = s
         elif s['t'] in ('equip', 'procedure', 'table', 'chart'):
             k['lab'].append(s)
-        elif s['t'] == 'model' and not k['illus']:
+        elif s['t'] == 'model' and not k['illus'] and old.get('ver') != 3:
             k['illus'] = s['illus']
         elif s.get('illus') and isinstance(s['illus'], dict) and not k['illus']:
             k['illus'] = s['illus']
@@ -274,7 +293,7 @@ def build(v, n):
     if old.get('hand'):
         return None
     P = json.load(open(os.path.join(PJ, f'{SRC.get(v, v)}_{int(n):02d}.json'), encoding='utf-8'))
-    K = keep_from(old)
+    K = keep_from(old, path)
     topic = clean(P['topic'])
     global TABLE
     bl = (P.get('bolim') or '').lower()
