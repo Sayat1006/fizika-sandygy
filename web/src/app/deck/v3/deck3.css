@@ -183,3 +183,25 @@
 .x-model .x-idea__txt { padding-right: 48px; }
 .x-model { grid-template-columns: 34% 66%; }
 .x-model__box { position: relative; }
+
+/* механика, астрономия, кванттар суреттерінің қозғалысы */
+.a3-orbit { animation: a3-rot 4s linear infinite; } .a3-orbit2 { animation: a3-rot 10s linear infinite; } .a3-spin2 { animation: a3-rot 4s linear infinite; }
+@keyframes a3-rot { to { transform: rotate(360deg); } }
+.a3-drive { animation: a3-drive 4s ease-in-out infinite alternate; } @keyframes a3-drive { to { transform: translateX(480px); } }
+.a3-drive2 { animation: a3-drive2 4s ease-in-out infinite alternate; } @keyframes a3-drive2 { from { transform: translateX(-60px); } to { transform: translateX(40px); } }
+.a3-tilt { animation: a3-tilt 3s ease-in-out infinite alternate; } @keyframes a3-tilt { from { transform: rotate(-4deg); } to { transform: rotate(3deg); } }
+.a3-tilt2 { animation: a3-tilt2 3s ease-in-out infinite alternate; } @keyframes a3-tilt2 { from { transform: rotate(-3deg); } to { transform: rotate(3deg); } }
+.a3-fall { animation: a3-fall 1.6s cubic-bezier(.55, 0, 1, .45) infinite; } @keyframes a3-fall { to { transform: translateY(360px); } }
+.a3-push { animation: a3-push 1.6s ease-in-out infinite alternate; } @keyframes a3-push { to { transform: translateY(40px); } }
+.a3-swing { animation: a3-swing 2.4s ease-in-out infinite alternate; } @keyframes a3-swing { from { transform: rotate(-22deg); } to { transform: rotate(22deg); } }
+.a3-pend { animation: a3-pend 2.2s ease-in-out infinite alternate; } @keyframes a3-pend { from { transform: rotate(-18deg); } to { transform: rotate(18deg); } }
+.a3-float { animation: a3-float 5s ease-in-out infinite alternate; } @keyframes a3-float { to { transform: translate(20px, -20px) rotate(12deg); } }
+.a3-float2 { animation: a3-float 4s ease-in-out infinite alternate-reverse; }
+.a3-hit1 { animation: a3-hit1 3s ease-in-out infinite; } @keyframes a3-hit1 { 0% { transform: translateX(0); } 45% { transform: translateX(230px); } 100% { transform: translateX(260px); } }
+.a3-hit2 { animation: a3-hit2 3s ease-in-out infinite; } @keyframes a3-hit2 { 0%, 45% { transform: translateX(0); } 100% { transform: translateX(220px); } }
+.a3-launch { animation: a3-launch 3s ease-in infinite; } @keyframes a3-launch { to { transform: translateY(-140px); } }
+.a3-wave { animation: a3-wave 1.6s linear infinite; } @keyframes a3-wave { to { transform: translateX(-360px); } }
+.a3-ring { animation: a3-ring 1.8s ease-out infinite; } @keyframes a3-ring { from { opacity: 1; } to { opacity: .1; transform: translateX(60px); } }
+.a3-eject { animation: a3-eject 1.6s ease-out infinite; } @keyframes a3-eject { from { opacity: 1; } to { transform: translate(120px, -260px); opacity: 0; } }
+.a3-push2 { animation: a3-push2 2.4s ease-in-out infinite alternate; } @keyframes a3-push2 { to { transform: translateX(150px); } }
+.a3-needle { animation: a3-needle 2.4s ease-in-out infinite alternate; } @keyframes a3-needle { from { transform: rotate(-50deg); } to { transform: rotate(10deg); } }

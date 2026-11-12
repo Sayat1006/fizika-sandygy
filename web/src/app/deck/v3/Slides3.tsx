@@ -25,6 +25,9 @@ function Sub({ t }: { t: string }) {
   return <>{out}</>;
 }
 
+/** ең ұзын сөз жолға сыятындай қаріп өлшемі (px) */
+const fitWord = (t: string, w: number, max: number) => Math.min(max, Math.floor(w / (Math.max(...t.replace(/\*\*/g, '').split(/\s+/).map((x) => x.length)) * 0.62)));
+
 const LV = { A: ['Түсінемін', 'a'], B: ['Қолданамын', 'b'], C: ['Талдаймын', 'c'] } as const;
 
 export default function Slide3({ s, step, no }: { s: Slide; step: number; no: number }) {
@@ -38,7 +41,7 @@ export default function Slide3({ s, step, no }: { s: Slide; step: number; no: nu
             <div className="x-cover__veil" />
             <div className="x-cover__txt">
               <div className="x-kicker">{s.kicker}</div>
-              <h1 className={s.title.length > 90 ? 'x-h1 x-h1--xs' : s.title.length > 44 ? 'x-h1 x-h1--s' : 'x-h1'}>{s.title}</h1>
+              <h1 className="x-h1" style={{ fontSize: fitWord(s.title, 700, s.title.length > 90 ? 62 : s.title.length > 44 ? 80 : 100) }}>{s.title}</h1>
               {s.sub && <p className="x-sub">{s.sub}</p>}
             </div>
           </div>
@@ -91,7 +94,7 @@ export default function Slide3({ s, step, no }: { s: Slide; step: number; no: nu
             <div className="x-idea__art"><A id={s.art} /></div>
             <div className="x-idea__txt">
               {s.kicker && <div className="x-kicker">{s.kicker}</div>}
-              <h2 className="x-h2">{s.title}</h2>
+              <h2 className="x-h2" style={{ fontSize: fitWord(s.title, 600, 84) }}>{s.title}</h2>
               {s.text && <p className={`x-text${s.text.length > 150 ? ' x-text--s' : ''}`}><T t={s.text} /></p>}
               {!!s.list?.length && <ul className={`x-list${s.list.join('').length > 220 ? ' x-list--s' : ''}`}>{s.list.map((t, i) => <In key={i} on={step > i} className="x-li"><T t={t} /></In>)}</ul>}
               {!!s.chips?.length && <In on={step > (s.list?.length || 0)} className="x-chips">{s.chips.map((c) => <span key={c}>{c}</span>)}</In>}
@@ -117,7 +120,7 @@ export default function Slide3({ s, step, no }: { s: Slide; step: number; no: nu
             <div className="x-f"><Sub t={s.f} /></div>
             <div className="x-parts">
               {s.parts.map(([sym, name, unit], i) => (
-                <In key={i} on={step > i} className="x-part"><b>{sym}</b><span>{name}</span><i>{unit}</i></In>
+                <In key={i} on={step > i} className="x-part"><b><Sub t={sym} /></b><span>{name}</span><i>{unit}</i></In>
               ))}
             </div>
           </div>

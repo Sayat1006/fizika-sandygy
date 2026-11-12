@@ -4,6 +4,7 @@
 import type { ReactNode } from 'react';
 import { Defs, Flow, Label, Sun } from './parts';
 import { SCENES8 } from './Art8';
+import { SCENES_M } from './ArtM';
 
 
 export type ArtId = string;
@@ -184,6 +185,7 @@ function Trio({ k }: { k: 'cond' | 'conv' | 'rad' }) {
 
 export const SCENES: Record<string, () => ReactNode> = {
   ...SCENES8,
+  ...SCENES_M,
   house: () => <House />, breeze_day: () => <BreezeScene />, breeze_night: () => <BreezeScene night />, conduction: () => <Conduction />,
   convection_room: () => <ConvectionRoom />, radiation_sun: () => <RadiationSun />, solar_collector: () => <SolarCollector />, house_loss: () => <HouseLoss />,
   thermos: () => <Thermos />, window_double: () => <WindowDouble />, trio_cond: () => <Trio k="cond" />, trio_conv: () => <Trio k="conv" />, trio_rad: () => <Trio k="rad" />,

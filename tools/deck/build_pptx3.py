@@ -93,6 +93,8 @@ def pill(pg, x, y, t, fill, color='FFFFFF', size=26):
 
 
 def h2(pg, x, y, w, h, t, size=80, align='l', anchor='t'):
+    longest = max((len(x_) for x_ in re.sub(r'\*\*', '', t).split()), default=1)
+    size = min(size, int(w / (longest * 0.64)))  # ең ұзын сөз жолға сыйсын (бөлініп кетпесін)
     return tx(pg, x, y, w, h, t, size, bold=True, align=align, anchor=anchor, spacing=0.95)
 
 
