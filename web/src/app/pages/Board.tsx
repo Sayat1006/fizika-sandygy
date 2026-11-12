@@ -303,6 +303,7 @@ export default function Board() {
           <div className="bd-pno">{i + 1} / {list.length}{onDeck && maxStep > 0 && <span className="bd-steps">{Array.from({ length: maxStep }, (_, k) => <i key={k} className={k < step ? 'on' : ''} />)}</span>}</div>
         </>}
         <aside className={`bd-notes${notes ? ' bd-notes--open' : ''}`} aria-label="Сабақ сценарийі">
+          {onDeck && deck && (deck.slides[i] as { notes?: string }).notes && <><h3>Осы слайдқа</h3><p>{(deck.slides[i] as { notes?: string }).notes}</p></>}
           {st ? <>
             <h3>{st.stage} · {st.min} мин</h3><p><b>{st.sub}</b></p>
             <h3>Мұғалімнің әрекеті</h3>{st.teacher.map((t, k) => <p key={k}>{t}</p>)}

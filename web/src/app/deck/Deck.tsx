@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import type { Chart, DeckData, Dir, Quote, Scale, Slide, Vec, Visual } from './types';
 import Illus, { ILLUS } from './Illus';
+import Slide3, { V3 } from './v3/Slides3';
 
 /* Анимациялы слайд: 1920×1080 сахна, контейнерге сыйғызылады. step — неше рет басылды. */
 export type Theme = 'a' | 'b' | 'c';
@@ -19,8 +20,8 @@ export default function Deck({ data, index, step, theme, stageRef }: { data: Dec
     <div className="dk-box" ref={box}>
       <div ref={stageRef} className={`dk dk--${theme}`} style={{ transform: `translate(${fit.x}px, ${fit.y}px) scale(${fit.k})`, visibility: fit.k ? 'visible' : 'hidden' }}>
         <section className="dk-slide" key={index}>
-          <SlideView s={s} step={step} custom={!!data.custom} />
-          {s.t !== 'title' && s.t !== 'end' && <div className="dk-foot"><span>{data.topic}</span><span>{index + 1}</span></div>}
+          {V3.has(s.t) ? <Slide3 s={s} step={step} no={index + 1} /> : <SlideView s={s} step={step} custom={!!data.custom} />}
+          {s.t !== 'title' && s.t !== 'end' && !V3.has(s.t) && <div className="dk-foot"><span>{data.topic}</span><span>{index + 1}</span></div>}
         </section>
       </div>
     </div>

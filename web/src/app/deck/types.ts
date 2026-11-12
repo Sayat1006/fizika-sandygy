@@ -30,7 +30,24 @@ export type Slide =
   | (Head & { t: 'equip'; title: string; items: string[] })
   | (Head & { t: 'procedure'; title: string; items: string[] })
   | (Head & { t: 'table'; title: string; head: string[]; rows: number; note?: string })
-  | (Head & { t: 'chart'; title: string; chart: Chart; items: string[] });
+  | (Head & { t: 'chart'; title: string; chart: Chart; items: string[] })
+  /* ── v3: көрнекі слайдтар — бір слайд = бір ой, үлкен сурет, аз мәтін ── */
+  | (N & { t: 'cover'; kicker: string; title: string; art: string; sub?: string })
+  | (N & { t: 'ask'; q: string; art: string; answer?: string })
+  | (N & { t: 'aims'; title: string; items: string[] })
+  | (N & { t: 'trio'; title: string; items: { name: string; art: string; text: string }[] })
+  | (N & { t: 'idea'; kicker?: string; title: string; text?: string; list?: string[]; art: string; chips?: string[]; flip?: boolean })
+  | (N & { t: 'model'; kicker?: string; title: string; text?: string; illus: { k: string; a?: unknown[] } })
+  | (N & { t: 'bigf'; title: string; f: string; parts: [string, string, string][]; art?: string })
+  | (N & { t: 'poll'; q: string; opts: string[]; ok: number; art?: string })
+  | (N & { t: 'myth'; wrong: string; right: string; why: string; art?: string })
+  | (N & { t: 'job'; level: 'A' | 'B' | 'C'; q: string; answer: string; art?: string })
+  | (N & { t: 'sum'; title: string; items: { art: string; text: string }[] })
+  | (N & { t: 'home'; title: string; items: [string, string][] })
+  | (N & { t: 'stars'; title: string; items: (string | [string, string])[] })
+  | (N & { t: 'bye'; title: string; art: string; quote?: Quote });
+/** v3 слайдының мұғалімге арналған жазбасы (әдіс нұсқаулығы — экранда емес, жазбада) */
+interface N { notes?: string; tag?: string }
 
 /** Сызба: сурет (SVG) немесе дерекпен салынатын карточкалар / схема / график */
 export interface Visual { illus?: { k: string; a?: unknown[] }; img?: { svg: string; png?: string; w: number; h: number }; cards?: { title: string; items: [string, string][] }; flow?: { title: string; items: string[] }; chart?: Chart }
@@ -53,6 +70,13 @@ export function stepsOf(s: Slide): number {
     case 'vectors': return s.vectors.length;
     case 'levels': return s.items.length;
     case 'task': return 1;
+    case 'ask': return s.answer ? 1 : 0;
+    case 'aims': return s.items.length;
+    case 'trio': case 'sum': return s.items.length;
+    case 'idea': return (s.list?.length || 0) + (s.chips?.length ? 1 : 0);
+    case 'bigf': return s.parts.length;
+    case 'poll': case 'job': return 1;
+    case 'myth': return 2;
     default: return 0;
   }
 }
