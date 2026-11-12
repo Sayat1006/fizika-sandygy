@@ -335,3 +335,22 @@ html[data-mode="class"] { --ok: #3ddc84; --warn-bg: #2a1f0e; --warn: #ffb340; }
 .player__b { display: grid; place-items: center; } .player__b svg { width: 18px; height: 18px; } .player__b--play svg { width: 14px; height: 14px; }
 .strip__x { display: grid; place-items: center; } .strip__x svg { width: 16px; height: 16px; }
 .search:focus-within { box-shadow: 0 0 0 2px var(--accent); }
+
+/* ═══════════ Тексерістен кейінгі түзетулер ═══════════ */
+/* «бүгін» — тек күні көк; жиек тек таңдалған карточкада (кең экран) */
+@media (min-width: 1100px) { .cab--split .card--today:not(.card--sel) { box-shadow: none; } }
+/* панель мазмұнына қарай биіктейді (бос орын қалмайды), экраннан аспайды */
+.pane { height: auto; max-height: calc(100vh - var(--nav-h) - 32px); }
+.pane__body { flex: 0 1 auto; }
+.pane__doc { max-height: 100%; }
+/* телефон: сәлемдесу ықшам, жолақ мәтіні қиылмайды */
+@media (max-width: 700px) {
+  .hello { padding: var(--s-4) 0 var(--s-3); justify-items: start; text-align: left; }
+  .hello h1 { font-size: 26px; }
+  .hello__sub { justify-content: flex-start; }
+  .strip__row, .strip__head { flex-wrap: wrap; row-gap: 2px; padding-block: 10px; }
+  .strip__t { order: 5; flex-basis: 100%; white-space: normal; }
+  .strip__k { flex: 1; }
+  .card { box-shadow: none !important; }
+  .acts--row .act { flex: 1; }
+}

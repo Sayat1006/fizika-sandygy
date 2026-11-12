@@ -4,6 +4,7 @@ import { CONFIG, VARIANT, week } from '../lib/config';
 import { KIND_LABEL, accountFn, dmy, money, sb, type DownloadRow, type Lesson, type PayRequest, type Profile, type Sub, loadLessons } from '../lib/data';
 import { Note, PasswordInput, Segmented, useToast } from '../ui/kit';
 import { AccountNav, Footer } from '../ui/Layout';
+import { allReviews, deleteReview, setApproved, type Review } from '../lib/reviews';
 
 const tm = (s: string) => new Date(s).toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
 type Row = DownloadRow & { user_id: string; created_at: string };
@@ -170,6 +171,8 @@ function Dashboard() {
         ) : <div className="empty">Күтіп тұрған өтінім жоқ.</div>}
       </section>
 
+      <AdminReviews />
+
       <section className="adm__sec">
         <h2 className="t-headline">Мұғалімдер</h2>
         <p className="hint">Мұғалім құпиясөзін ұмытса, «Жаңа құпиясөз» басыңыз: жаңа құпиясөз шығады және оны WhatsApp арқылы жіберу сілтемесі пайда болады.</p>
@@ -230,5 +233,35 @@ function Dashboard() {
         ) : <div className="empty">Соңғы 7 күнде жүктеу болмады.</div>}
       </section>
     </div>
+  );
+}
+
+/** Мұғалімдердің пікірлері: бекітілгені басты бетте шығады (ең көбі 6, ең жаңалары) */
+function AdminReviews() {
+  const [list, setList] = useState<Review[] | null>(null);
+  const toast = useToast();
+  const load = () => allReviews().then(setList);
+  useEffect(() => { void load(); }, []);
+  const act = async (f: () => Promise<unknown>) => { try { await f(); await load(); } catch { toast('Орындалмады'); } };
+  return (
+    <section className="adm__sec">
+      <h2 className="t-headline">Пікірлер</h2>
+      <p className="hint">Мұғалімдер кабинеттен жазады. «Жариялау» басылған пікір басты бетте шығады (ең жаңа 6-уы).</p>
+      {!list ? <div className="skel" style={{ height: 80 }} /> : list.length ? (
+        <div className="adm__rv">
+          {list.map((r) => (
+            <article key={r.id} className={`adm__rvi${r.approved ? ' on' : ''}`}>
+              <p>«{r.text}»</p>
+              <small>{r.name}{r.school ? ` · ${r.school}` : ''} · {new Date(r.created_at).toLocaleDateString('kk-KZ')}</small>
+              <div className="adm__acts">
+                {r.approved ? <button className="btn btn--sm" type="button" onClick={() => act(() => setApproved(r.id, false))}>Жасыру</button>
+                  : <button className="btn btn--sm btn--primary" type="button" onClick={() => act(() => setApproved(r.id, true))}>Жариялау</button>}
+                <button className="btn btn--sm btn--danger" type="button" onClick={() => act(() => deleteReview(r.id))}>Өшіру</button>
+              </div>
+            </article>
+          ))}
+        </div>
+      ) : <div className="empty">Әзірге пікір жоқ.</div>}
+    </section>
   );
 }

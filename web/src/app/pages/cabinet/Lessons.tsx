@@ -114,7 +114,7 @@ function WeekView({ lessons, vs, g, w, day, setDay, onView, onLock, onAll, sel, 
               <div className="card__body">
                 <small>№{l.disp}{g >= 10 ? ` · ${VARIANT[l.v].short}` : ''}</small>
                 <h3>{l.topic}</h3>
-                <LessonActions l={l} grade={g} onView={onView} onLock={onLock} layout="row" compact={!!onSelect} />
+                <LessonActions l={l} grade={g} onView={onView} onLock={onLock} layout="row" compact={!!onSelect} brief />
               </div>
             </article>
           ))}
