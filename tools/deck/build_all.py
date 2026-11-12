@@ -13,6 +13,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.dirname(os.path.dirname(HERE))
 sys.path.insert(0, HERE)
 import build_pptx  # noqa: E402
+import build_pptx3  # noqa: E402
 
 SECRET = 'sabaqtas-pv-7f3a91'
 
@@ -41,7 +42,7 @@ def main(only):
             added.add((v, int(n)))
         path = entry['pres']['path']
         out = os.path.join(REPO, 'materials', path)
-        build_pptx.build(dp, out)
+        (build_pptx3 if json.load(open(dp, encoding='utf-8')).get('ver') == 3 else build_pptx).build(dp, out)
         with tempfile.TemporaryDirectory() as t:
             subprocess.run(['soffice', '--headless', '--convert-to', 'pdf', '--outdir', t, out], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             pdf = os.path.join(t, os.path.basename(out)[:-5] + '.pdf')

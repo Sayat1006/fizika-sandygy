@@ -23,7 +23,11 @@
 /* мұқаба: сурет толық экран, сол жақта мөлдір перде мен тақырып */
 .x-cover__veil { position: absolute; inset: 0; background: linear-gradient(90deg, var(--d-bg) 0%, var(--d-bg) 34%, color-mix(in srgb, var(--d-bg) 70%, transparent) 50%, transparent 66%); }
 .x-cover__txt { position: absolute; left: 128px; top: 0; bottom: 0; width: 980px; display: flex; flex-direction: column; justify-content: center; }
-.x-cover .x-bleed { left: 34%; }
+.x-cover svg.a3.x-bleed, .x-cover .x-bleed { left: 46%; top: 48px; width: calc(54% - 48px); height: calc(100% - 96px); border-radius: 48px; }
+.x-cover .x-cover__veil { display: none; }
+.x-cover .x-cover__txt { width: 46%; padding-right: 40px; box-sizing: border-box; }
+.x-cover .x-h1 { font-size: 100px; } .x-cover .x-h1--s { font-size: 80px; } .x-cover .x-h1--xs { font-size: 62px; }
+.x svg.a3.x-bleed { position: absolute; }
 .x-quote { margin: 48px 0 0; font: 600 44px/1.3 var(--d-body); color: var(--d-ink-2); }
 .x-quote cite { display: block; margin-top: 14px; font-size: 32px; font-style: normal; color: var(--d-ink-3); }
 
@@ -115,8 +119,8 @@
 /* екі жұлдыз, бір тілек */
 .x-stars { display: grid; grid-template-columns: repeat(3, 1fr); gap: 40px; margin-top: 80px; width: 100%; }
 .x-star { background: var(--d-card); border-radius: 40px; padding: 56px 40px; display: flex; flex-direction: column; align-items: center; gap: 30px; }
-.x-star svg { width: 200px; height: 200px; } .x-star path { fill: #ffc21f; }
-.x-star--wish path { fill: #1f8bff; }
+.x-star svg { width: 180px; height: 180px; }
+.x-star--sm { padding: 44px 24px; } .x-star--sm svg { width: 130px; height: 130px; } .x-star--sm p { font-size: 34px; }
 .x-star p { margin: 0; font-size: 44px; font-weight: 700; line-height: 1.2; }
 
 /* суреттердің анимациясы */
@@ -143,3 +147,39 @@
 .x-tcard h3 { overflow-wrap: anywhere; }
 .dk--b .x-tcard h3 { font-size: 42px; }
 .dk--b .x-h2 { font-size: 76px; } .dk--b .x-job__q--s { font-size: 54px; } .dk--b .x-myth__t { font-size: 60px; }
+
+/* 8-сынып суреттерінің қозғалысы */
+.a3-jit { animation: a3-jit 1.6s ease-in-out infinite alternate; }
+@keyframes a3-jit { 25% { transform: translate(5px, -4px); } 50% { transform: translate(-4px, 5px); } 75% { transform: translate(4px, 4px); } }
+.a3-drift { animation: a3-drift 2.4s ease-in-out infinite alternate; } .a3-drift2 { animation: a3-drift2 2.4s ease-in-out infinite alternate; }
+@keyframes a3-drift { to { transform: translate(90px, 14px); } } @keyframes a3-drift2 { to { transform: translate(-90px, -14px); } }
+.a3-brown { animation: a3-brown 6s steps(1) infinite; transition: transform .3s; }
+@keyframes a3-brown { 0% { transform: translate(0, 0); } 15% { transform: translate(-60px, 40px); } 30% { transform: translate(-30px, -50px); } 45% { transform: translate(50px, -20px); } 60% { transform: translate(80px, 50px); } 75% { transform: translate(10px, 70px); } 90% { transform: translate(-50px, 10px); } }
+.a3-rise { animation: a3-rise 4s ease-in-out infinite alternate; transform-box: fill-box; transform-origin: 50% 100%; }
+@keyframes a3-rise { from { transform: scaleY(.35); } }
+.a3-slide { animation: a3-slide 1.4s ease-in-out infinite alternate; } @keyframes a3-slide { from { transform: translateX(-120px); } to { transform: translateX(120px); } }
+.a3-flick { animation: a3-flick .5s ease-in-out infinite alternate; transform-box: fill-box; transform-origin: 50% 100%; }
+@keyframes a3-flick { to { scale: 1.05 .93; } }
+.a3-draw { stroke-dashoffset: 1400; animation: a3-draw 1.4s ease-out forwards; } @keyframes a3-draw { to { stroke-dashoffset: 0; } }
+.a3-melt { animation: a3-melt 4s ease-in-out infinite alternate; transform-box: fill-box; transform-origin: 50% 100%; } @keyframes a3-melt { to { transform: scale(.6, .35); } }
+.a3-rise2 { animation: a3-rise2 2.8s ease-out infinite; } @keyframes a3-rise2 { from { opacity: 1; } to { transform: translate(30px, -380px); opacity: 0; } }
+.a3-bubble { animation: a3-bubble 1.8s ease-in infinite; } @keyframes a3-bubble { from { opacity: 1; } to { transform: translateY(-250px); opacity: 0; } }
+.a3-piston { animation: a3-piston 2.6s ease-in-out infinite alternate; } @keyframes a3-piston { to { transform: translateY(-110px); } }
+.a3-drop { animation: a3-drop 1.6s ease-in infinite; } @keyframes a3-drop { to { transform: translateY(60px); opacity: 0; } }
+.a3-hair { animation: a3-hair 2s ease-in-out infinite alternate; transform-origin: 300px 270px; } @keyframes a3-hair { to { transform: rotate(4deg); } }
+.a3-flash { animation: a3-flash 2.4s steps(1) infinite; } @keyframes a3-flash { 0%, 60%, 70% { opacity: 1; } 62%, 75%, 100% { opacity: .15; } }
+.a3-electron { animation: a3-electron 3s linear infinite; } @keyframes a3-electron { 0% { transform: translateX(0); } 30% { transform: translateX(80px) translateY(8px); } 60% { transform: translateX(150px) translateY(-8px); } 100% { transform: translateX(260px); opacity: 0; } }
+.a3-ionL { animation: a3-ionL 2.4s ease-in-out infinite; } @keyframes a3-ionL { to { transform: translateX(80px); } }
+.a3-ionR { animation: a3-ionR 2.4s ease-in-out infinite; } @keyframes a3-ionR { to { transform: translateX(-80px); } }
+.a3-lift { animation: a3-lift 3s ease-in-out infinite alternate; } @keyframes a3-lift { to { transform: translateY(-60px); } }
+.a3-spin { animation: a3-spin 3s linear infinite; } @keyframes a3-spin { to { transform: rotateX(360deg); } }
+@media (prefers-reduced-motion: reduce) { .x svg.a3 * { animation: none !important; } }
+
+.x-text--s { font-size: 40px; }
+.x-list { list-style: none; margin: 36px 0 0; padding: 0; display: flex; flex-direction: column; gap: 22px; }
+.x-li { position: relative; padding-left: 52px; font-size: 42px; line-height: 1.25; color: var(--d-ink-2); }
+.x-li::before { content: ""; position: absolute; left: 6px; top: 16px; width: 22px; height: 22px; border-radius: 50%; background: var(--d-accent); }
+.x-list--s .x-li { font-size: 34px; } .x-list--s .x-li::before { top: 12px; }
+.x-model .x-idea__txt { padding-right: 48px; }
+.x-model { grid-template-columns: 34% 66%; }
+.x-model__box { position: relative; }
