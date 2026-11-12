@@ -8,9 +8,9 @@ import { Footer, Nav } from '../ui/Layout';
 
 type Page = [string, number, number];
 interface File { file: string; name: string; size: number; pages: Page[] }
-interface Sample { grade: number; n: number; disp: string; topic: string; bolim: string; v?: string; kmzh?: File; pres?: File; ws?: File }
+interface Sample { grade: number; n: number; disp: string; topic: string; bolim: string; v?: string; kmzh?: File; pres?: File; ws?: File; sa?: File }
 
-const NAMES: Record<Kind, string> = { kmzh: 'ҚМЖ', pres: 'Презентация', ws: 'Жұмыс парағы' };
+const NAMES: Record<Kind, string> = { kmzh: 'ҚМЖ', pres: 'Презентация', ws: 'Жұмыс парағы', sa: 'Жиынтық бағалау' };
 const kb = (n: number) => (n > 1048576 ? (n / 1048576).toFixed(1).replace('.', ',') + ' МБ' : Math.round(n / 1024) + ' КБ');
 const fromHash = () => { const m = location.hash.match(/^#g(\d+)$/); return m ? +m[1] : 8; };
 

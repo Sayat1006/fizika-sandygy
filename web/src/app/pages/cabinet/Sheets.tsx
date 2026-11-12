@@ -11,7 +11,7 @@ import { markSeen } from '../../lib/seen';
 /* ───────── Қарау: ҚМЖ, слайд, парақ беттері ───────── */
 export function ViewerSheet({ lesson, onClose, onLock }: { lesson: Lesson | null; onClose: () => void; onLock: (g: number) => void }) {
   const { subOf } = useAccount();
-  const kinds = lesson ? (['kmzh', 'pres', 'ws'] as Kind[]).filter((k) => lesson[k]) : [];
+  const kinds = lesson ? (['kmzh', 'pres', 'ws', 'sa'] as Kind[]).filter((k) => lesson[k]) : [];
   const [kind, setKind] = useState<Kind>('kmzh');
   const [cache, setCache] = useState<Partial<Record<Kind, ViewPages | string>>>({});
   useEffect(() => { setCache({}); if (lesson) setKind(kinds[0]); }, [lesson]); // eslint-disable-line react-hooks/exhaustive-deps
