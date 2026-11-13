@@ -11,10 +11,10 @@ export interface Profile {
 export interface Sub { user_id?: string; grade: number; paid_until: string; trial: boolean }
 export interface PayRequest { id: string; user_id: string; grades: number[]; plan: 'month' | 'year'; amount: number; status: 'pending' | 'approved' | 'rejected'; created_at: string; decided_at?: string | null }
 export interface DownloadRow { user_id?: string; variant: string | null; grade: number; n: number; kind: Kind; created_at?: string }
-export type Kind = 'kmzh' | 'pres' | 'ws';
-export const KIND_LABEL: Record<Kind, string> = { kmzh: 'ҚМЖ', pres: 'Слайд', ws: 'Парақ' };
+export type Kind = 'kmzh' | 'pres' | 'ws' | 'sa';
+export const KIND_LABEL: Record<Kind, string> = { kmzh: 'ҚМЖ', pres: 'Слайд', ws: 'Парақ', sa: 'БЖБ/ТЖБ' };
 
-export interface Lesson { grade: number; n: number; disp: string; topic: string; bolim: string; date: string; kmzh: boolean; pres: boolean; ws: boolean; v: string }
+export interface Lesson { grade: number; n: number; disp: string; topic: string; bolim: string; date: string; kmzh: boolean; pres: boolean; ws: boolean; /** бұл сабақта өтетін жиынтық бағалау (БЖБ/ТЖБ) */ sa?: boolean; v: string }
 
 let lessonsP: Promise<Lesson[]> | null = null;
 /** ҚТЖ: барлық нұсқаның сабақтары (бір рет жүктеледі) */

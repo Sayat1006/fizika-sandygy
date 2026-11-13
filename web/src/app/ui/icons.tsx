@@ -28,7 +28,8 @@ export const IcChevronD = P('M6 9l6 6 6-6');
 export const IcPlay = P('M8 5v14l11-7z', { fill: 'currentColor', stroke: 'none' });
 export const IcPause = P('M7 5h3v14H7zM14 5h3v14h-3z', { fill: 'currentColor', stroke: 'none' });
 
-export const KindIcon = { kmzh: IcKmzh, pres: IcPres, ws: IcWs } as const;
+export const IcSa = P('M9 4h6v3H9zM6 6h12v15H6zM9 12h1M13 12h3M9 16h1M13 16h3');
+export const KindIcon = { kmzh: IcKmzh, pres: IcPres, ws: IcWs, sa: IcSa } as const;
 
 /** «Сабақтас» белгісі */
 export function Mark(props: SVGProps<SVGSVGElement>) {

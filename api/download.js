@@ -21,7 +21,7 @@ function deck(v, n, grade) {
   }
   return null;
 }
-const FREE_PAGES = { kmzh: 1, pres: 3, ws: 1 }; // жазылымсыз қарауға болатын бет саны
+const FREE_PAGES = { kmzh: 1, pres: 3, ws: 1, sa: 1 }; // жазылымсыз қарауға болатын бет саны
 function previews() {
   if (!PREVIEWS) { try { PREVIEWS = JSON.parse(fs.readFileSync(path.join(ROOT, 'previews.json'), 'utf8')); } catch (_) { PREVIEWS = {}; } }
   return PREVIEWS;
@@ -78,7 +78,7 @@ module.exports = async (req, res) => {
     const v = String(url.searchParams.get('v') || url.searchParams.get('grade') || '');
     const n = parseInt(url.searchParams.get('n'), 10);
     const kind = url.searchParams.get('kind');
-    if (!/^(7|8|9|10|11)(-(zhmb|kgb)-[123])?$/.test(v) || !(n > 0) || !['kmzh', 'pres', 'ws', 'plan', 'deck'].includes(kind)) return fail(res, 400, 'Сұраныс қате.');
+    if (!/^(7|8|9|10|11)(-(zhmb|kgb)-[123])?$/.test(v) || !(n > 0) || !['kmzh', 'pres', 'ws', 'sa', 'plan', 'deck'].includes(kind)) return fail(res, 400, 'Сұраныс қате.');
     const grade = parseInt(v, 10);
 
     const u = await sb('/auth/v1/user', token);
@@ -141,6 +141,7 @@ module.exports = async (req, res) => {
       kmzh: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
       pres: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
       ws: 'application/pdf',
+      sa: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
     }[kind]);
     res.setHeader('Content-Disposition', `attachment; filename="${kind}_${v}_${n}${path.extname(file.path)}"; filename*=UTF-8''${encodeURIComponent(file.name)}`);
     res.setHeader('Cache-Control', 'private, no-store');
