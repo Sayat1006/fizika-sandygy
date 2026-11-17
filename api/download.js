@@ -21,7 +21,8 @@ function deck(v, n, grade) {
   }
   return null;
 }
-const FREE_PAGES = { kmzh: 1, pres: 3, ws: 1, sa: 1 }; // жазылымсыз қарауға болатын бет саны
+const FREE_PAGES = { kmzh: 1, pres: 3, ws: 1, sa: 1 };
+const TRIAL_FILES = 20; // тегін 3 күнде жүктеуге болатын файл саны (web/src/app/lib/config.ts → trialFiles) // жазылымсыз қарауға болатын бет саны
 function previews() {
   if (!PREVIEWS) { try { PREVIEWS = JSON.parse(fs.readFileSync(path.join(ROOT, 'previews.json'), 'utf8')); } catch (_) { PREVIEWS = {}; } }
   return PREVIEWS;
@@ -30,10 +31,12 @@ function plans() {
   if (!PLANS) { try { PLANS = JSON.parse(fs.readFileSync(path.join(ROOT, 'plans.json'), 'utf8')); } catch (_) { PLANS = {}; } }
   return PLANS;
 }
-async function activeSub(uid, grade, token) {
-  const s = await sb(`/rest/v1/subscriptions?select=paid_until&user_id=eq.${uid}&grade=eq.${grade}`, token);
+/** сыныптың жазылымы: { active, trial } — trial: тегін 3 күндік кезең */
+async function subOf(uid, grade, token) {
+  const s = await sb(`/rest/v1/subscriptions?select=paid_until,trial&user_id=eq.${uid}&grade=eq.${grade}`, token);
   const subs = s.ok ? await s.json() : [];
-  return !!subs.length && subs[0].paid_until >= week(Date.now()).today;
+  const active = !!subs.length && subs[0].paid_until >= week(Date.now()).today;
+  return { active, trial: active && !!subs[0].trial };
 }
 function manifest() {
   if (!MANIFEST) MANIFEST = JSON.parse(fs.readFileSync(path.join(ROOT, 'manifest.json'), 'utf8'));
@@ -89,7 +92,7 @@ module.exports = async (req, res) => {
     if (kind === 'plan') {
       const st = plans()[`${v}:${n}`] || (grade < 10 ? plans()[`${grade}:${n}`] : null);
       if (!st) return fail(res, 404, 'Бұл сабақтың сценарийі әзірге жоқ.');
-      if (!(await activeSub(user.id, grade, token))) return fail(res, 402, `Тақта жазылыммен ашылады: ${grade}-сынып.`);
+      if (!(await subOf(user.id, grade, token)).active) return fail(res, 402, `Тақта жазылыммен ашылады: ${grade}-сынып.`);
       res.statusCode = 200;
       res.setHeader('Content-Type', 'application/json; charset=utf-8');
       res.setHeader('Cache-Control', 'private, no-store');
@@ -99,7 +102,7 @@ module.exports = async (req, res) => {
     if (kind === 'deck') {
       const d = deck(v, n, grade);
       if (!d) return fail(res, 404, 'Бұл сабақтың анимациялы презентациясы әзірге жоқ.');
-      if (!(await activeSub(user.id, grade, token))) return fail(res, 402, `Тақта жазылыммен ашылады: ${grade}-сынып.`);
+      if (!(await subOf(user.id, grade, token)).active) return fail(res, 402, `Тақта жазылыммен ашылады: ${grade}-сынып.`);
       res.statusCode = 200;
       res.setHeader('Content-Type', 'application/json; charset=utf-8');
       res.setHeader('Cache-Control', 'private, no-store');
@@ -117,7 +120,7 @@ module.exports = async (req, res) => {
       if (!pv) return fail(res, 404, 'Бұл файлдың алдын ала көрінісі әзірге жоқ.');
       const total = pv.files.length;
       let open = total;
-      if (!(await activeSub(user.id, grade, token))) open = Math.min(total, FREE_PAGES[kind]);
+      if (!(await subOf(user.id, grade, token)).active) open = Math.min(total, FREE_PAGES[kind]);
       res.statusCode = 200;
       res.setHeader('Content-Type', 'application/json; charset=utf-8');
       res.setHeader('Cache-Control', 'private, no-store');
@@ -125,7 +128,16 @@ module.exports = async (req, res) => {
         pages: pv.files.slice(0, open).map((f) => `/pv/${pv.dir}/${f}`) }));
     }
 
-    if (!(await activeSub(user.id, grade, token))) return fail(res, 402, `Материалдар жазылыммен ашылады: ${grade}-сынып.`);
+    const sub = await subOf(user.id, grade, token);
+    if (!sub.active) return fail(res, 402, `Материалдар жазылыммен ашылады: ${grade}-сынып.`);
+    let trialLeft = null;
+    if (sub.trial) {
+      // тегін кезең: барлық сынып бойынша TRIAL_FILES файлға дейін (қарау шектелмейді)
+      const all = await sb(`/rest/v1/downloads?select=id&user_id=eq.${user.id}&limit=${TRIAL_FILES + 1}`, token);
+      const used = all.ok ? (await all.json()).length : TRIAL_FILES;
+      if (used >= TRIAL_FILES) return fail(res, 403, `Тегін кезеңде ${TRIAL_FILES} файл жүктеуге болады — шек бітті. Жазылымды рәсімдесеңіз, шектеу алынады.`);
+      trialLeft = TRIAL_FILES - used - 1;
+    }
 
     const c = await sb(`/rest/v1/downloads?select=id&user_id=eq.${user.id}&grade=eq.${grade}&n=eq.${n}&kind=eq.${kind}&variant=eq.${encodeURIComponent(v)}`, token);
     const prev = c.ok ? await c.json() : [];
@@ -137,6 +149,7 @@ module.exports = async (req, res) => {
     let data = fs.readFileSync(path.join(ROOT, file.path));
     if (kind === 'kmzh') data = personalizeKmzh(data, { teacher: me, date: dmy(lesson.date) });
     res.statusCode = 200;
+    if (trialLeft !== null) { res.setHeader('X-Trial-Left', String(trialLeft)); res.setHeader('Access-Control-Expose-Headers', 'X-Trial-Left'); }
     res.setHeader('Content-Type', {
       kmzh: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
       pres: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',

@@ -62,7 +62,7 @@ export default function Samples() {
 
         <section className="cta-end">
           <h2 className="t-title">Ұнады ма? 3 күн тегін.</h2>
-          <p className="t-sub">Тіркелсеңіз, 3 күн бойы барлық сыныптың материалдары мен интерактивті тақта ашық. Кейін бір сыныпқа айына {money(CONFIG.prices.month)}, жылына {money(CONFIG.prices.year)}.</p>
+          <p className="t-sub">Тіркелсеңіз, 3 күн бойы барлық сыныптың материалдары мен интерактивті тақта ашық. Тегін кезеңде {CONFIG.trialFiles} файл жүктеуге болады. Кейін: айына бір сыныпқа {money(CONFIG.prices.month)}; жылына 7–9-сынып {money(CONFIG.prices.year[7])}, 10–11-сынып {money(CONFIG.prices.year[10])}, барлық сынып бірге {money(CONFIG.prices.all)}.</p>
           <Link className="btn btn--lg btn--primary" to="/app?signup">3 күн тегін бастау</Link>
           <p className="t-small">Үлгілерді өз сабағыңызда еркін қолдана беріңіз. Ақылы материалдарды таратуға рұқсат жоқ.</p>
         </section>

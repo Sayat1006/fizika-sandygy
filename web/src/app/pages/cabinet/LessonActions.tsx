@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAccount } from '../../lib/account';
-import { labOf } from '../../lib/config';
+import { CONFIG, labOf } from '../../lib/config';
 import { KIND_LABEL, downloadFile, type Kind, type Lesson } from '../../lib/data';
 import { IcBoard, IcBusy, IcDone, IcEye, IcLab, IcLock, KindIcon } from '../../ui/icons';
 import { useToast } from '../../ui/kit';
@@ -39,7 +39,10 @@ export function DownloadAct({ l, kind, big }: { l: Lesson; kind: Kind; big?: boo
   const key = `${l.v}|${l.n}|${kind}`, Ic = KindIcon[kind];
   const run = async () => {
     setState('busy');
-    try { await downloadFile(l.v, l.n, kind); markGot(key); setState('done'); setTimeout(() => setState('idle'), 2200); }
+    try {
+      const left = await downloadFile(l.v, l.n, kind); markGot(key); setState('done'); setTimeout(() => setState('idle'), 2200);
+      if (left !== null) toast(left > 0 ? `Тегін кезең: тағы ${left} файл жүктеуге болады` : `Тегін кезеңдегі ${CONFIG.trialFiles} файлдың соңғысы жүктелді`);
+    }
     catch (e) { toast((e as Error).message); setState('idle'); }
   };
   const cls = big ? 'btn btn--lg btn--primary' : `act${got.has(key) ? ' act--got' : ''}${state === 'done' ? ' act--done' : ''}`;

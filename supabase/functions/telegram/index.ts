@@ -200,7 +200,7 @@ async function onTrialEnd() {
   const { data: people } = await db.from('profiles').select('id,full_name,tg_chat_id').in('id', ids).not('tg_chat_id', 'is', null).is('trial_reminded_at', null);
   let sent = 0;
   for (const p of people ?? []) {
-    await send(p.tg_chat_id, `⏰ <b>Тегін сынақ бүгін аяқталады</b>\n\nЕртеңнен бастап ҚМЖ, презентация, жұмыс парағы және тақта жазылыммен ашылады.\n\nЖазылым бір сыныпқа: айына <b>1 490 ₸</b> немесе жылына <b>9 990 ₸</b>.`, { text: 'Жазылымды рәсімдеу', url: SITE + '/app' });
+    await send(p.tg_chat_id, `⏰ <b>Тегін сынақ бүгін аяқталады</b>\n\nЕртеңнен бастап ҚМЖ, презентация, жұмыс парағы және тақта жазылыммен ашылады.\n\nЖазылым: айына әр сыныпқа <b>1 500 ₸</b>; жылына 7–9-сынып <b>5 000 ₸</b>, 10–11-сынып <b>4 000 ₸</b>, барлық сынып бірге <b>19 990 ₸</b>.`, { text: 'Жазылымды рәсімдеу', url: SITE + '/app' });
     await db.from('profiles').update({ trial_reminded_at: new Date().toISOString() }).eq('id', p.id);
     sent++;
     await new Promise((r) => setTimeout(r, 60));

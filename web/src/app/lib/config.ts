@@ -7,8 +7,14 @@ export const CONFIG = {
   whatsappShow: '+7 776 870 75 00',
   telegram: 'ca9m_cc', // Telegram логині, @ белгісіз
   telegramBot: 'impulse_edu_bot', // хабарлама боты (@ белгісіз)
-  /** бір сынып үшін, ₸ — дерекқордағы plan_price функциясымен бірдей болуы керек */
-  prices: { month: 1490, year: 9990 } as Record<'month' | 'year', number>,
+  /** ₸ — дерекқордағы plan_price функциясымен бірдей болуы керек (supabase/migrations/*_new_prices.sql) */
+  prices: {
+    month: 1500, // айына, әр сыныпқа
+    year: { 7: 5000, 8: 5000, 9: 5000, 10: 4000, 11: 4000 } as Record<number, number>, // жылына, әр сыныпқа
+    all: 19990, // жылына, бес сынып бірге (жеңілдікпен)
+  },
+  /** тегін 3 күнде жүктеуге болатын файл саны (api/download.js-пен бірдей) */
+  trialFiles: 20,
   googleLogin: false, // Supabase-те Google провайдері қосылған соң true етіңіз
   siteUrl: 'https://sabaqtas-kz.vercel.app',
   /** «admin» логині admin@fizika-sandygy.kz аккаунтына сәйкес келеді */
@@ -16,6 +22,16 @@ export const CONFIG = {
 };
 
 export const GRADES = [7, 8, 9, 10, 11] as const;
+
+/** жазылым бағасы: айына — әр сыныпқа 1500; жылына — 7–9: 5000, 10–11: 4000, бесеуі бірге 19 990 */
+export function priceOf(plan: 'month' | 'year', grades: number[]) {
+  const gs = [...new Set(grades)];
+  if (plan === 'month') return gs.length * CONFIG.prices.month;
+  if (GRADES.every((g) => gs.includes(g))) return CONFIG.prices.all;
+  return gs.reduce((s, g) => s + (CONFIG.prices.year[g] || 0), 0);
+}
+/** бес сыныпты жеке алғандағы жылдық баға (жеңілдікті көрсету үшін) */
+export const yearSeparate = () => GRADES.reduce((s, g) => s + CONFIG.prices.year[g], 0);
 
 /* Сабақтың ашылу ережесі: ҚТЖ бойынша осы аптаның сабақтары (дүйсенбі–жексенбі).
    Сенбі мен жексенбіде келесі аптаның сабақтары да ашылады (алдын ала дайындалу үшін).

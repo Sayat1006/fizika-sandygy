@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { useAccount } from '../../lib/account';
-import { CONFIG, GRADES, VARIANT, VARIANTS, week } from '../../lib/config';
+import { CONFIG, GRADES, VARIANT, VARIANTS, priceOf, week, yearSeparate } from '../../lib/config';
 import { KIND_LABEL, dm, dmy, money, sb, tgPayLink, viewPages, type Kind, type Lesson, type ViewPages } from '../../lib/data';
 import { IcLock } from '../../ui/icons';
 import { Note, Segmented, Sheet, useToast } from '../../ui/kit';
@@ -64,7 +64,8 @@ export function SubscribeSheet({ open, onClose, preset }: { open: boolean; onClo
     setPicked(new Set(preset ? [preset] : GRADES.filter((g) => profile?.classes_set && teaches(g))));
   }, [open, preset]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const total = picked.size * CONFIG.prices[plan];
+  const total = priceOf(plan, [...picked]);
+  const allYear = plan === 'year' && GRADES.every((g) => picked.has(g));
   const submit = async (e: FormEvent) => {
     e.preventDefault(); if (!picked.size) return;
     setBusy(true); setErr('');
@@ -112,11 +113,16 @@ export function SubscribeSheet({ open, onClose, preset }: { open: boolean; onClo
               ))}
             </div>
             <Segmented label="Мерзімі" large value={plan} onChange={setPlan} items={[
-              { value: 'month', label: <>1 ай · {money(CONFIG.prices.month)}</> },
-              { value: 'year', label: <>1 жыл · {money(CONFIG.prices.year)}</> },
+              { value: 'month', label: <>1 ай</> },
+              { value: 'year', label: <>1 жыл</> },
             ]} />
-            <p className="hint">Баға бір сыныпқа көрсетілген.</p>
-            <div className="sum"><span>Барлығы</span><b className="tabular">{money(total)}</b></div>
+            <p className="hint">{plan === 'month'
+              ? <>Айына әр сыныпқа {money(CONFIG.prices.month)}.</>
+              : <>Жылына: 7–9-сынып — {money(CONFIG.prices.year[7])}, 10–11-сынып — {money(CONFIG.prices.year[10])}. Бес сынып бірге — {money(CONFIG.prices.all)}.</>}</p>
+            {plan === 'year' && !allYear && (
+              <button className="btn btn--sm" type="button" onClick={() => setPicked(new Set(GRADES))}>Барлық сынып · 1 жыл — {money(CONFIG.prices.all)}</button>
+            )}
+            <div className="sum"><span>Барлығы{allYear && <small className="t-small" style={{ display: 'block', color: 'var(--ok, #17a05d)' }}>жеңілдік: {money(yearSeparate() - CONFIG.prices.all)} үнем</small>}</span><b className="tabular">{money(total)}</b></div>
             <Note>{err}</Note>
             <button className="btn btn--lg btn--primary btn--block" type="submit" disabled={!picked.size || busy}>Өтінім жіберу</button>
           </form>

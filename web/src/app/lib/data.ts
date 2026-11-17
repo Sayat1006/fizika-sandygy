@@ -69,6 +69,8 @@ export async function downloadFile(v: string, n: number, kind: Kind) {
   a.href = URL.createObjectURL(await r.blob()); a.download = name;
   document.body.appendChild(a); a.click(); a.remove();
   setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  const left = r.headers.get('X-Trial-Left');
+  return left === null ? null : Number(left); // тегін кезеңде қалған файл саны
 }
 
 /* ───────── Edge Function: account (тіркелу, құпиясөзді жаңарту) ───────── */
