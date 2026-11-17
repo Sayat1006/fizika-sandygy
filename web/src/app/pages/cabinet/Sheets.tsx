@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { useAccount } from '../../lib/account';
 import { CONFIG, GRADES, VARIANT, VARIANTS, week } from '../../lib/config';
+import { findRow, priceOf, range, rowNow, separateSum, usePrices } from '../../lib/pricing';
 import { KIND_LABEL, dm, dmy, money, sb, tgPayLink, viewPages, type Kind, type Lesson, type ViewPages } from '../../lib/data';
 import { IcLock } from '../../ui/icons';
 import { Note, Segmented, Sheet, useToast } from '../../ui/kit';
@@ -58,22 +59,44 @@ export function SubscribeSheet({ open, onClose, preset }: { open: boolean; onClo
   const [err, setErr] = useState('');
   const [pay, setPay] = useState<{ id: string; amount: number; grades: number[]; plan: 'month' | 'year' } | null>(null);
   const toast = useToast();
+  const prices = usePrices();
+  const [promo, setPromo] = useState('');
+  const [quote, setQuote] = useState<{ code: string; discount: number; amount: number; error: string | null } | null>(null);
   useEffect(() => {
     if (!open) return;
-    setPay(null); setErr('');
+    setPay(null); setErr(''); setQuote(null);
     setPicked(new Set(preset ? [preset] : GRADES.filter((g) => profile?.classes_set && teaches(g))));
   }, [open, preset]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const total = picked.size * CONFIG.prices[plan];
+  const total = priceOf(prices, plan, [...picked]);
+  const all = GRADES.every((g) => picked.has(g));
+  const bundle = rowNow(findRow(prices, plan, 0));
+  const bundleOn = all && bundle.now != null;
+  const r79 = range(prices, plan, [7, 8, 9]), r1011 = range(prices, plan, [10, 11]);
+  const rng = (r: { min: number; max: number }) => r.min === r.max ? money(r.min) : `${money(r.min)}–${money(r.max)}`;
+  const sales = GRADES.map((g) => rowNow(findRow(prices, plan, g))).filter((x) => x.old != null);
+  // промокод: сома дерекқорда есептеледі; таңдау өзгерсе — қайта есептейміз
+  const grades = [...picked].sort((a, b) => a - b);
+  const applied = quote && !quote.error && quote.code === promo.trim().toUpperCase() ? quote : null;
+  const applyPromo = async (code = promo) => {
+    const c = code.trim().toUpperCase(); if (!c || !grades.length) return setQuote(null);
+    const { data, error } = await sb.rpc('quote_subscription', { p_grades: grades, p_plan: plan, p_promo: c });
+    if (error || !data) return setQuote({ code: c, discount: 0, amount: total, error: 'Тексеру мүмкін болмады.' });
+    const j = data as { discount: number; amount: number; error: string | null };
+    setQuote({ code: c, discount: j.discount, amount: j.amount, error: j.error });
+  };
+  useEffect(() => { if (applied) void applyPromo(applied.code); }, [plan, picked]); // eslint-disable-line react-hooks/exhaustive-deps
   const submit = async (e: FormEvent) => {
     e.preventDefault(); if (!picked.size) return;
     setBusy(true); setErr('');
-    const grades = [...picked].sort((a, b) => a - b);
-    const { data: id, error } = await sb.rpc('request_subscription', { p_grades: grades, p_plan: plan });
+    const code = applied ? applied.code : null;
+    const { data: id, error } = await sb.rpc('request_subscription', { p_grades: grades, p_plan: plan, p_promo: code });
+    if (error) { setBusy(false); return setErr('Өтінімді жіберу мүмкін болмады: ' + error.message); }
+    // сома — дерекқор есептеген мән
+    const { data: row } = await sb.from('payment_requests').select('amount').eq('id', String(id)).maybeSingle();
     setBusy(false);
-    if (error) return setErr('Өтінімді жіберу мүмкін болмады: ' + error.message);
     await reload();
-    setPay({ id: String(id), amount: total, grades, plan });
+    setPay({ id: String(id), amount: row?.amount ?? (applied ? applied.amount : total), grades, plan });
   };
   const status = { pending: ['warn', 'Төлем күтілуде'], approved: ['ok', 'Расталды'], rejected: ['err', 'Қабылданбады'] } as const;
   const waText = pay && `Сәлеметсіз бе! Сабақтас, өтінім №${pay.id.slice(0, 8).toUpperCase()}: ${pay.grades.join(', ')}-сынып, ${pay.plan === 'month' ? '1 ай' : '1 жыл'}, ${money(pay.amount)}. Аты-жөні: ${profile?.full_name}. Email: ${session?.user.email}. Kaspi чегін қоса жіберемін.`;
@@ -112,11 +135,22 @@ export function SubscribeSheet({ open, onClose, preset }: { open: boolean; onClo
               ))}
             </div>
             <Segmented label="Мерзімі" large value={plan} onChange={setPlan} items={[
-              { value: 'month', label: <>1 ай · {money(CONFIG.prices.month)}</> },
-              { value: 'year', label: <>1 жыл · {money(CONFIG.prices.year)}</> },
+              { value: 'month', label: <>1 ай</> },
+              { value: 'year', label: <>1 жыл</> },
             ]} />
-            <p className="hint">Баға бір сыныпқа көрсетілген.</p>
-            <div className="sum"><span>Барлығы</span><b className="tabular">{money(total)}</b></div>
+            <p className="hint">{plan === 'month' ? 'Айына' : 'Жылына'}: 7–9-сынып — {rng(r79)}, 10–11-сынып — {rng(r1011)}{bundle.now != null && <>. Бес сынып бірге — {money(bundle.now)}</>}.
+              {sales.length > 0 && <> Жеңілдік әрекет етуде{sales[0].until ? ` (${dmy(sales[0].until)} дейін)` : ''}.</>}</p>
+            {bundle.now != null && !all && (
+              <button className="btn btn--sm" type="button" onClick={() => setPicked(new Set(GRADES))}>Барлық сынып · {plan === 'month' ? '1 ай' : '1 жыл'} — {money(bundle.now)}</button>
+            )}
+            <div className="promo">
+              <input className="input" placeholder="Промокод" value={promo} maxLength={32} autoCapitalize="characters" onChange={(e) => { setPromo(e.target.value); }} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); void applyPromo(); } }} aria-label="Промокод" />
+              <button className="btn btn--sm" type="button" disabled={!promo.trim() || !picked.size} onClick={() => void applyPromo()}>Қолдану</button>
+            </div>
+            {quote && quote.code === promo.trim().toUpperCase() && (quote.error ? <p className="hint" style={{ color: 'var(--err, #e5483a)' }}>{quote.error}</p>
+              : <p className="hint" style={{ color: 'var(--ok, #17a05d)' }}>Промокод қолданылды: −{money(quote.discount)}</p>)}
+            <div className="sum"><span>Барлығы{bundleOn && <small className="t-small" style={{ display: 'block', color: 'var(--ok, #17a05d)' }}>бес сынып бірге: {money(separateSum(prices, plan) - (bundle.now || 0))} үнем</small>}</span>
+              <b className="tabular">{applied ? <><s className="t-muted" style={{ fontSize: '.6em', marginRight: 8 }}>{money(total)}</s>{money(applied.amount)}</> : money(total)}</b></div>
             <Note>{err}</Note>
             <button className="btn btn--lg btn--primary btn--block" type="submit" disabled={!picked.size || busy}>Өтінім жіберу</button>
           </form>
@@ -128,7 +162,7 @@ export function SubscribeSheet({ open, onClose, preset }: { open: boolean; onClo
             <div className="group">
               {reqs.map((r) => (
                 <div key={r.id} className="group__row group__row--static">
-                  <span className="group__t"><span className="t-small">{dmy(r.created_at)}</span><br />{r.grades.join(', ')}-сынып · {r.plan === 'month' ? '1 ай' : '1 жыл'} · {money(r.amount)}</span>
+                  <span className="group__t"><span className="t-small">{dmy(r.created_at)}</span><br />{r.grades.join(', ')}-сынып · {r.plan === 'month' ? '1 ай' : '1 жыл'} · {money(r.amount)}{r.promo_code ? ` · ${r.promo_code}` : ''}</span>
                   {r.status === 'pending' && CONFIG.telegramBot ? <a className="link" href={tgPayLink(r.id)} target="_blank" rel="noopener">Чек жіберу</a>
                     : <span className={`chip chip--${status[r.status][0]}`}>{status[r.status][1]}</span>}
                 </div>

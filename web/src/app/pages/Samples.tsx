@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { CONFIG, VARIANT } from '../lib/config';
+import { findRow, range, rowNow, usePrices } from '../lib/pricing';
 import { money, type Kind } from '../lib/data';
 import { IcChevronL, IcChevronR } from '../ui/icons';
 import { Segmented } from '../ui/kit';
@@ -16,6 +17,7 @@ const fromHash = () => { const m = location.hash.match(/^#g(\d+)$/); return m ? 
 
 /** /samples — тіркелусіз тегін үлгілер: әр сыныптан бір сабақ */
 export default function Samples() {
+  const prices = usePrices();
   const [all, setAll] = useState<Sample[] | null>(null);
   const [err, setErr] = useState(false);
   const [grade, setGrade] = useState(fromHash);
@@ -62,7 +64,7 @@ export default function Samples() {
 
         <section className="cta-end">
           <h2 className="t-title">Ұнады ма? 3 күн тегін.</h2>
-          <p className="t-sub">Тіркелсеңіз, 3 күн бойы барлық сыныптың материалдары мен интерактивті тақта ашық. Кейін бір сыныпқа айына {money(CONFIG.prices.month)}, жылына {money(CONFIG.prices.year)}.</p>
+          <p className="t-sub">Тіркелсеңіз, 3 күн бойы барлық сыныптың материалдары мен интерактивті тақта ашық. Тегін кезеңде {CONFIG.trialFiles} файл жүктеуге болады. Кейін: айына бір сыныпқа {money(range(prices, 'month', [7]).min)}; жылына 7–9-сынып {money(range(prices, 'year', [7]).min)}, 10–11-сынып {money(range(prices, 'year', [10]).min)}{rowNow(findRow(prices, 'year', 0)).now != null && <>, барлық сынып бірге {money(rowNow(findRow(prices, 'year', 0)).now!)}</>}.</p>
           <Link className="btn btn--lg btn--primary" to="/app?signup">3 күн тегін бастау</Link>
           <p className="t-small">Үлгілерді өз сабағыңызда еркін қолдана беріңіз. Ақылы материалдарды таратуға рұқсат жоқ.</p>
         </section>

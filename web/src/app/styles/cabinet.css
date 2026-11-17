@@ -354,3 +354,4 @@ html[data-mode="class"] { --ok: #3ddc84; --warn-bg: #2a1f0e; --warn: #ffb340; }
   .card { box-shadow: none !important; }
   .acts--row .act { flex: 1; }
 }
+.promo { display: flex; gap: var(--s-2); } .promo .input { flex: 1; text-transform: uppercase; }
