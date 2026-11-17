@@ -9,7 +9,8 @@ export interface Profile {
   is_admin?: boolean; classes_set?: boolean; variants?: string[] | null; tg_chat_id?: number | null; created_at?: string;
 }
 export interface Sub { user_id?: string; grade: number; paid_until: string; trial: boolean }
-export interface PayRequest { id: string; user_id: string; grades: number[]; plan: 'month' | 'year'; amount: number; status: 'pending' | 'approved' | 'rejected'; created_at: string; decided_at?: string | null }
+export interface PayRequest { id: string; user_id: string; grades: number[]; plan: 'month' | 'year'; amount: number; status: 'pending' | 'approved' | 'rejected'; created_at: string; decided_at?: string | null;
+  /** промокодқа дейінгі сома, промокод және жеңілдік (₸) */ base_amount?: number | null; promo_code?: string | null; discount?: number }
 export interface DownloadRow { user_id?: string; variant: string | null; grade: number; n: number; kind: Kind; created_at?: string }
 export type Kind = 'kmzh' | 'pres' | 'ws' | 'sa';
 export const KIND_LABEL: Record<Kind, string> = { kmzh: 'ҚМЖ', pres: 'Слайд', ws: 'Парақ', sa: 'БЖБ/ТЖБ' };

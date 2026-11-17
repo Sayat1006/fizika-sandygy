@@ -285,3 +285,12 @@
 /* үлгілер: телефонда сыныптар жолағы экраннан шықпайды */
 .samples-head { min-width: 0; } .samples-head > * { max-width: 100%; min-width: 0; }
 .samples-head .seg { max-width: calc(100vw - 44px); }
+.lp-price__old { color: var(--fg-2); font-size: 15px; }
+
+/* әкімші: бағалар мен промокодтар */
+.input--sm { min-height: 38px; padding: 0 10px; font-size: 14px; }
+.adm__prices td { vertical-align: middle; } .adm__prices .input { max-width: 150px; }
+.adm__prices td small { display: inline-block; margin-left: 8px; }
+.adm__promo { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 8px; margin: 10px 0 14px; align-items: center; }
+.adm__promo-d { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--fg-2); }
+.adm__prices .input, .adm__promo .input { border: 1px solid var(--line); background: var(--bg); }

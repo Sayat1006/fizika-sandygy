@@ -1,7 +1,8 @@
 import { Suspense, lazy, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Footer, Nav } from '../ui/Layout';
-import { CONFIG, yearSeparate } from '../lib/config';
+import { CONFIG } from '../lib/config';
+import { findRow, range, rowNow, separateSum, usePrices, type PriceRow } from '../lib/pricing';
 import LessonDemo from '../ui/LessonDemo';
 import HeroBoard from '../ui/HeroBoard';
 import { IcBoard, IcKmzh, IcSend } from '../ui/icons';
@@ -13,9 +14,18 @@ const Morph = lazy(() => import('../ui/Morph'));
 /* Басты бет: мұғалімге бірнеше секундта түсінікті болуы керек — не береді, қанша тұрады, қалай бастау керек.
    Сандар нақты (materials/, public/lessons.json бойынша), ойдан шығарылған пікір жоқ. */
 const fmt = (n: number) => n.toLocaleString('ru-RU');
-const M = CONFIG.prices.month, Y9 = CONFIG.prices.year[7], Y11 = CONFIG.prices.year[10], ALL = CONFIG.prices.all, SAVE = yearSeparate() - ALL, TF = CONFIG.trialFiles;
+const TF = CONFIG.trialFiles;
+/** басты беттегі бағалар — әкімші панельдегі бағалар кестесінен */
+function priceView(rows: PriceRow[]) {
+  const m = range(rows, 'month', [7, 8, 9, 10, 11]), y9 = range(rows, 'year', [7, 8, 9]), y11 = range(rows, 'year', [10, 11]);
+  const all = rowNow(findRow(rows, 'year', 0));
+  const r = (x: { min: number; max: number }) => x.min === x.max ? fmt(x.min) : `${fmt(x.min)}–${fmt(x.max)}`;
+  return { M: r(m), Y9: r(y9), Y11: r(y11), ALL: all.now, ALLold: all.old, SAVE: all.now != null ? separateSum(rows, 'year') - all.now : 0,
+    oldM: rowNow(findRow(rows, 'month', 7)).old, oldY9: rowNow(findRow(rows, 'year', 7)).old, oldY11: rowNow(findRow(rows, 'year', 10)).old };
+}
+let M = '', Y9 = '', Y11 = '', ALL = 0, SAVE = 0; // T мәтіндері үшін (Landing ішінде жаңартылады)
 
-const T = {
+const mkT = () => ({
   kk: {
     lab: '3D зертхана', login: 'Кіру', other: 'Рус',
     eyebrow: 'Физика · 7–11-сынып · ЖМБ және ҚГБ',
@@ -39,7 +49,7 @@ const T = {
       ['Қай бағдарлама бойынша жасалған?', 'Қолданыстағы оқу бағдарламасы мен ҚТЖ бойынша: 7–9-сынып, 10–11-сынып ЖМБ және ҚГБ (сағат саны бойынша нұсқалар).'],
       ['Интерактивті тақта болмаса ше?', 'Компьютер мен проектор жеткілікті. Презентацияны pptx етіп жүктеп, PowerPoint-те де көрсетуге болады.'],
       ['Оқушылар тіркелуі керек пе?', 'Жоқ. Оқушы телефонмен QR-кодты сканерлейді немесе кодты жазады — сол жеткілікті.'],
-      ['Төлем қалай жасалады?', `Kaspi арқылы. Айына әр сыныпқа ${fmt(M)} ₸. Жылына: 7–9-сынып ${fmt(Y9)} ₸, 10–11-сынып ${fmt(Y11)} ₸, ал барлық бес сынып бірге — ${fmt(ALL)} ₸. Төлем расталған соң жазылым бірден ашылады.`],
+      ['Төлем қалай жасалады?', `Kaspi арқылы. Айына әр сыныпқа ${M} ₸. Жылына: 7–9-сынып ${Y9} ₸, 10–11-сынып ${Y11} ₸, ал барлық бес сынып бірге — ${fmt(ALL)} ₸. Төлем расталған соң жазылым бірден ашылады.`],
       ['Тегін кезеңде не ашық?', `Тіркелгеннен кейін 3 күн бойы барлық сыныптың материалдары мен тақта ашық. Бұл кезеңде барлығы ${TF} файл жүктеуге болады, қарауға шектеу жоқ.`],
     ],
     endT: 'Ертеңгі сабаққа бүгін дайын болыңыз.', endP: 'Тіркеліңіз — 3 күн бойы барлық сыныптың материалдары мен тақта тегін.',
@@ -70,7 +80,7 @@ const T = {
       ['По какой программе?', 'По действующей учебной программе и КТП: 7–9 классы, 10–11 классы ЕМН и ОГН (варианты по количеству часов).'],
       ['А если нет интерактивной доски?', 'Достаточно компьютера и проектора. Презентацию можно скачать в pptx и показывать в PowerPoint.'],
       ['Нужна ли регистрация ученикам?', 'Нет. Ученик сканирует QR-код телефоном или вводит код — этого достаточно.'],
-      ['Как оплатить?', `Через Kaspi. В месяц ${fmt(M)} ₸ за класс. В год: 7–9 классы ${fmt(Y9)} ₸, 10–11 классы ${fmt(Y11)} ₸, все пять классов вместе — ${fmt(ALL)} ₸. Подписка открывается сразу после подтверждения оплаты.`],
+      ['Как оплатить?', `Через Kaspi. В месяц ${M} ₸ за класс. В год: 7–9 классы ${Y9} ₸, 10–11 классы ${Y11} ₸, все пять классов вместе — ${fmt(ALL)} ₸. Подписка открывается сразу после подтверждения оплаты.`],
       ['Что доступно бесплатно?', `3 дня после регистрации открыты материалы всех классов и доска. За это время можно скачать до ${TF} файлов, просмотр без ограничений.`],
     ],
     endT: 'Будьте готовы к завтрашнему уроку уже сегодня.', endP: 'Зарегистрируйтесь — 3 дня материалы всех классов и доска бесплатно.',
@@ -78,7 +88,7 @@ const T = {
     q: 'Есть вопрос? WhatsApp', wa: 'WhatsApp', tg: 'Telegram', statsL: 'Материалы в Сабақтас',
     demo: 'Это бесплатный образец урока (7 класс). Открыть полностью', rvT: 'Что говорят учителя',
   },
-};
+});
 
 /** 3D көрініс (three.js, ~740 КБ) бет жүктеліп болған соң ғана; баяу интернетте/үнемдеу режимінде мүлде жүктелмейді */
 function useIdle() {
@@ -99,7 +109,9 @@ export default function Landing() {
   const idle = useIdle();
   const { session } = useAccount();
   const [lang, setLang] = useState<'kk' | 'ru'>(() => { try { return localStorage.getItem('fs-lang') === 'ru' ? 'ru' : 'kk'; } catch { return 'kk'; } });
-  const t = T[lang];
+  const P = priceView(usePrices());
+  M = P.M; Y9 = P.Y9; Y11 = P.Y11; ALL = P.ALL ?? 0; SAVE = P.SAVE;
+  const t = mkT()[lang];
   // Нақты пікірлер (әкімші бекіткен); жоқ болса бөлім көрінбейді
   const [reviews, setReviews] = useState<Review[]>([]);
   useEffect(() => { publicReviews().then(setReviews).catch(() => {}); }, []);
@@ -175,9 +187,9 @@ export default function Landing() {
           <h2 className="t-title">{t.priceT}</h2>
           <p className="t-sub">{t.priceSub}</p>
           <div className="lp-price__cards">
-            <div className="lp-price__card"><b className="tabular">{fmt(M)} ₸</b><span>{t.month}</span></div>
-            <div className="lp-price__card"><b className="tabular lp-price__two">{fmt(Y9)} ₸<small>{t.y9}</small></b><b className="tabular lp-price__two">{fmt(Y11)} ₸<small>{t.y11}</small></b><span>{t.year}</span></div>
-            <div className="lp-price__card lp-price__card--y"><em>{t.save}</em><b className="tabular">{fmt(ALL)} ₸</b><span>{t.all}</span></div>
+            <div className="lp-price__card">{P.oldM != null && <s className="lp-price__old">{fmt(P.oldM)} ₸</s>}<b className="tabular">{P.M} ₸</b><span>{t.month}</span></div>
+            <div className="lp-price__card">{(P.oldY9 != null || P.oldY11 != null) && <s className="lp-price__old">{fmt(P.oldY9 ?? 0)} / {fmt(P.oldY11 ?? 0)} ₸</s>}<b className="tabular lp-price__two">{P.Y9} ₸<small>{t.y9}</small></b><b className="tabular lp-price__two">{P.Y11} ₸<small>{t.y11}</small></b><span>{t.year}</span></div>
+            {P.ALL != null && <div className="lp-price__card lp-price__card--y">{P.SAVE > 0 && <em>{t.save}</em>}{P.ALLold != null && <s className="lp-price__old">{fmt(P.ALLold)} ₸</s>}<b className="tabular">{fmt(P.ALL)} ₸</b><span>{t.all}</span></div>}
           </div>
           <ul className="lp-check">{t.inc.map((x) => <li key={x}>{x}</li>)}</ul>
           <Link className="btn btn--lg btn--primary" to="/app?signup">{t.signup}</Link>

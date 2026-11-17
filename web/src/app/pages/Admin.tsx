@@ -5,6 +5,7 @@ import { KIND_LABEL, accountFn, dmy, money, sb, type DownloadRow, type Lesson, t
 import { Note, PasswordInput, Segmented, useToast } from '../ui/kit';
 import { AccountNav, Footer } from '../ui/Layout';
 import { allReviews, deleteReview, setApproved, type Review } from '../lib/reviews';
+import { AdminPrices, AdminPromos } from './AdminPricing';
 
 const tm = (s: string) => new Date(s).toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
 type Row = DownloadRow & { user_id: string; created_at: string };
@@ -163,13 +164,16 @@ function Dashboard() {
               <tr key={r.id}>
                 <td className="tabular">{tm(r.created_at)}</td>
                 <td>{u.full_name || '—'}<small>{u.phone} · {u.email}</small><small>{u.school}</small></td>
-                <td>{r.grades.join(', ')}</td><td>{r.plan === 'month' ? '1 ай' : '1 жыл'}</td><td className="tabular"><b>{money(r.amount)}</b></td>
+                <td>{r.grades.join(', ')}</td><td>{r.plan === 'month' ? '1 ай' : '1 жыл'}</td><td className="tabular"><b>{money(r.amount)}</b>{r.promo_code && <small>{r.promo_code} · −{money(r.discount || 0)}</small>}</td>
                 <td className="tabular">{r.id.slice(0, 8).toUpperCase()}</td>
                 <td><div className="adm__acts"><button className="btn btn--sm btn--primary" type="button" disabled={busy === r.id} onClick={() => decide(r.id, true)}>Растау</button><button className="btn btn--sm btn--danger" type="button" disabled={busy === r.id} onClick={() => decide(r.id, false)}>Бас тарту</button></div></td>
               </tr>); })}</tbody>
           </table></div>
         ) : <div className="empty">Күтіп тұрған өтінім жоқ.</div>}
       </section>
+
+      <AdminPrices />
+      <AdminPromos />
 
       <AdminReviews />
 

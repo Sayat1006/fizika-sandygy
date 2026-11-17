@@ -31,7 +31,19 @@ const send = (chat_id: number, text: string, button?: { text: string; url: strin
 const decideKb = (id: string) => ({ inline_keyboard: [[{ text: '✅ Растау', callback_data: 'ok:' + id }, { text: '❌ Бас тарту', callback_data: 'no:' + id }]] });
 const code = (id: string) => id.slice(0, 8).toUpperCase();
 const uuidOf = (h: string) => `${h.slice(0, 8)}-${h.slice(8, 12)}-${h.slice(12, 16)}-${h.slice(16, 20)}-${h.slice(20, 32)}`;
-const planTxt = (r: any) => `${r.grades.join(', ')}-сынып · ${r.plan === 'month' ? '1 ай' : '1 жыл'} · <b>${fmt(r.amount)}</b>`;
+const planTxt = (r: any) => `${r.grades.join(', ')}-сынып · ${r.plan === 'month' ? '1 ай' : '1 жыл'} · <b>${fmt(r.amount)}</b>` +
+  (r.promo_code ? `\nПромокод: ${esc(r.promo_code)} (−${fmt(r.discount || 0)})` : '');
+/** бағалар — әкімші панельдегі prices кестесінен (жеңілдік мерзімін ескеріп) */
+async function priceText() {
+  const { data } = await db.from('prices').select('plan,grade,price,sale_price,sale_until');
+  const today = week().today;
+  const now = (p: string, g: number) => { const r = (data ?? []).find((x: any) => x.plan === p && x.grade === g); if (!r) return null;
+    return r.sale_price != null && (!r.sale_until || r.sale_until >= today) ? r.sale_price : r.price; };
+  const rng = (p: string, gs: number[]) => { const v = gs.map((g) => now(p, g) ?? 0); const a = Math.min(...v), b = Math.max(...v); return a === b ? fmt(a) : `${fmt(a)}–${fmt(b)}`; };
+  const all = now('year', 0);
+  return `Жазылым: айына әр сыныпқа <b>${rng('month', [7, 8, 9, 10, 11])}</b>; жылына 7–9-сынып <b>${rng('year', [7, 8, 9])}</b>, 10–11-сынып <b>${rng('year', [10, 11])}</b>` +
+    (all != null ? `, барлық сынып бірге <b>${fmt(all)}</b>` : '') + '.';
+}
 async function summary(r: any) {
   const { data: u } = await db.from('profiles').select('full_name,phone,school').eq('id', r.user_id).maybeSingle();
   return `Өтінім №${code(r.id)}\n${esc(u?.full_name)} · ${esc(u?.phone)}\n${esc(u?.school)}\n${planTxt(r)}`;
@@ -199,8 +211,9 @@ async function onTrialEnd() {
   if (!ids.length) return { sent: 0 };
   const { data: people } = await db.from('profiles').select('id,full_name,tg_chat_id').in('id', ids).not('tg_chat_id', 'is', null).is('trial_reminded_at', null);
   let sent = 0;
+  const prices = await priceText();
   for (const p of people ?? []) {
-    await send(p.tg_chat_id, `⏰ <b>Тегін сынақ бүгін аяқталады</b>\n\nЕртеңнен бастап ҚМЖ, презентация, жұмыс парағы және тақта жазылыммен ашылады.\n\nЖазылым: айына әр сыныпқа <b>1 500 ₸</b>; жылына 7–9-сынып <b>5 000 ₸</b>, 10–11-сынып <b>4 000 ₸</b>, барлық сынып бірге <b>19 990 ₸</b>.`, { text: 'Жазылымды рәсімдеу', url: SITE + '/app' });
+    await send(p.tg_chat_id, `⏰ <b>Тегін сынақ бүгін аяқталады</b>\n\nЕртеңнен бастап ҚМЖ, презентация, жұмыс парағы және тақта жазылыммен ашылады.\n\n${prices}`, { text: 'Жазылымды рәсімдеу', url: SITE + '/app' });
     await db.from('profiles').update({ trial_reminded_at: new Date().toISOString() }).eq('id', p.id);
     sent++;
     await new Promise((r) => setTimeout(r, 60));
