@@ -1,0 +1,78 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><style>html,body{margin:0;background:#eef2f7;overflow:hidden}canvas{display:block}</style>
+<script type="importmap">{"imports":{"three":"./lib/three.module.js"}}</script></head>
+<body>
+<script type="module">
+// «Инерция» (7-сынып): 1) арба кенет тоқтайды — үстіндегі брусок алға құлайды; 2) картон ұшып кетеді — тиын стақанға түседі.
+import { THREE, V, stage, orbit, arrow, label, seg, win, lerp, clamp, mat, mesh, ready } from './kit.js';
+const st = stage({ table: [5.6, 2.2] }), { scene, camera } = st;
+
+// ── 1. арба мен брусок ──
+const cart = new THREE.Group(); scene.add(cart);
+const WR = 0.07, CL = 0.7, CH = 0.1, TOPY = 2 * WR + CH; // доңғалақ радиусы, арба ұзындығы, биіктігі
+mesh(new THREE.BoxGeometry(CL, CH, 0.4), new THREE.MeshStandardMaterial({ color: '#e0a03a', roughness: 0.5 }), { parent: cart, pos: [0, 2 * WR + CH / 2 - 0.01, 0] });
+const wheels = [];
+for (const sx of [-1, 1]) for (const sz of [-1, 1]) {
+  const w = mesh(new THREE.CylinderGeometry(WR, WR, 0.04, 24), mat.dark, { parent: cart, pos: [sx * 0.24, WR, sz * 0.22], rot: [Math.PI / 2, 0, 0] });
+  mesh(new THREE.BoxGeometry(0.02, 0.1, 0.045), mat.metal, { parent: w }); wheels.push(w);
+}
+const BW = 0.14, BH = 0.42, BX = -0.15; // брусок
+const pivot = new THREE.Group(); pivot.position.set(BX + BW / 2, TOPY, 0); cart.add(pivot);
+mesh(new THREE.BoxGeometry(BW, BH, BW), new THREE.MeshStandardMaterial({ color: '#3d7bd9', roughness: 0.6 }), { parent: pivot, pos: [-BW / 2, BH / 2, 0] });
+const STOP_X = -0.45; // тосқауыл
+mesh(new THREE.BoxGeometry(0.1, 0.16, 0.7), mat.woodDark, { parent: scene, pos: [STOP_X + 0.05, 0.08, 0] });
+const X0 = -2.35, VC = 0.55, T_HIT = (STOP_X - CL / 2 - X0) / VC; // соқтығысу уақыты
+const aV = arrow(scene, '#17a05d'), aB = arrow(scene, '#17a05d');
+const lV = label(scene, 'υ', '', '#17a05d', { size: 0.4 }), lB = label(scene, 'υ', '', '#17a05d', { size: 0.4 });
+
+// ── 2. стақан, картон, тиын ──
+const GX = 1.55, GR = 0.15, GH = 0.38;
+const gpts = [V(0.001, 0), V(GR * 0.86, 0), V(GR * 0.9, 0.02), V(GR, GH)].map((p) => new THREE.Vector2(p.x, p.y));
+const glass = new THREE.Mesh(new THREE.LatheGeometry(gpts, 48), mat.glass()); glass.position.x = GX; glass.renderOrder = 3; scene.add(glass);
+const rim = mesh(new THREE.TorusGeometry(GR, 0.004, 8, 48), new THREE.MeshStandardMaterial({ color: '#9fb6cf' }), { parent: scene, pos: [GX, GH, 0], rot: [Math.PI / 2, 0, 0], shadow: false });
+const card = mesh(new THREE.BoxGeometry(0.44, 0.008, 0.3), new THREE.MeshStandardMaterial({ color: '#e9dcc2', roughness: 0.9 }), { parent: scene });
+const coin = mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.012, 40), new THREE.MeshStandardMaterial({ color: '#d9b04a', metalness: 0.6, roughness: 0.3 }), { parent: scene });
+const stick = mesh(new THREE.BoxGeometry(0.5, 0.03, 0.05), mat.wood, { parent: scene });
+const T_STRIKE = 11.0, SLOW = 0.3; // соққы сәті, баяулату
+const aC = arrow(scene, '#17a05d', { r: 0.012 }), aG = arrow(scene, '#e5483a', { r: 0.011 });
+const lC = label(scene, 'υ', '', '#17a05d', { size: 0.2 }), lG = label(scene, 'mg', '', '#e5483a', { size: 0.2 });
+
+window.renderFrame = (t) => {
+  // 1) арба: тұрақты жылдамдық → тосқауыл → тоқтау
+  const tc = Math.min(t, T_HIT), cx = X0 + VC * tc;
+  cart.position.x = cx; wheels.forEach((w) => (w.rotation.y = -cx / WR));
+  const tau = t - T_HIT; // брусок алға құлайды (тірегі — алдыңғы төменгі қыры)
+  let th = 0; if (tau > 0) { const k = clamp(tau / 0.6); th = (Math.PI / 2) * k * k; if (k >= 1) th -= 0.06 * Math.exp(-(tau - 0.6) * 9) * Math.abs(Math.sin((tau - 0.6) * 25)); }
+  pivot.rotation.z = -th;
+  const vOn = win(t, 0.4, 0.9, T_HIT - 0.05, T_HIT + 0.15);
+  aV.set(V(cx + CL / 2 + 0.02, TOPY - 0.05, 0.25), V(1, 0, 0), 0.42, vOn); lV.show(V(cx + CL / 2 + 0.25, TOPY + 0.12, 0.25), vOn);
+  const bOn = win(t, 0.4, 0.9, T_HIT + 0.9, T_HIT + 1.6);
+  const bTop = new THREE.Vector3(-BW / 2, BH, 0); pivot.localToWorld(bTop);
+  aB.set(bTop.clone().add(V(0.05, 0.02, 0.1)), V(1, 0, 0), 0.42, bOn); lB.show(bTop.clone().add(V(0.3, 0.17, 0.1)), bOn);
+  // 2) таяқша картонды ұрады, тиын стақанға түседі (баяу көрініс)
+  const s = t < T_STRIKE ? t - T_STRIKE : (t - T_STRIKE) * SLOW; // «физикалық» уақыт
+  const cardLeft0 = GX - 0.22;
+  const stx = s < 0 ? lerp(cardLeft0 - 1.0, cardLeft0 - 0.25, seg(t, T_STRIKE - 2.2, T_STRIKE - 0.9)) + (t > T_STRIKE - 0.9 ? Math.min(1, (t - (T_STRIKE - 0.9)) / 0.9) * 0.25 : 0) : cardLeft0 + Math.min(0.06, s * 3);
+  stick.position.set(stx - 0.25, GH + 0.004, 0);
+  let cX = GX, cY = GH + 0.004, cR = 0;
+  if (s > 0) { cX = GX + 3.2 * s - 1.5 * s * s; const f = Math.max(0, s - 0.05); cY = Math.max(0.004, GH + 0.004 - 4.9 * f * f); cR = -Math.min(0.5, f * 3); if (cY <= 0.004) cR = 0; cX = Math.min(cX, GX + 0.95); }
+  card.position.set(cX, cY, 0); card.rotation.z = cR;
+  const free = s > 0 && cX - 0.22 > GX + 0.04; // тиынның астында картон жоқ
+  const sFree = (0.26) / 3.2; // шамамен босайтын сәт
+  let yC = GH + 0.014;
+  if (free) { const f = Math.max(0, s - sFree); yC = Math.max(0.026, GH + 0.014 - 4.9 * f * f); }
+  coin.position.set(GX, yC, 0);
+  // бағыттамалар
+  const cOn = win(t, T_STRIKE, T_STRIKE + 0.1, T_STRIKE + 0.5, T_STRIKE + 0.9);
+  aC.set(V(cX + 0.23, cY, 0.0), V(1, 0, 0), 0.2, cOn); lC.show(V(cX + 0.34, cY + 0.07, 0.0), cOn);
+  const gOn = win(t, 9.3, 10.0, 12.6, 13.1);
+  aG.set(V(GX, yC, 0.0), V(0, -1, 0), 0.13, gOn); lG.show(V(GX + 0.1, yC - 0.1, 0.0), gOn);
+  // камера: алдымен арба, сосын стақан
+  const k = seg(t, 5.6, 8.4);
+  const look = [lerp(-1.0, GX + 0.05, k), lerp(0.3, 0.22, k), 0];
+  orbit(camera, t, { ang: lerp(-0.35, 0.25, k), swing: 0.18, rad: lerp(3.3, 1.9, k), y: lerp(1.05, 0.62, k), look, cx: look[0] });
+  return st.render();
+};
+ready();
+</script>
+</body></html>

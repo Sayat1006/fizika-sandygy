@@ -1,0 +1,92 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><style>html,body{margin:0;background:#eef2f7;overflow:hidden}canvas{display:block}</style>
+<script type="importmap">{"imports":{"three":"./lib/three.module.js"}}</script></head>
+<body>
+<script type="module">
+// «Қатынас ыдыстар» (7-сынып): пішіні әр түрлі 4 ыдыс астынан жалғанған; су бір ыдысқа құйылады, бәрінде деңгей бірдей.
+import { THREE, V, stage, orbit, arrow, label, seg, win, lerp, clamp, mat, mesh, ready } from './kit.js';
+const st = stage({ table: [5.2, 2.2] }), { scene, camera } = st;
+
+const Y0 = 0.28, HT = 1.55, PR = 0.06; // ыдыстардың түбі (құбыр осі), биіктігі, құбыр радиусы
+const shapes = [ // r(u), u = 0..1 (төменнен жоғары)
+  { x: -1.35, r: (u) => 0.1 },
+  { x: -0.45, r: (u) => 0.27 },
+  { x: 0.45, r: (u) => 0.07 + 0.26 * u },
+  { x: 1.35, r: (u) => 0.09 + 0.17 * Math.sin(Math.PI * Math.min(1, u * 1.15)) + 0.04 * u },
+];
+const N = 40;
+const prof = (s, h) => { const pts = []; for (let i = 0; i <= N; i++) { const u = (i / N) * h; pts.push(new THREE.Vector2(s.r(u), Y0 + u * HT)); } return pts; };
+// тұғыр
+mesh(new THREE.BoxGeometry(3.4, 0.06, 0.6), mat.woodDark, { parent: scene, pos: [0, 0.03, 0] });
+for (const s of shapes) {
+  const g = new THREE.Mesh(new THREE.LatheGeometry(prof(s, 1), 48), mat.glass()); g.position.x = s.x; g.renderOrder = 3; scene.add(g);
+  mesh(new THREE.TorusGeometry(s.r(1), 0.005, 8, 48), new THREE.MeshStandardMaterial({ color: '#9fb6cf' }), { parent: scene, pos: [s.x, Y0 + HT, 0], rot: [Math.PI / 2, 0, 0], shadow: false });
+  mesh(new THREE.CylinderGeometry(s.r(0) + 0.01, s.r(0) + 0.01, 0.02, 32), new THREE.MeshStandardMaterial({ color: '#b8c7d8' }), { parent: scene, pos: [s.x, Y0, 0], shadow: false });
+  mesh(new THREE.CylinderGeometry(0.02, 0.02, Y0 - 0.06, 10), mat.metal, { parent: scene, pos: [s.x, (Y0 + 0.06) / 2, 0] });
+  s.water = new THREE.Mesh(new THREE.BufferGeometry(), mat.water()); s.water.position.x = s.x; s.water.renderOrder = 2; scene.add(s.water);
+  s.top = new THREE.Mesh(new THREE.CircleGeometry(1, 48), mat.waterTop()); s.top.rotation.x = -Math.PI / 2; s.top.renderOrder = 2; scene.add(s.top);
+}
+const x0 = shapes[0].x, x1 = shapes[3].x;
+const pipe = new THREE.Mesh(new THREE.CylinderGeometry(PR, PR, x1 - x0, 24, 1, true), mat.glass()); pipe.rotation.z = Math.PI / 2; pipe.position.set(0, Y0, 0); pipe.renderOrder = 3; scene.add(pipe);
+const pipeW = new THREE.Mesh(new THREE.CylinderGeometry(PR - 0.008, PR - 0.008, 1, 24), mat.water()); pipeW.rotation.z = Math.PI / 2; pipeW.renderOrder = 2; scene.add(pipeW);
+for (const sx of [-1, 1]) mesh(new THREE.SphereGeometry(PR, 16, 12), mat.glass(), { parent: scene, pos: [sx * x1, Y0, 0], shadow: false });
+
+// құятын стақан (сол жақ ыдыстың үстінде) және ағын
+const beaker = new THREE.Group(); scene.add(beaker);
+const bk = new THREE.Mesh(new THREE.LatheGeometry([new THREE.Vector2(0.001, 0), new THREE.Vector2(0.14, 0), new THREE.Vector2(0.15, 0.32)], 40), mat.glass()); bk.renderOrder = 3; beaker.add(bk);
+const bkW = new THREE.Mesh(new THREE.CylinderGeometry(0.135, 0.13, 0.16, 32), mat.water()); bkW.position.y = 0.09; bkW.renderOrder = 2; beaker.add(bkW);
+const stream = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.026, 1, 16), new THREE.MeshPhysicalMaterial({ color: '#4aa6f0', transparent: true, opacity: 0.7, roughness: 0.1, depthWrite: false })); stream.renderOrder = 2; scene.add(stream);
+
+const levelPlane = new THREE.Mesh(new THREE.PlaneGeometry(3.5, 0.8), new THREE.MeshBasicMaterial({ color: '#17d07a', transparent: true, opacity: 0, depthWrite: false, side: THREE.DoubleSide }));
+levelPlane.rotation.x = -Math.PI / 2; levelPlane.renderOrder = 6; scene.add(levelPlane);
+const lineMat = new THREE.LineDashedMaterial({ color: '#0f8a52', dashSize: 0.06, gapSize: 0.04, transparent: true, depthTest: false });
+const line = new THREE.Line(new THREE.BufferGeometry().setFromPoints([V(-1.8, 0, 0.36), V(1.8, 0, 0.36)]), lineMat); line.computeLineDistances(); line.renderOrder = 8; scene.add(line);
+const hArrows = shapes.map(() => arrow(scene, '#0f8a52', { r: 0.012 })), hLabels = shapes.map(() => label(scene, 'h', '', '#0f8a52', { size: 0.42 }));
+
+// деңгейлер: ортақ L(t) + құйылатын ыдыста аздап жоғары, қалғанында кешігу, кейін тербеліп теңеседі
+const T_P0 = 1.8, T_P1 = 8.2, L_END = 0.62; // u бірлігінде (0..1)
+const pour = (t) => seg(t, T_P0 + 0.4, T_P1);
+function levels(t) {
+  const L = 0.02 + (L_END - 0.02) * pour(t);
+  const rate = win(t, T_P0 + 0.4, T_P0 + 1.2, T_P1 - 0.8, T_P1);
+  const settle = t > T_P1 ? Math.exp(-(t - T_P1) * 1.6) * Math.cos((t - T_P1) * 6) : 1;
+  const d = 0.05 * rate + (t > T_P1 ? 0.05 * settle : 0);
+  return shapes.map((s, i) => Math.max(0, L + (i === 0 ? d : -d * (0.25 + 0.15 * i))));
+}
+
+window.renderFrame = (t) => {
+  const lv = levels(t), started = t > T_P0 + 0.45;
+  shapes.forEach((s, i) => {
+    const h = started ? lv[i] : 0;
+    s.water.visible = s.top.visible = h > 0.003;
+    if (s.water.visible) {
+      const pts = [new THREE.Vector2(0.001, Y0), ...prof(s, h).map((p) => new THREE.Vector2(p.x - 0.008, p.y)), new THREE.Vector2(0.001, Y0 + h * HT)];
+      s.water.geometry.dispose(); s.water.geometry = new THREE.LatheGeometry(pts, 40);
+      const r = s.r(h) - 0.008; s.top.scale.set(r, r, 1); s.top.position.set(s.x, Y0 + h * HT + 0.001, 0);
+    }
+  });
+  // құбырдағы су солдан оңға жайылады
+  const fill = clamp((t - T_P0 - 0.45) / 0.8);
+  pipeW.visible = fill > 0; pipeW.scale.y = Math.max(0.001, (x1 - x0) * fill); pipeW.position.set(x0 + (x1 - x0) * fill / 2, Y0, 0);
+  // стақан еңкейеді, ағын
+  const tilt = win(t, T_P0 - 1.0, T_P0 + 0.4, T_P1, T_P1 + 0.9);
+  beaker.position.set(x0 + 0.42 - 0.08 * tilt, Y0 + HT + 0.35 + 1.4 * (1 - seg(t, 0.1, 1.0)) + 1.4 * seg(t, 9.0, 10.0), 0); beaker.rotation.z = 1.75 * tilt;
+  bkW.scale.y = Math.max(0.05, 1 - pour(t) * 0.9);
+  const sOn = t > T_P0 + 0.3 && t < T_P1 + 0.1;
+  const sy0 = Y0 + HT + 0.3, sy1 = Y0 + lv[0] * HT;
+  stream.visible = sOn; stream.scale.y = sy0 - sy1; stream.position.set(x0 + 0.04, (sy0 + sy1) / 2, 0);
+  // теңдік: жасыл жазықтық, үзік сызық, h бағыттамалары
+  const eq = win(t, 10.2, 11.0, 16.8, 17.6), yL = Y0 + L_END * HT;
+  levelPlane.position.set(0, yL + 0.002, 0); levelPlane.material.opacity = 0.18 * eq;
+  line.position.y = yL; lineMat.opacity = eq; line.visible = eq > 0.01;
+  shapes.forEach((s, i) => {
+    const ax = s.x + s.r(0) + 0.06 + (i === 2 ? 0 : 0);
+    hArrows[i].set(V(s.x - s.r(lv[i]) - 0.07, Y0, 0.0), V(0, 1, 0), lv[i] * HT, eq * seg(t, 11.0 + i * 0.25, 11.6 + i * 0.25));
+    hLabels[i].show(V(s.x - s.r(lv[i] * 0.5) - 0.17, Y0 + lv[i] * HT * 0.5, 0.0), eq * seg(t, 11.0 + i * 0.25, 11.6 + i * 0.25));
+  });
+  orbit(camera, t, { ang: -0.25, swing: 0.3, rad: 6.0, y: 2.2, look: [0, 0.95, 0] });
+  return st.render();
+};
+ready();
+</script>
+</body></html>
