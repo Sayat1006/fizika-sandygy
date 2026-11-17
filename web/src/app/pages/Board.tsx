@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom';
 import { useAccount } from '../lib/account';
 import { labOf } from '../lib/config';
+import { videosOf, type Video } from '../lib/videos';
 import { lessonDeck, lessonPlan, loadLessons, viewPages, type Lesson, type Stage } from '../lib/data';
 import Deck, { THEMES, type Theme } from '../deck/Deck';
 import LivePanel from './board/LivePanel';
@@ -12,7 +13,7 @@ import { useOnline } from '../lib/offline';
 /* Тақта: интерактивті панельге арналған толық экранды сабақ режимі.
    Слайд / жұмыс парағы / ақ тақта / 3D тәжірибе, қалам қабаты, сабақ кезеңдері мен уақыт, кездейсоқ оқушы, таймер. */
 
-type Src = 'pres' | 'ws' | 'board' | 'lab';
+type Src = 'pres' | 'ws' | 'board' | 'lab' | 'video';
 type Tool = 'hand' | 'pen' | 'hl' | 'erase';
 interface Stroke { t: Tool; c: string; w: number; p: [number, number][] }
 
@@ -31,6 +32,7 @@ export default function Board() {
   const [lesson, setLesson] = useState<Lesson | null>(null);
   const [pages, setPages] = useState<{ pres: string[]; ws: string[] }>({ pres: [], ws: [] });
   const [src, setSrc] = useState<Src>('pres');
+  const [videos, setVideos] = useState<Video[]>([]);
   const [idx, setIdx] = useState({ pres: 0, ws: 0 });
   const [tool, setToolS] = useState<Tool>('hand');
   const [color, setColor] = useState('#111111');
@@ -65,11 +67,12 @@ export default function Board() {
       const l = all.find((x) => x.v === V && x.n === N) || all.find((x) => grade < 10 && x.grade === grade && x.n === N);
       if (!l) return fail('Сабақ табылмады', 'Кабинетке оралып, тақырыпты қайта таңдаңыз.');
       const lv = { ...l, v: V };
-      const [plan, pres, ws, dk] = await Promise.all([
+      const [plan, pres, ws, dk, vids] = await Promise.all([
         lessonPlan(V, N),
         l.pres ? viewPages(V, N, 'pres').catch(() => null) : null,
         l.ws ? viewPages(V, N, 'ws').catch(() => null) : null,
         lessonDeck(V, N),
+        videosOf(V, N, grade),
       ]);
       if (off) return;
       if (plan.status === 402) return fail('Тақта жазылыммен ашылады', `${grade}-сыныпқа жазылым немесе тегін сынақ мерзімі керек.`, 'Жазылымды рәсімдеу');
@@ -79,6 +82,7 @@ export default function Board() {
       [...p.pres, ...p.ws].forEach((u) => { const i = new Image(); i.decoding = 'async'; i.src = u; });
       // анимациялы презентация болса, «Слайд» соны көрсетеді
       if (dk?.slides?.length) { setDeck(dk); p.pres = dk.slides.map((_, k) => `deck:${k}`); }
+      setVideos(vids);
       setLesson(lv); setPages(p); setStages(plan.stages || []); setSrc(p.pres.length ? 'pres' : 'board');
       setCur(0); setLeft((plan.stages?.[0]?.min || 0) * 60);
       document.title = `${l.topic} · Тақта`;
@@ -294,6 +298,7 @@ export default function Board() {
         <div className={`bd-view${src === 'board' ? ' bd-view--white' : ''}`}>
           {onDeck && <Deck data={deck!} index={i} step={step} theme={theme} stageRef={deckRef} />}
           {paged && !onDeck && list[i] && <img ref={imgRef} src={list[i]} alt={`${src === 'pres' ? 'Слайд' : 'Бет'} ${i + 1}`} draggable={false} onLoad={redraw} />}
+          {src === 'video' && videos[0] && <video key={videos[0].src} className="bd-video" src={videos[0].src} poster={videos[0].poster || undefined} autoPlay loop muted playsInline controls disablePictureInPicture aria-label={videos[0].title} />}
           {src === 'lab' && lab?.exp && <iframe src={`/lab/experiments/${lab.exp}?embed=1`} title="3D тәжірибе" allow="fullscreen" />}
         </div>
         <canvas ref={cvRef} className={`bd-ink${tool === 'hand' ? ' bd-ink--off' : ''}`} onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp} />
@@ -318,6 +323,7 @@ export default function Board() {
           {srcBtn('pres', 'Слайд', 'M3 6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2zM12 16v4M8 20h8', pages.pres.length > 0)}
           {srcBtn('ws', 'Парақ', 'M9 4h6v3H9zM6 6h12v15H6zM9 13l2 2 4-4', pages.ws.length > 0)}
           {srcBtn('board', 'Ақ тақта', 'M3 6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2zM7 14l3-4 3 3 4-5')}
+          {srcBtn('video', 'Видео', 'M4 6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2zM10 9l5 3-5 3z', videos.length > 0)}
           {srcBtn('lab', '3D тәжірибе', 'M9 3h6M10 3v6l-5 9a2 2 0 0 0 2 3h10a2 2 0 0 0 2-3l-5-9V3', !!lab?.exp)}
         </div>
         <div className="bd-grp bd-pen" role="group" aria-label="Қалам">
