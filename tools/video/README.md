@@ -1,12 +1,32 @@
-# Сөзсіз 3D видеолар (сынақ)
+# Сөзсіз 3D видеолар
 
 Әр құбылыс — бір HTML сахна (`scenes/*.html`, three.js). `window.renderFrame(t)` t секундтағы кадрды салады,
-сондықтан видео әрдайым бірдей және тегіс шығады.
+сондықтан видео әрдайым бірдей және тегіс шығады. Стиль: ашық сұр фон, ағаш үстел, 1280×720, 18 с, 30 кадр/с,
+мәтінсіз (тек mg, F_A, l₁ сияқты белгілер мен өлшеуіштің мәні), камера баяу айналады.
 
-    # сахналар папкасында сервер: three.js `lib/` ішінде болуы керек
-    mkdir -p scenes/lib && cp ../../web/node_modules/three/build/three.{module,core}.js scenes/lib/
-    (cd scenes && python3 -m http.server 8765 --bind 127.0.0.1 &)
-    node render.js 8765 archimedes.html /tmp/frames 30 0 18
-    ffmpeg -framerate 30 -i /tmp/frames/f%04d.jpg -c:v libx264 -preset slow -crf 22 -pix_fmt yuv420p -movflags +faststart archimedes.mp4
+## Ортақ бөлшектер — `scenes/kit.js`
 
-Сынақ: «Архимед күші» (7-сынып), 18 с, 1280×720, ~1 МБ.
+`stage` (жарық, еден, ағаш үстел, HUD), `orbit` (камера), `seg`/`win`/`simulate` (уақыт сызығы, физиканы алдын ала есептеу),
+`stand` (штатив), `tank`/`waterSurface` (ыдыс пен су), `arrow` + `label` (күш бағыттамасы мен белгі), `readout` (өлшеуіш мәні),
+`dynamometer`, `spring`, `hookMass` (100 г жүк), `ruler` (сызғыш), `hudGraph` (кішкене график).
+Жаңа видео тек өз құбылысын жазады (мысалы `hooke.html` — 80 жол шамасы).
+
+## Жасау
+
+    sh make.sh hooke lever            # out/{id}.mp4 + out/{id}.jpg (POSTER=кадр нөмірі, CRF=сапа)
+    node sheet.js 8765 /tmp/s.jpg hooke.html,lever.html 1,5,9,13,17   # бірнеше сахнаны бір суретке жинап тексеру
+    python3 publish.py                # → public/vid, public/videos.json (қай видео қай сабаққа — videos.json)
+
+`make.sh` three.js-ті `web/node_modules`-тан `scenes/lib/`-ке көшіреді (алдымен `npm --prefix web ci`) және `scenes` папкасында
+8765 портта сервер ашады.
+
+## Видеолар (7-сынып)
+
+| id | тақырып | сабақтар |
+|---|---|---|
+| archimedes | Архимед күші | 44–48 |
+| inertia | Инерция: арба кенет тоқтайды; картон ұшады — тиын стақанға түседі | 23 |
+| hooke | Гук заңы: 1–3 жүк, Δl сызғышпен, F(Δl) графигі | 26, 27 |
+| pressure | Қысым (кірпіш губкада: S₁ > S₂) және Паскаль шары | 34–36 |
+| vessels | Қатынас ыдыстар: 4 түрлі пішін, деңгей бірдей | 38 |
+| lever | Иіндіктің тепе-теңдігі: 2 жүк 3-те = 3 жүк 2-де | 57, 60 |

@@ -1,0 +1,75 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><style>html,body{margin:0;background:#eef2f7;overflow:hidden}canvas{display:block}</style>
+<script type="importmap">{"imports":{"three":"./lib/three.module.js"}}</script></head>
+<body>
+<script type="module">
+// «Гук заңы» (7-сынып): серіппеге 1, 2, 3 жүк ілінеді — ұзаруы жүкке пропорционал; F(Δl) графигі түзу.
+import { THREE, V, stage, orbit, stand, spring, hookMass, arrow, label, readout, ruler, hudGraph, seg, win, lerp, simulate, mat, mesh, num, ready } from './kit.js';
+const st = stage({ table: [4.2, 2.2] }), { scene, camera, hud } = st;
+
+const SX = 0.15, ARM_Y = 2.75, L0 = 0.55, PER = 0.15; // серіппе ілінген нүкте x, иін биіктігі, бастапқы ұзындық, 1 жүкке ұзару (= 3 см)
+const sd = stand(scene, { x: -0.75, z: 0, h: 3.1, arm: 0.95 }); sd.setArmY(ARM_Y);
+const top = V(SX, ARM_Y - 0.075, 0);
+const sp = spring(scene, { turns: 16, r: 0.06, tube: 0.01 }); sp.position.copy(top);
+const pointer = mesh(new THREE.BoxGeometry(0.2, 0.012, 0.012), new THREE.MeshStandardMaterial({ color: '#e5483a' }), { parent: scene });
+// сызғыш: 0 — серіппенің бастапқы ұшы, 1 бөлік = 1 см (0.05 бірлік)
+const CM = 0.05, rl = ruler(scene, { len: 20 * CM, n: 20, every: 5, width: 0.17 }); rl.position.set(SX - 0.27, top.y - L0 - 10 * CM, -0.02);
+const yZero = top.y - L0;
+
+// жүктер: үстелдегі орны → доғамен ілінеді
+const masses = [0, 1, 2].map((i) => hookMass(scene, { color: ['#9aa4b2', '#929cab', '#8a94a3'][i] }));
+const ML = masses[0].userData.len, T_ON = [2.2, 6.2, 10.2], T_FLY = 1.1;
+const table0 = (i) => V(1.0 + i * 0.25, 0.315, 0.35 - i * 0.12);
+
+// серіппе динамикасы (өшетін тербеліс)
+const W0 = 2 * Math.PI * 1.1, Z = 0.16;
+const nAt = (t) => T_ON.filter((a) => t >= a + T_FLY).length;
+const S = simulate({ e: 0, v: 0 }, (s, t, dt) => { const a = W0 * W0 * (PER * nAt(t) - s.e) - 2 * Z * W0 * s.v; s.v += a * dt; s.e += s.v * dt; });
+
+const aF = arrow(scene, '#1f6fd0'), aG = arrow(scene, '#e5483a');
+const lF = label(scene, 'F', 'серп', '#1f6fd0', { size: 0.42 }), lG = label(scene, 'mg', '', '#e5483a', { size: 0.42 });
+const lD = label(scene, 'Δl', '', '#1b2230', { size: 0.38 });
+const ro = readout(scene, { color: '#1b2230', w: 0.6 });
+// Δl жақшасы
+const brMat = new THREE.MeshBasicMaterial({ color: '#1b2230', transparent: true, depthTest: false });
+const br = mesh(new THREE.BoxGeometry(0.012, 1, 0.012), brMat, { parent: scene, shadow: false }); br.renderOrder = 9;
+const graph = hudGraph(hud, { x: 920, y: 360, w: 320, h: 270, ax: ['Δl', ''], ay: ['F', 'серп'] });
+
+window.renderFrame = (t) => {
+  const s = S(t), e = s.e, n = nAt(t);
+  sp.setLength(L0 + e);
+  const end = V(SX, top.y - L0 - e, 0);
+  pointer.position.set(SX - 0.12, end.y, 0.0);
+  // жүктер
+  let chain = end.clone();
+  masses.forEach((m, i) => {
+    const k = seg(t, T_ON[i], T_ON[i] + T_FLY);
+    const hangAt = V(SX, end.y - i * ML, 0);
+    if (k <= 0) m.position.copy(table0(i));
+    else if (k < 1) { const p = table0(i).lerp(hangAt, k); p.y += Math.sin(Math.PI * k) * 0.55; m.position.copy(p); }
+    else m.position.copy(hangAt);
+    m.rotation.y = 0.3 * i;
+  });
+  // күштер: F_серп = k·Δl (жоғары, серіппе ұшынан), mg (төмен, жүктердің астынан)
+  const Fs = 0.24; // 1 Н = 0.24 бірлік (сызба)
+  const show = win(t, 3.0, 3.6, 17.2, 17.8);
+  aF.set(end.clone().add(V(0.16, 0, 0.12)), V(0, 1, 0), Fs * e / PER, show);
+  const bottom = V(SX, end.y - Math.max(1, n) * ML * 0.5, 0);
+  aG.set(bottom.clone().add(V(0.16, 0, 0.12)), V(0, -1, 0), Fs * n, show * (n > 0 ? 1 : 0));
+  lF.show(end.clone().add(V(0.42, Fs * e / PER * 0.6, 0.12)), show);
+  lG.show(bottom.clone().add(V(0.4, -Fs * n * 0.7, 0.12)), show * (n > 0 ? 1 : 0));
+  // Δl: жақша + сызғыш мәні
+  const dOn = seg(t, 3.0, 3.6) * (e > 0.01 ? 1 : 0);
+  br.scale.y = Math.max(0.001, e); br.position.set(SX - 0.36, yZero - e / 2, 0.02); brMat.opacity = dOn;
+  lD.show(V(SX - 0.47, yZero - e / 2, 0.03), dOn);
+  const cm = Math.round(e / CM);
+  ro.set(cm + ' см', seg(t, 3.0, 3.6)); ro.position.set(SX - 0.95, end.y, 0.05);
+  // график: тұрақтанған әр нүкте
+  const pts = [[0, 0]]; T_ON.forEach((a, i) => { if (t > a + T_FLY + 1.6) pts.push([(i + 1) / 3.4, (i + 1) / 3.4]); });
+  graph.draw(pts, seg(t, 13.6, 15.2) * 0.95, seg(t, 1.0, 1.8));
+  orbit(camera, t, { ang: -0.18, swing: 0.32, rad: 5.2, y: 1.9, look: [0.5, 1.45, 0] });
+  return st.render();
+};
+ready();
+</script>
+</body></html>

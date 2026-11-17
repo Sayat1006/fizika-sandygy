@@ -1,0 +1,124 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><style>html,body{margin:0;background:#eef2f7;overflow:hidden}canvas{display:block}</style>
+<script type="importmap">{"imports":{"three":"./lib/three.module.js"}}</script></head>
+<body>
+<script type="module">
+// «Қысым және Паскаль заңы» (7-сынып): 1) бірдей кірпіш: жалпақ жатса аз батады, тік тұрса көп (p = F/S);
+// 2) Паскаль шары: поршень басылғанда су барлық тесіктен бірдей атқылайды.
+import { THREE, V, stage, orbit, arrow, label, seg, win, lerp, clamp, mat, mesh, ready } from './kit.js';
+const st = stage({ table: [5.6, 2.2] }), { scene, camera } = st;
+
+// ── 1. губка (жұмсақ төсеме) және кірпіштер ──
+const PW = 0.8, PH = 0.22, PD = 0.55;
+function pad(x) {
+  const geo = new THREE.BoxGeometry(PW, PH, PD, 48, 6, 32), base = geo.attributes.position.array.slice();
+  const m = mesh(geo, new THREE.MeshStandardMaterial({ color: '#f0cf62', roughness: 0.95 }), { parent: scene, pos: [x, PH / 2, 0] });
+  // ойыс: hx×hz табанның астында d тереңдік, жиегі тегіс
+  m.dent = (hx, hz, d) => {
+    const p = geo.attributes.position;
+    for (let i = 0; i < p.count; i++) {
+      const X = base[i * 3], Y = base[i * 3 + 1], Z = base[i * 3 + 2];
+      const ex = Math.max(0, Math.abs(X) - hx), ez = Math.max(0, Math.abs(Z) - hz), r = Math.hypot(ex, ez);
+      const k = Math.exp(-(r * r) / 0.004) * ((Y + PH / 2) / PH);
+      p.setY(i, Y - d * k);
+    }
+    p.needsUpdate = true; geo.computeVertexNormals();
+  };
+  return m;
+}
+const XA = -1.75, XB = -0.65, pA = pad(XA), pB = pad(XB);
+const BL = 0.5, BWd = 0.25, BT = 0.13; // кірпіш өлшемі
+const brickMat = new THREE.MeshStandardMaterial({ color: '#b5523b', roughness: 0.85 });
+const bA = mesh(new THREE.BoxGeometry(BL, BT, BWd), brickMat, { parent: scene }); // жалпақ
+const bB = mesh(new THREE.BoxGeometry(BWd, BL, BT), brickMat, { parent: scene }); // тік
+const sMat = new THREE.MeshBasicMaterial({ color: '#17d07a', transparent: true, opacity: 0, depthWrite: false, side: THREE.DoubleSide });
+const sA = mesh(new THREE.PlaneGeometry(BL, BWd), sMat, { parent: scene, rot: [-Math.PI / 2, 0, 0], shadow: false }); sA.renderOrder = 6;
+const sB = mesh(new THREE.PlaneGeometry(BWd, BT), sMat, { parent: scene, rot: [-Math.PI / 2, 0, 0], shadow: false }); sB.renderOrder = 6;
+const DA = 0.025, DB = 0.1; // батуы: аудан 4 есе аз → 4 есе көп
+const gA = arrow(scene, '#e5483a', { r: 0.02 }), gB = arrow(scene, '#e5483a', { r: 0.02 });
+const lgA = label(scene, 'mg', '', '#e5483a', { size: 0.3 }), lgB = label(scene, 'mg', '', '#e5483a', { size: 0.3 });
+const lsA = label(scene, 'S', '1', '#0f8a52', { size: 0.3 }), lsB = label(scene, 'S', '2', '#0f8a52', { size: 0.3 });
+
+// ── 2. Паскаль шары ──
+const C = V(1.05, 0.78, 0), R = 0.3, TX0 = C.x + R - 0.04, TX1 = 2.15, TR = 0.1;
+const ballMat = new THREE.MeshPhysicalMaterial({ color: '#dfefff', transparent: true, opacity: 0.22, roughness: 0.05, depthWrite: false, side: THREE.DoubleSide });
+const ball = new THREE.Mesh(new THREE.SphereGeometry(R, 48, 32), ballMat); ball.position.copy(C); ball.renderOrder = 3; scene.add(ball);
+const inner = new THREE.Mesh(new THREE.SphereGeometry(R - 0.012, 40, 28), mat.water()); inner.position.copy(C); inner.renderOrder = 2; scene.add(inner);
+const tube = new THREE.Mesh(new THREE.CylinderGeometry(TR, TR, TX1 - TX0, 32, 1, true), mat.glass()); tube.rotation.z = Math.PI / 2; tube.position.set((TX0 + TX1) / 2, C.y, 0); tube.renderOrder = 3; scene.add(tube);
+const tubeWater = new THREE.Mesh(new THREE.CylinderGeometry(TR - 0.008, TR - 0.008, 1, 32), mat.water()); tubeWater.rotation.z = Math.PI / 2; tubeWater.renderOrder = 2; scene.add(tubeWater);
+const piston = mesh(new THREE.CylinderGeometry(TR - 0.006, TR - 0.006, 0.06, 32), mat.dark, { parent: scene, rot: [0, 0, Math.PI / 2] });
+const rod = mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.7, 12), mat.metal, { parent: scene, rot: [0, 0, Math.PI / 2] });
+const knob = mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.04, 24), mat.dark, { parent: scene, rot: [0, 0, Math.PI / 2] });
+mesh(new THREE.TorusGeometry(TR + 0.006, 0.008, 8, 32), mat.metal, { parent: scene, pos: [TX1, C.y, 0], rot: [0, Math.PI / 2, 0] });
+for (const x of [C.x, 1.75]) { // тіреулер
+  mesh(new THREE.CylinderGeometry(0.025, 0.025, C.y - (x === C.x ? R : TR), 12), mat.metal, { parent: scene, pos: [x, (C.y - (x === C.x ? R : TR)) / 2, 0] });
+  mesh(new THREE.CylinderGeometry(0.12, 0.12, 0.03, 24), mat.metal, { parent: scene, pos: [x, 0.015, 0] });
+}
+// тесіктер (шардың бетінде, түтік жағынан басқа)
+const holes = [];
+for (let i = 0; i < 26; i++) {
+  const y = 1 - (i + 0.5) / 26 * 2, r = Math.sqrt(1 - y * y), a = i * 2.39996;
+  const n = V(Math.cos(a) * r, y, Math.sin(a) * r);
+  if (n.x > 0.45 || n.y < -0.75) continue; holes.push(n);
+}
+const holeMat = new THREE.MeshBasicMaterial({ color: '#25507a' });
+for (const n of holes) { const h = new THREE.Mesh(new THREE.CircleGeometry(0.013, 12), holeMat); h.position.copy(C).addScaledVector(n, R + 0.002); h.lookAt(C.clone().addScaledVector(n, 2)); scene.add(h); }
+// су ағыны — бөлшектер (детерминирленген: туған уақыты бойынша)
+const PER = 40, LIFE = 0.55, G = 3.2, V0 = 1.25;
+const drops = new THREE.InstancedMesh(new THREE.SphereGeometry(0.011, 8, 6), new THREE.MeshStandardMaterial({ color: '#4aa6f0', transparent: true, opacity: 0.85, roughness: 0.2 }), holes.length * PER);
+drops.renderOrder = 4; scene.add(drops);
+const dummy = new THREE.Object3D();
+const T_PUSH = 10.6, T_END = 16.0, P0 = 2.0, P1 = 1.5; // поршень x
+const aF = arrow(scene, '#1f6fd0', { r: 0.022 }), lF = label(scene, 'F', '', '#1f6fd0', { size: 0.3 });
+const pArrows = [V(0, 1, 0), V(0, -1, 0), V(-1, 0, 0), V(-0.7, 0.7, 0), V(-0.7, -0.7, 0), V(0, 0, 1), V(0.5, 0.5, 0.7), V(-0.5, 0.2, 0.84)].map(() => arrow(scene, '#1f6fd0', { r: 0.009 }));
+const pDirs = [V(0, 1, 0), V(0, -1, 0), V(-1, 0, 0), V(-0.7, 0.7, 0), V(-0.7, -0.7, 0), V(0, 0, 1), V(0.5, 0.5, 0.7), V(-0.5, 0.2, 0.84)];
+const lp = label(scene, 'p', '', '#1f6fd0', { size: 0.24 });
+
+window.renderFrame = (t) => {
+  // 1) кірпіштер түседі де, губкаға батады
+  const drop = seg(t, 0.8, 2.2), sink = seg(t, 2.1, 3.4);
+  const hA = 1.0 - drop * 1.0, dA = DA * sink, dB = DB * sink;
+  pA.dent(BL / 2, BWd / 2, dA); pB.dent(BWd / 2, BT / 2, dB);
+  bA.position.set(XA, PH + BT / 2 + hA - dA, 0);
+  bB.position.set(XB, PH + BL / 2 + hA - dB, 0);
+  const sOn = win(t, 3.6, 4.2, 9.0, 9.6) * (0.75 + 0.25 * Math.sin(t * 5));
+  sMat.opacity = 0.55 * sOn;
+  sA.position.set(XA, PH - dA + 0.003, 0); sB.position.set(XB, PH - dB + 0.003, 0);
+  sA.scale.set(1.04, 1.04, 1); sB.scale.set(1.06, 1.06, 1);
+  const gOn = win(t, 2.8, 3.4, 9.0, 9.6);
+  gA.set(V(XA, bA.position.y, BWd / 2 + 0.06), V(0, -1, 0), 0.5, gOn); gB.set(V(XB, bB.position.y, BT / 2 + 0.06), V(0, -1, 0), 0.5, gOn);
+  lgA.show(V(XA + 0.17, bA.position.y - 0.36, BWd / 2 + 0.06), gOn); lgB.show(V(XB + 0.17, bB.position.y - 0.36, BT / 2 + 0.06), gOn);
+  lsA.show(V(XA - BL / 2 - 0.14, PH + 0.03, PD / 2), win(t, 3.6, 4.2, 9.0, 9.6)); lsB.show(V(XB - BWd / 2 - 0.14, PH + 0.03, PD / 2), win(t, 3.6, 4.2, 9.0, 9.6));
+  // 2) поршень
+  const push = seg(t, T_PUSH, T_END), px = lerp(P0, P1, push);
+  piston.position.set(px, C.y, 0); rod.position.set(px + 0.35, C.y, 0); knob.position.set(px + 0.7, C.y, 0);
+  tubeWater.scale.y = px - 0.03 - TX0 + 0.02; tubeWater.position.set((TX0 - 0.02 + px - 0.03) / 2, C.y, 0);
+  const fOn = win(t, T_PUSH - 0.6, T_PUSH, T_END + 0.4, T_END + 1.0);
+  aF.set(V(px + 1.15, C.y, 0), V(-1, 0, 0), 0.42, fOn); lF.show(V(px + 0.95, C.y + 0.14, 0), fOn);
+  const pOn = win(t, T_PUSH + 0.2, T_PUSH + 0.7, T_END + 0.2, T_END + 0.8);
+  pArrows.forEach((a, i) => a.set(C.clone().addScaledVector(pDirs[i].clone().normalize(), 0.05), pDirs[i], 0.2, pOn));
+  lp.show(C.clone().add(V(-0.12, 0.13, 0.25)), pOn);
+  // ағын: поршень қозғалып тұрғанда бөлшек туады
+  const flowOn = (tb) => tb > T_PUSH + 0.15 && tb < T_END;
+  let k = 0;
+  for (let h = 0; h < holes.length; h++) {
+    const n = holes[h], start = C.clone().addScaledVector(n, R);
+    for (let j = 0; j < PER; j++) {
+      // осы бөлшектің ең соңғы туған сәті
+      const phase = (j / PER) * LIFE, tb = Math.floor((t - phase) / LIFE) * LIFE + phase, age = t - tb;
+      let vis = flowOn(tb) && age >= 0 && age < LIFE;
+      const p = start.clone().addScaledVector(n, V0 * age); p.y -= 0.5 * G * age * age;
+      if (p.y < 0.01) vis = false;
+      dummy.position.copy(p); dummy.scale.setScalar(vis ? 1 : 0); dummy.updateMatrix(); drops.setMatrixAt(k++, dummy.matrix);
+    }
+  }
+  drops.instanceMatrix.needsUpdate = true;
+  // камера: кірпіштерден Паскаль шарына
+  const kk = seg(t, 8.6, 10.4);
+  const look = [lerp(-1.2, 1.35, kk), lerp(0.3, 0.62, kk), 0];
+  orbit(camera, t, { ang: lerp(-0.3, 0.2, kk), swing: 0.2, rad: lerp(3.0, 3.4, kk), y: lerp(1.4, 1.45, kk), look, cx: look[0] });
+  return st.render();
+};
+ready();
+</script>
+</body></html>

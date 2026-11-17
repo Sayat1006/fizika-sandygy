@@ -1,0 +1,75 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><style>html,body{margin:0;background:#eef2f7;overflow:hidden}canvas{display:block}</style>
+<script type="importmap">{"imports":{"three":"./lib/three.module.js"}}</script></head>
+<body>
+<script type="module">
+// «Иіндіктің тепе-теңдігі» (7-сынып): солда 2 жүк 3-бөлікте; оңда 3 жүк алдымен 4-бөлікте (оңға аунайды),
+// сосын 2-бөлікке жылжиды — тепе-теңдік: F₁·l₁ = F₂·l₂ (2·3 = 3·2).
+import { THREE, V, stage, orbit, hookMass, arrow, label, ruler, seg, win, lerp, clamp, simulate, mat, mesh, ready } from './kit.js';
+const st = stage({ table: [4.6, 2.2] }), { scene, camera } = st;
+
+const PY = 1.55, STEP = 0.18, BL = 2.5; // ось биіктігі, бір бөлік, иіндік ұзындығы
+// тірек: табан, екі тік бағана, ось
+mesh(new THREE.BoxGeometry(0.9, 0.06, 0.55), mat.metal, { parent: scene, pos: [0, 0.03, 0] });
+mesh(new THREE.CylinderGeometry(0.04, 0.04, PY, 20), mat.metal, { parent: scene, pos: [0, PY / 2, -0.12] });
+mesh(new THREE.BoxGeometry(0.1, 0.12, 0.1), mat.metal, { parent: scene, pos: [0, PY, -0.12] });
+mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.2, 12), mat.metal, { parent: scene, pos: [0, PY, -0.02], rot: [Math.PI / 2, 0, 0] });
+// иіндік (сызғыш, 0 — ортасында)
+const bar = new THREE.Group(); bar.position.set(0, PY, 0); scene.add(bar);
+const rl = ruler(bar, { len: 12 * STEP, n: 12, every: 1, vertical: false, width: 0.12, text: (i) => String(Math.abs(i - 6)) });
+rl.scale.z = 2;
+// жүктер: сол жақта 2, оң жақта 3
+const left = [0, 1].map(() => hookMass(scene, { color: '#9aa4b2' }));
+const right = [0, 1, 2].map(() => hookMass(scene, { color: '#9aa4b2' }));
+const ML = left[0].userData.len;
+const T_L = 1.6, T_R = 5.0, FLY = 1.2, T_S0 = 8.6, T_S1 = 10.4; // ілу, жылжыту уақыттары
+const xL = -3, xR = (t) => lerp(4, 2, seg(t, T_S0, T_S1)); // бөлік бойынша орны
+// айналу динамикасы (тірек сәл жоғары — тепе-теңдікте түзу қалпына оралады; ±0.2 рад шектегіш)
+const LIM = 0.2;
+const torque = (t) => (t > T_L + FLY ? 2 * -xL : 0) - (t > T_R + FLY ? 3 * xR(t) : 0); // + — сол жағы төмен
+const S = simulate({ a: 0, w: 0 }, (s, t, dt) => {
+  const acc = 0.55 * torque(t) * Math.cos(s.a) - 2.2 * s.a - 1.6 * s.w;
+  s.w += acc * dt; s.a += s.w * dt;
+  if (s.a > LIM) { s.a = LIM; s.w = Math.min(0, s.w); } if (s.a < -LIM) { s.a = -LIM; s.w = Math.max(0, s.w); }
+});
+const tableL = (i) => V(-1.25 - i * 0.22, 0.315, -0.2), tableR = (i) => V(1.0 + i * 0.22, 0.315, -0.2);
+const aF1 = arrow(scene, '#e5483a', { r: 0.022 }), aF2 = arrow(scene, '#e5483a', { r: 0.022 });
+const lF1 = label(scene, 'F', '1', '#e5483a', { size: 0.36 }), lF2 = label(scene, 'F', '2', '#e5483a', { size: 0.36 });
+// иін жақшалары (иіндіктің жергілікті жүйесінде, сызғыштың үстінде)
+const brM = new THREE.MeshBasicMaterial({ color: '#1f6fd0', transparent: true, depthTest: false });
+const br1 = mesh(new THREE.BoxGeometry(1, 0.014, 0.014), brM, { parent: bar, shadow: false }), br2 = mesh(new THREE.BoxGeometry(1, 0.014, 0.014), brM, { parent: bar, shadow: false });
+br1.renderOrder = br2.renderOrder = 9;
+const ticks = [0, 1, 2, 3].map(() => { const m = mesh(new THREE.BoxGeometry(0.014, 0.08, 0.014), brM, { parent: bar, shadow: false }); m.renderOrder = 9; return m; });
+const ll1 = label(bar, 'l', '1', '#1f6fd0', { size: 0.32, parent: bar }), ll2 = label(bar, 'l', '2', '#1f6fd0', { size: 0.32, parent: bar });
+
+function hang(list, x, t0, tableAt, t, a) {
+  const hook = new THREE.Vector3(x * STEP, -0.07, 0.0); bar.localToWorld(hook);
+  list.forEach((m, i) => {
+    const k = seg(t, t0 + i * 0.15, t0 + FLY + i * 0.15);
+    const at = hook.clone().add(V(0, -i * ML, 0));
+    if (k <= 0) m.position.copy(tableAt(i));
+    else if (k < 1) { const p = tableAt(i).lerp(at, k); p.y += Math.sin(Math.PI * k) * 0.5; m.position.copy(p); }
+    else m.position.copy(at);
+  });
+  return hook;
+}
+
+window.renderFrame = (t) => {
+  const s = S(t); bar.rotation.z = s.a; bar.updateMatrixWorld();
+  const hL = hang(left, xL, T_L, tableL, t), hR = hang(right, xR(t), T_R, tableR, t);
+  // күштер: жүктердің салмағы иіндікке түсетін нүктеден төмен
+  const fOn = win(t, 10.8, 11.4, 17.2, 17.8), FS = 0.2;
+  aF1.set(hL.clone().add(V(0, 0, 0.2)), V(0, -1, 0), 2 * FS + 0.12, fOn); aF2.set(hR.clone().add(V(0, 0, 0.2)), V(0, -1, 0), 3 * FS + 0.12, fOn);
+  lF1.show(hL.clone().add(V(-0.17, -0.35, 0.2)), fOn); lF2.show(hR.clone().add(V(0.17, -0.45, 0.2)), fOn);
+  const lOn = win(t, 11.6, 12.2, 17.2, 17.8); brM.opacity = lOn;
+  const x1 = xL * STEP, x2 = xR(t) * STEP, yb = 0.13;
+  br1.scale.x = Math.abs(x1); br1.position.set(x1 / 2, yb, 0.03); br2.scale.x = x2; br2.position.set(x2 / 2, yb, 0.03);
+  [[0, x1], [1, 0], [2, x2], [3, 0]].forEach(([i, x]) => ticks[i].position.set(x, yb, 0.03));
+  ticks.forEach((m) => (m.visible = lOn > 0.01)); br1.visible = br2.visible = lOn > 0.01;
+  ll1.show(V(x1 / 2, yb + 0.13, 0.03), lOn); ll2.show(V(x2 / 2, yb + 0.13, 0.03), lOn);
+  orbit(camera, t, { ang: 0.0, swing: 0.35, rad: 3.9, y: 1.75, look: [0, 1.12, 0] });
+  return st.render();
+};
+ready();
+</script>
+</body></html>

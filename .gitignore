@@ -9,3 +9,6 @@ tools/kmzh/img/qr_*.png
 tools/deck/fig/
 tools/kmzh/img/x_*.png
 tools/kmzh/json_v2/
+
+# видео сахналарына three.js көшірмесі (web/node_modules-тан, README қараңыз)
+tools/video/scenes/lib/
