@@ -1,0 +1,38 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><style>html,body{margin:0;background:#eef2f7;overflow:hidden}canvas{display:block}</style>
+<script type="importmap">{"imports":{"three":"./lib/three.module.js"}}</script></head>
+<body>
+<script type="module">
+// «Тербелмелі қозғалыс. Математикалық және серіппелі маятниктер» (9-сынып): математикалық маятник (l = 1 м, T = 2π√(l/g) ≈ 2,0 с)
+// және серіппелі маятник (m = 0,2 кг, k = 3,2 Н/м, T = 2π√(m/k) ≈ 1,6 с) нақты уақытта тербеледі (теңдеулер сандық шешіледі,
+// әлсіз өшу бар). x(t) графиктері — синусоида; амплитуда A және период T белгіленеді.
+import { THREE, V, stage, orbit, stand, spring, hookMass, readout, hudPlot, simulate, seg, win, lerp, mat, mesh, ready } from './kit.js';
+const st = stage({ table: [3.6, 2.2] }), { scene, camera, hud } = st;
+const PX = -0.75, PY = 1.75, L = 1.0, G = 9.8;
+const sd = stand(scene, { x: PX - 0.55, z: -0.1, h: 1.95, arm: 0.6 }); sd.setArmY(PY);
+const str = mesh(new THREE.CylinderGeometry(0.004, 0.004, 1, 6), mat.dark, { parent: scene, shadow: false });
+const bob = mesh(new THREE.SphereGeometry(0.06, 24, 16), new THREE.MeshStandardMaterial({ color: '#1f6fd0', roughness: 0.35 }), { parent: scene });
+const SX = 0.45, SY = 1.75;
+const sd2 = stand(scene, { x: SX - 0.55, z: -0.1, h: 1.95, arm: 0.6 }); sd2.setArmY(SY);
+const sp = spring(scene, { turns: 16, r: 0.05, tube: 0.008 }); sp.position.set(SX, SY, 0);
+const mass = hookMass(scene, { color: '#e5683a' });
+const L0 = 0.55, K = 3.2, M = 0.2, S0 = 0.12; // тепе-теңдік ұзындығы; бастапқы ығысу
+const P = simulate({ th: 0, w: 0, x: 0, v: 0 }, (s, t, dt) => { if (t < 1.0) { s.th = 0.22; s.x = S0; return; } const a = -(G / L) * Math.sin(s.th) - 0.06 * s.w; s.w += a * dt; s.th += s.w * dt;
+  const ax = -(K / M) * s.x - 0.08 * s.v; s.v += ax * dt; s.x += s.v * dt; });
+const plot = hudPlot(hud, { x: 900, y: 360, w: 360, h: 300, ax: ['t', ''], ay: ['x', ''] });
+const rT1 = readout(scene, { color: '#1f6fd0', w: 0.56 }), rT2 = readout(scene, { color: '#e5683a', w: 0.56 });
+
+window.renderFrame = (t) => {
+  const s = P(t);
+  const b = V(PX + L * Math.sin(s.th), PY - L * Math.cos(s.th), 0); bob.position.copy(b);
+  str.scale.y = L; str.position.set((PX + b.x) / 2, (PY + b.y) / 2, 0); str.rotation.z = s.th;
+  const len = L0 + s.x; sp.setLength(len); mass.position.set(SX, SY - len, 0);
+  const pts1 = [], pts2 = []; for (let k = 0; k <= 340; k++) { const tt = 1.0 + k * 0.05; if (tt > t) break; const q = P(tt); pts1.push([0.02 + k / 340 * 0.96, 0.75 + q.th / 0.22 * 0.18]); pts2.push([0.02 + k / 340 * 0.96, 0.27 + q.x / S0 * 0.18]); }
+  plot.draw([{ pts: [[0, 0.75], [1, 0.75]], color: '#d5dbe3', label: '' }, { pts: [[0, 0.27], [1, 0.27]], color: '#d5dbe3', label: '' }, { pts: pts1, color: '#1f6fd0', label: '' }, { pts: pts2, color: '#e5683a', label: '' }], seg(t, 0.4, 0.9));
+  rT1.set('T = 2,0 с', win(t, 7.0, 7.5, 17.3, 17.9)); rT1.position.set(PX, 0.35, 0.1); rT2.set('T = 1,6 с', win(t, 7.4, 7.9, 17.3, 17.9)); rT2.position.set(SX, 0.35, 0.1);
+  orbit(camera, t, { ang: 0.0, swing: 0.12, rad: 3.6, y: 1.25, look: [0.15, 1.05, 0], cx: 0.15 });
+  return st.render();
+};
+ready();
+</script>
+</body></html>

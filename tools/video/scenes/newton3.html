@@ -22,7 +22,7 @@ const cart = (col, heavy) => { const g = new THREE.Group(); scene.add(g); mesh(n
   for (const sx of [-1, 1]) for (const sz of [-1, 1]) mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.02, 14), mat.dark, { parent: g, pos: [sx * 0.09, 0.035, sz * 0.075], rot: [Math.PI / 2, 0, 0] });
   if (heavy) mesh(new THREE.BoxGeometry(0.22, 0.08, 0.14), new THREE.MeshStandardMaterial({ color: '#8a919c', metalness: 0.4, roughness: 0.4 }), { parent: g, pos: [0, 0.145, 0] }); return g; };
 const cA = cart('#1f6fd0', false), cB = cart('#e5683a', true);
-const sp = spring(scene, { turns: 9, r: 0.03, tube: 0.006 }); sp.rotation.z = -Math.PI / 2;
+const sp = spring(scene, { turns: 9, r: 0.03, tube: 0.006 }); sp.rotation.z = Math.PI / 2;
 const thread = mesh(new THREE.CylinderGeometry(0.003, 0.003, 1, 6), mat.dark, { parent: scene, shadow: false });
 const fa = arrow(scene, '#e5483a', { r: 0.014 }), fb = arrow(scene, '#e5483a', { r: 0.014 }), la = label(scene, 'F', '', '#e5483a', { size: 0.24 }), lb = label(scene, '−F', '', '#e5483a', { size: 0.24 });
 const va = arrow(scene, '#17a05d', { r: 0.012 }), vb = arrow(scene, '#17a05d', { r: 0.012 }), lva = label(scene, '2υ', '', '#17a05d', { size: 0.24 }), lvb = label(scene, 'υ', '', '#17a05d', { size: 0.24 });

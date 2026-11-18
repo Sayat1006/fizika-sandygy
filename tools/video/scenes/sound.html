@@ -1,0 +1,52 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><style>html,body{margin:0;background:#eef2f7;overflow:hidden}canvas{display:block}</style>
+<script type="importmap">{"imports":{"three":"./lib/three.module.js"}}</script></head>
+<body>
+<script type="module">
+// «Дыбыс. Жаңғырық» (9-сынып): 1) соғылған камертонның тармақтары тербеледі, ауа бөлшектері тербеліп, қоюлану мен
+// сирегу (бойлық толқын) таралады; 2) жаңғырық — дыбыс толқыны кедергіден шағылып қайтады. Шағылған толқын «жалған»
+// көзден (қабырғаға қатысты симметриялы нүкте) таралғандай болады. s = υt / 2 (υ ≈ 340 м/с ауада).
+import { THREE, V, stage, orbit, readout, seg, win, lerp, mat, mesh, ready } from './kit.js';
+const st = stage({ table: [4.6, 2.4] }), { scene, camera } = st;
+// 1) камертон
+const FX = -1.6, FY = 0.24;
+mesh(new THREE.BoxGeometry(0.3, 0.16, 0.18), mat.wood, { parent: scene, pos: [FX, 0.08, 0] });
+mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.08, 10), mat.metal, { parent: scene, pos: [FX, FY - 0.04, 0] });
+const prongs = [-1, 1].map((s) => mesh(new THREE.BoxGeometry(0.018, 0.3, 0.02), mat.metal, { parent: scene, pos: [FX + s * 0.03, FY + 0.15, 0] }));
+mesh(new THREE.BoxGeometry(0.08, 0.02, 0.02), mat.metal, { parent: scene, pos: [FX, FY, 0] });
+const hammer = new THREE.Group(); scene.add(hammer); mesh(new THREE.CylinderGeometry(0.006, 0.006, 0.3, 8), mat.woodDark, { parent: hammer, pos: [0, -0.15, 0] }); mesh(new THREE.SphereGeometry(0.03, 14, 10), new THREE.MeshStandardMaterial({ color: '#e5322d' }), { parent: hammer });
+// ауа бөлшектері: x бойымен, бірнеше қатар
+const NX = 34, NY = 7, parts = []; const pm = new THREE.InstancedMesh(new THREE.SphereGeometry(0.012, 8, 6), new THREE.MeshBasicMaterial({ color: '#1f6fd0' }), NX * NY); scene.add(pm);
+for (let i = 0; i < NX; i++) for (let j = 0; j < NY; j++) parts.push([FX + 0.12 + i * 0.045, FY + 0.03 + j * 0.045 + (i % 2) * 0.01]);
+const LAM = 0.5, Tp = 0.5;
+const disp = (x, t) => { const u = t - 1.2 - (x - FX) * Tp / LAM; return u > 0 ? 0.022 * Math.sin(2 * Math.PI * u / Tp) * Math.exp(-Math.max(0, t - 6) * 0.6) : 0; };
+const dm = new THREE.Object3D();
+// 2) жаңғырық: үстел бетінде толқын шеңберлері, қабырға x = WX
+const SX = -0.6, WX = 1.4, IX = 2 * WX - SX, SZ = 0.0, Y = 0.02;
+const wall = mesh(new THREE.BoxGeometry(0.06, 0.5, 1.8), new THREE.MeshStandardMaterial({ color: '#b9c3cf', roughness: 0.8 }), { parent: scene, pos: [WX + 0.03, 0.25, 0] });
+const src = mesh(new THREE.SphereGeometry(0.04, 16, 12), new THREE.MeshStandardMaterial({ color: '#e5683a' }), { parent: scene, pos: [SX, 0.05, SZ] });
+const ring = (col) => { const l = new THREE.Line(new THREE.BufferGeometry().setFromPoints(Array.from({ length: 121 }, () => V())), new THREE.LineBasicMaterial({ color: col, transparent: true })); l.frustumCulled = false; scene.add(l); return l; };
+const NR = 4, dir = Array.from({ length: NR }, () => ring('#e5683a')), ref = Array.from({ length: NR }, () => ring('#1f6fd0'));
+const rv = readout(scene, { color: '#1b2230', w: 0.66 }), rs = readout(scene, { color: '#1f6fd0', w: 0.62 });
+const C = 0.42; // толқын фронтының жылдамдығы (баяулатылған)
+function setRing(l, cx, r, keep, op) { const p = l.geometry.attributes.position; let vis = false;
+  for (let i = 0; i <= 120; i++) { const a = i / 120 * Math.PI * 2, x = cx + r * Math.cos(a), z = SZ + r * Math.sin(a); const ok = keep(x) && Math.abs(z) < 1.0; p.setXYZ(i, ok ? x : NaN, Y, ok ? z : NaN); vis = vis || ok; }
+  p.needsUpdate = true; l.visible = vis && op > 0.01 && r > 0.01; l.material.opacity = op; l.computeLineDistances && 0; }
+
+window.renderFrame = (t) => {
+  const hk = seg(t, 0.6, 1.0) * (1 - seg(t, 1.0, 1.4)); hammer.position.set(FX + 0.06 + 0.25 * (1 - hk) + 0.0, FY + 0.28, 0.0); hammer.rotation.z = 0.6 * (1 - hk); hammer.visible = t < 2.4;
+  const vib = t > 1.0 ? 0.012 * Math.sin(t * 60) * Math.exp(-Math.max(0, t - 1.0) * 0.5) : 0;
+  prongs[0].position.x = FX - 0.03 - vib; prongs[1].position.x = FX + 0.03 + vib;
+  parts.forEach(([x, y], i) => { dm.position.set(x + disp(x, t) * 1.4, y, 0); dm.scale.setScalar(t < 8.4 ? 1 : 0.0001); dm.updateMatrix(); pm.setMatrixAt(i, dm.matrix); }); pm.instanceMatrix.needsUpdate = true;
+  // 2) импульстер 9,0 с-тан 0,6 с сайын
+  for (let k = 0; k < NR; k++) { const t0 = 9.0 + k * 0.55, r = Math.max(0, (t - t0) * C);
+    setRing(dir[k], SX, r, (x) => x <= WX, t > t0 ? 1 : 0); setRing(ref[k], IX, r, (x) => x <= WX && r > IX - WX, t > t0 ? 1 : 0); }
+  src.visible = t > 8.4;
+  rv.set('340 м/с', win(t, 9.4, 9.8, 17.3, 17.9)); rv.position.set(SX, 0.45, -0.6); rs.set('s = υt / 2', win(t, 14.6, 15.0, 17.3, 17.9)); rs.position.set((SX + WX) / 2, 0.45, 0.7);
+  const kc = seg(t, 7.6, 9.0), lx = lerp(-1.05, 0.35, kc);
+  orbit(camera, t, { ang: 0.0, swing: 0.1, rad: lerp(2.0, 2.4, kc), y: lerp(0.55, 2.3, kc), look: [lx, lerp(0.3, 0.0, kc), 0], cx: lx });
+  return st.render();
+};
+ready();
+</script>
+</body></html>
