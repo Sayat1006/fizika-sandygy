@@ -1,0 +1,60 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><style>html,body{margin:0;background:#eef2f7;overflow:hidden}canvas{display:block}</style>
+<script type="importmap">{"imports":{"three":"./lib/three.module.js"}}</script></head>
+<body>
+<script type="module">
+// «Еркін түсу. Горизонталь лақтырылған дененің қозғалысы» (9-сынып): 1) Ньютон түтігі — ауа бар түтікте тиын қауырсыннан
+// бұрын түседі, ауасы сорылған түтікте екеуі бірге түседі (еркін түсу үдеуі бірдей); 2) бір биіктіктен бір шар еркін
+// түседі, екіншісі горизонталь лақтырылады — екеуі жерге бірге жетеді: тігінен қозғалыс бірдей (y = gt²/2), көлденеңінен
+// υₓ тұрақты. Стробоскоптық кадрлар бірдей уақыт аралығында. Уақыт баяулатылған.
+import { THREE, V, stage, orbit, arrow, label, seg, win, lerp, mat, mesh, ready } from './kit.js';
+const st = stage({ table: [4.6, 2.2] }), { scene, camera } = st;
+// 1) Ньютон түтіктері
+const TH = 1.3, TB = 0.06, XS = [-1.45, -0.95];
+const coinM = new THREE.MeshStandardMaterial({ color: '#d9a441', metalness: 0.8, roughness: 0.3 }), feaM = new THREE.MeshStandardMaterial({ color: '#f4f1ea', roughness: 0.9, side: THREE.DoubleSide });
+const tubes = XS.map((x, i) => { const g = mesh(new THREE.CylinderGeometry(0.09, 0.09, TH, 32, 1, true), mat.glass(), { parent: scene, pos: [x, TB + TH / 2, 0], shadow: false }); g.renderOrder = 5;
+  for (const y of [TB, TB + TH]) mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.04, 32), mat.dark, { parent: scene, pos: [x, y, 0] });
+  const coin = mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.008, 24), coinM, { parent: scene });
+  const fea = new THREE.Group(); scene.add(fea); mesh(new THREE.PlaneGeometry(0.045, 0.14), feaM, { parent: fea, shadow: false }); mesh(new THREE.CylinderGeometry(0.002, 0.002, 0.16, 6), mat.dark, { parent: fea, shadow: false });
+  return { x, coin, fea, vac: i === 1 }; });
+const lAir = label(scene, '', '', '#1b2230', { size: 0.2 });
+const pump = mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.3, 8), mat.dark, { parent: scene, pos: [XS[1] + 0.15, TB + TH + 0.02, 0], rot: [0, 0, Math.PI / 2] });
+// 2) горизонталь лақтыру: тақтаға тор
+const GX = 0.0, H = 1.2, V0 = 0.62, G = 2 * H / 1.65 ** 2; // түсу уақыты 1,65 с (баяулатылған)
+const bc = document.createElement('canvas'); bc.width = 1024; bc.height = 768; const bg = bc.getContext('2d'); bg.fillStyle = '#ffffff'; bg.fillRect(0, 0, 1024, 768); bg.strokeStyle = '#c9d3e0'; bg.lineWidth = 2;
+for (let x = 0; x <= 1024; x += 64) { bg.beginPath(); bg.moveTo(x, 0); bg.lineTo(x, 768); bg.stroke(); } for (let y = 0; y <= 768; y += 64) { bg.beginPath(); bg.moveTo(0, y); bg.lineTo(1024, y); bg.stroke(); }
+const btx = new THREE.CanvasTexture(bc); btx.colorSpace = THREE.SRGBColorSpace;
+mesh(new THREE.PlaneGeometry(1.6, 1.2), new THREE.MeshBasicMaterial({ map: btx }), { parent: scene, pos: [GX + 0.8, 0.6, -0.12], shadow: false });
+mesh(new THREE.BoxGeometry(0.3, H, 0.24), mat.woodDark, { parent: scene, pos: [GX - 0.15, H / 2, 0] });
+const bA = mesh(new THREE.SphereGeometry(0.04, 24, 16), new THREE.MeshStandardMaterial({ color: '#1f6fd0', roughness: 0.4 }), { parent: scene });
+const bB = mesh(new THREE.SphereGeometry(0.04, 24, 16), new THREE.MeshStandardMaterial({ color: '#e5683a', roughness: 0.4 }), { parent: scene });
+const ghosts = []; for (let i = 0; i <= 11; i++) for (const c of ['#1f6fd0', '#e5683a']) { const m = mesh(new THREE.SphereGeometry(0.04, 16, 12), new THREE.MeshBasicMaterial({ color: c, transparent: true, opacity: 0.35 }), { parent: scene, shadow: false }); m.visible = false; ghosts.push({ m, i, thrown: c === '#e5683a' }); }
+const ax = arrow(scene, '#1f6fd0', { r: 0.01 }), ay = arrow(scene, '#e5483a', { r: 0.01 }), lx = label(scene, 'υ', 'x', '#1f6fd0', { size: 0.2 }), ly = label(scene, 'υ', 'y', '#e5483a', { size: 0.2 });
+const T2 = 10.4, DT = 1.65 / 11;
+
+window.renderFrame = (t) => {
+  // 1) 1,0 с — екі түтікте де бірге жіберіледі; 4,6 с — қайта
+  const run = (t0) => { const u = Math.max(0, t - t0); return u; };
+  for (const tb of tubes) { const u = t < 4.4 ? run(1.0) : run(5.0), g1 = 0.95;
+    const yc = Math.max(TB + 0.03, TB + TH - 0.06 - g1 * u * u / 2);
+    const yfAir = Math.max(TB + 0.08, TB + TH - 0.08 - (u < 0.6 ? g1 * u * u / 2 : g1 * 0.18 + 0.12 * (u - 0.6)));
+    const yfVac = Math.max(TB + 0.08, TB + TH - 0.08 - g1 * u * u / 2);
+    const air = !tb.vac || t < 4.4 ? !tb.vac : false; // 1-кезеңде оң түтікте де ауа жоқ (вакуум)
+    tb.coin.position.set(tb.x - 0.03, yc, 0); tb.coin.rotation.x = 0.3;
+    const yf = tb.vac ? yfVac : yfAir; tb.fea.position.set(tb.x + 0.03 + (tb.vac ? 0 : 0.02 * Math.sin(u * 5)), yf, 0); tb.fea.rotation.z = tb.vac ? 0 : 0.6 * Math.sin(u * 4);
+  }
+  // 2) 7,8 с-тан: бір мезгілде
+  const u = Math.min(1.65, Math.max(0, t - T2)), yy = (s) => H + 0.04 - G * s * s / 2;
+  bA.position.set(GX - 0.06, yy(u), 0.2); bB.position.set(GX + 0.04 + V0 * u, yy(u), 0.05);
+  bA.visible = bB.visible = t > 7.6;
+  ghosts.forEach((g) => { const s = g.i * DT; g.m.visible = t > T2 + s + 0.02 && t > 7.6; g.m.position.set(g.thrown ? GX + 0.04 + V0 * s : GX - 0.06, yy(s), g.thrown ? 0.05 : 0.2); });
+  const ao = t > T2 && t < T2 + 1.6 ? 1 : 0, vy = G * u;
+  ax.set(bB.position.clone().add(V(0, 0, 0.05)), V(1, 0, 0), V0 * 0.4, ao); ay.set(bB.position.clone().add(V(0, 0, 0.05)), V(0, -1, 0), 0.02 + vy * 0.4, ao);
+  lx.show(bB.position.clone().add(V(V0 * 0.4 + 0.06, 0.05, 0.05)), ao); ly.show(bB.position.clone().add(V(0.08, -vy * 0.4 - 0.04, 0.05)), ao);
+  const kc = seg(t, 7.0, 8.6), cx = lerp(-1.2, 0.55, kc);
+  orbit(camera, t, { ang: 0.0, swing: 0.1, rad: lerp(2.7, 3.0, kc), y: lerp(0.9, 0.8, kc), look: [cx, lerp(0.72, 0.66, kc), 0], cx });
+  return st.render();
+};
+ready();
+</script>
+</body></html>

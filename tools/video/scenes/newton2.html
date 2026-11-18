@@ -1,0 +1,43 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><style>html,body{margin:0;background:#eef2f7;overflow:hidden}canvas{display:block}</style>
+<script type="importmap">{"imports":{"three":"./lib/three.module.js"}}</script></head>
+<body>
+<script type="module">
+// «Ньютонның екінші заңы» (9-сынып): үш арбаны жүк блок арқылы тартады (үйкеліс ескерілмейді, жүк массасы аз деп алынған):
+// 1) F, m → a = F/m = 1 м/с²; 2) 2F, m → 2 м/с²; 3) F, 2m → 0,5 м/с². Бірдей уақытта жүрген жолдары s = at²/2 —
+// 1 : 2 : 0,5 қатынасында (тең уақыт аралықтарындағы белгілер). Уақыт баяулатылған.
+import { THREE, V, stage, orbit, arrow, label, readout, seg, win, lerp, mat, mesh, num, ready } from './kit.js';
+const st = stage({ table: [4.2, 2.2] }), { scene, camera } = st;
+const X0 = -1.3, XE = 1.95, T0 = 1.6, TT = 4.5, K = 2 * (XE - X0 - 0.25) / TT ** 2 / 2; // a = 2 м/с² жолақ TT ішінде соңына жетеді
+const L = [{ z: -0.5, F: 1, m: 1, col: '#1f6fd0' }, { z: 0, F: 2, m: 1, col: '#e5483a' }, { z: 0.5, F: 1, m: 2, col: '#17a05d' }];
+for (const l of L) {
+  mesh(new THREE.BoxGeometry(XE - X0 + 0.2, 0.02, 0.22), new THREE.MeshStandardMaterial({ color: '#e9edf2', roughness: 0.6 }), { parent: scene, pos: [(X0 + XE) / 2, 0.01, l.z] });
+  mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.03, 20), mat.metal, { parent: scene, pos: [XE + 0.12, 0.1, l.z], rot: [Math.PI / 2, 0, 0] });
+  mesh(new THREE.BoxGeometry(0.03, 0.1, 0.03), mat.dark, { parent: scene, pos: [XE + 0.12, 0.05, l.z] });
+  l.cart = new THREE.Group(); scene.add(l.cart);
+  mesh(new THREE.BoxGeometry(0.24, 0.07, 0.16), new THREE.MeshStandardMaterial({ color: l.col, roughness: 0.5 }), { parent: l.cart, pos: [0, 0.07, 0] });
+  for (const sx of [-1, 1]) for (const sz of [-1, 1]) mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.02, 14), mat.dark, { parent: l.cart, pos: [sx * 0.08, 0.035, sz * 0.07], rot: [Math.PI / 2, 0, 0] });
+  if (l.m === 2) mesh(new THREE.BoxGeometry(0.2, 0.08, 0.13), new THREE.MeshStandardMaterial({ color: '#8a919c', metalness: 0.4, roughness: 0.4 }), { parent: l.cart, pos: [0, 0.145, 0] });
+  l.str = mesh(new THREE.CylinderGeometry(0.003, 0.003, 1, 6), mat.dark, { parent: scene, shadow: false }); l.str2 = mesh(new THREE.CylinderGeometry(0.003, 0.003, 1, 6), mat.dark, { parent: scene, shadow: false });
+  l.w = new THREE.Group(); scene.add(l.w); for (let i = 0; i < l.F; i++) mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.05, 20), mat.metal, { parent: l.w, pos: [0, -0.03 - i * 0.055, 0] });
+  l.marks = Array.from({ length: 5 }, () => { const m = mesh(new THREE.BoxGeometry(0.01, 0.025, 0.2), new THREE.MeshBasicMaterial({ color: l.col }), { parent: scene, shadow: false }); m.visible = false; return m; });
+  l.ro = readout(scene, { color: l.col, w: 0.62 }); l.aF = arrow(scene, l.col, { r: 0.012 }); l.lF = label(scene, l.F === 2 ? '2F' : 'F', '', l.col, { size: 0.24 });
+}
+
+window.renderFrame = (t) => {
+  const u = Math.min(TT, Math.max(0, t - T0));
+  for (const l of L) {
+    const a = l.F / l.m, x = X0 + K * a * u * u / 2 * 1; l.cart.position.set(x, 0.0, l.z);
+    const hx = x + 0.13; l.str.scale.y = XE + 0.12 - hx; l.str.position.set((hx + XE + 0.12) / 2, 0.1, l.z); l.str.rotation.z = Math.PI / 2;
+    const wy = 0.04 - (x - X0); l.w.position.set(XE + 0.17, wy + 0.06, l.z); l.str2.scale.y = 0.1 - wy; l.str2.position.set(XE + 0.17, (0.1 + wy + 0.06) / 2 + 0.0, l.z);
+    l.marks.forEach((m, i) => { const ti = (i + 1) * TT / 5; m.visible = t > T0 + ti && ti <= TT + 1e-6 && X0 + K * a * ti * ti / 2 < XE; m.position.set(X0 + K * a * ti * ti / 2, 0.035, l.z); });
+    const o = win(t, 0.6, 1.0, 17.3, 17.9);
+    l.aF.set(V(x + 0.15, 0.2, l.z), V(1, 0, 0), 0.14 * l.F, o * (u < TT ? 1 : 0)); l.lF.show(V(x + 0.18 + 0.07 * l.F, 0.3, l.z), o * (u < TT ? 1 : 0));
+    l.ro.set('a = ' + num(a) + ' м/с²', win(t, T0 + TT + 0.4, T0 + TT + 0.9, 17.3, 17.9)); l.ro.position.set(0.0, 0.32, l.z);
+  }
+  orbit(camera, t, { ang: 0.0, swing: 0.08, rad: 3.1, y: 2.6, look: [0.3, 0.0, 0.05], cx: 0.3 });
+  return st.render();
+};
+ready();
+</script>
+</body></html>
