@@ -1,0 +1,73 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><style>html,body{margin:0;background:#eef2f7;overflow:hidden}canvas{display:block}</style>
+<script type="importmap">{"imports":{"three":"./lib/three.module.js"}}</script></head>
+<body>
+<script type="module">
+// «Гидростатикалық қысым» (7-сынып): мембраналы шұңғыл суға түсіріледі — тереңдеген сайын манометрдегі Δh артады;
+// бір тереңдікте шұңғылды бұрса (төмен, бүйір, жоғары) Δh өзгермейді.
+import { THREE, V, stage, orbit, tank, arrow, label, ruler, seg, win, lerp, mat, mesh, ready } from './kit.js';
+const st = stage({ table: [4.6, 2.2] }), { scene, camera } = st;
+
+const TX = -0.55, LEVEL = 1.1, tk = tank(scene, { w: 1.3, h: 1.35, d: 0.9, x: TX });
+const SURF = 0.025 + LEVEL;
+// шұңғыл: жергілікті +y — өсі (мойны), y = 0 — мембрана
+const fun = new THREE.Group(); scene.add(fun);
+const lp = [[0.165, 0], [0.16, 0.02], [0.05, 0.2], [0.028, 0.24], [0.028, 0.32]].map(([r, y]) => new THREE.Vector2(r, y));
+mesh(new THREE.LatheGeometry(lp, 40), new THREE.MeshStandardMaterial({ color: '#d7dde5', metalness: 0.2, roughness: 0.3, side: THREE.DoubleSide }), { parent: fun });
+const memb = mesh(new THREE.CylinderGeometry(0.163, 0.163, 0.006, 40), new THREE.MeshStandardMaterial({ color: '#d84a3a', roughness: 0.6 }), { parent: fun });
+// манометр (U-түтік) және тақтасы
+const MX1 = 0.95, MX2 = 1.35, MB = 0.45, MT = 1.62, M0 = 0.95, MR = (MX2 - MX1) / 2;
+mesh(new THREE.BoxGeometry(0.75, 1.45, 0.03), new THREE.MeshStandardMaterial({ color: '#f6f7f9', roughness: 0.8 }), { parent: scene, pos: [(MX1 + MX2) / 2, 0.98, -0.08] });
+mesh(new THREE.BoxGeometry(0.75, 0.05, 0.3), mat.woodDark, { parent: scene, pos: [(MX1 + MX2) / 2, 0.025, -0.0] });
+mesh(new THREE.BoxGeometry(0.05, 0.25, 0.05), mat.woodDark, { parent: scene, pos: [(MX1 + MX2) / 2, 0.15, -0.06] });
+const rl = ruler(scene, { len: 1.0, n: 20, every: 5, width: 0.1, text: (i) => String(Math.abs(10 - i)) }); rl.position.set((MX1 + MX2) / 2, M0, -0.055);
+const glassT = (h) => { const m = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, h, 20, 1, true), mat.glass()); m.renderOrder = 3; scene.add(m); return m; };
+for (const x of [MX1, MX2]) glassT(MT - MB).position.set(x, (MT + MB) / 2, 0);
+const bend = new THREE.Mesh(new THREE.TorusGeometry(MR, 0.035, 12, 32, Math.PI), mat.glass()); bend.rotation.z = Math.PI; bend.position.set((MX1 + MX2) / 2, MB, 0); bend.renderOrder = 3; scene.add(bend);
+const liqM = new THREE.MeshStandardMaterial({ color: '#d8374a', roughness: 0.3, transparent: true, opacity: 0.9 });
+const bendL = new THREE.Mesh(new THREE.TorusGeometry(MR, 0.028, 12, 32, Math.PI), liqM); bendL.rotation.z = Math.PI; bendL.position.copy(bend.position); scene.add(bendL);
+const colL = mesh(new THREE.CylinderGeometry(0.028, 0.028, 1, 16), liqM, { parent: scene, shadow: false }), colR = mesh(new THREE.CylinderGeometry(0.028, 0.028, 1, 16), liqM, { parent: scene, shadow: false });
+// резеңке түтік (әр кадрда қайта салынады)
+const hose = mesh(new THREE.BufferGeometry(), new THREE.MeshStandardMaterial({ color: '#3a3f4a', roughness: 0.7 }), { parent: scene });
+// белгілер
+const bm = new THREE.MeshBasicMaterial({ color: '#1f6fd0', transparent: true, depthTest: false });
+const brH = mesh(new THREE.BoxGeometry(0.012, 1, 0.012), bm, { parent: scene, shadow: false }); brH.renderOrder = 9;
+const bm2 = new THREE.MeshBasicMaterial({ color: '#0f8a52', transparent: true, depthTest: false });
+const brD = mesh(new THREE.BoxGeometry(0.012, 1, 0.012), bm2, { parent: scene, shadow: false }); brD.renderOrder = 9;
+const tk1 = mesh(new THREE.BoxGeometry(0.12, 0.012, 0.012), bm2, { parent: scene, shadow: false }), tk2 = mesh(new THREE.BoxGeometry(0.12, 0.012, 0.012), bm2, { parent: scene, shadow: false }); tk1.renderOrder = tk2.renderOrder = 9;
+const lh = label(scene, 'h', '', '#1f6fd0', { size: 0.36 }), ld = label(scene, 'Δh', '', '#0f8a52', { size: 0.36 });
+const aP = arrow(scene, '#1f6fd0', { r: 0.014 }), lP = label(scene, 'p', '', '#1f6fd0', { size: 0.3 });
+const K = 0.62; // Δh = K·h (сызба)
+
+window.renderFrame = (t) => {
+  // тереңдік: сырттан → 0.3 → 0.75; бұру: төмен → бүйір → жоғары; соңында 0.3-ке көтеріледі
+  const depth = lerp(-0.3, 0.3, seg(t, 1.2, 3.6)) + 0.45 * seg(t, 5.6, 7.8) - 0.45 * seg(t, 14.6, 16.4);
+  const phi = (Math.PI / 2) * seg(t, 9.0, 10.4) + (Math.PI / 2) * seg(t, 11.4, 12.8) - Math.PI * seg(t, 13.4, 14.4);
+  const c = V(TX - 0.05, SURF - depth, 0);
+  fun.position.copy(c); fun.rotation.set(0, 0, phi);
+  const h = Math.max(0, depth), dh = K * h;
+  memb.scale.set(1, 1, 1); memb.position.y = 0.004 + 0.02 * h;
+  // манометр бағандары
+  const yl = M0 - dh / 2, yr = M0 + dh / 2;
+  colL.scale.y = yl - MB; colL.position.set(MX1, (yl + MB) / 2, 0); colR.scale.y = yr - MB; colR.position.set(MX2, (yr + MB) / 2, 0);
+  // түтік: шұңғылдың мойнынан манометрдің сол иініне
+  const axis = V(0, 1, 0).applyEuler(fun.rotation), neck = c.clone().addScaledVector(axis, 0.32);
+  const pts = [neck, neck.clone().addScaledVector(axis, 0.12), V(c.x + 0.32, neck.y + 0.05 * axis.y, 0.0), V(c.x + 0.3, 1.52, 0), V(0.55, 1.82, 0), V(MX1, 1.8, 0), V(MX1, MT - 0.02, 0)];
+  hose.geometry.dispose(); hose.geometry = new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 80, 0.018, 8, false);
+  tk.setLevel(LEVEL, t, 0.004 * win(t, 1.8, 2.4, 3.4, 5.0));
+  // белгілер: h (бет → мембрана), Δh (манометр), p (мембранаға)
+  const on = win(t, 3.8, 4.4, 17.2, 17.8) * (h > 0.02 ? 1 : 0);
+  bm.opacity = on; brH.visible = on > 0.01; brH.scale.y = Math.max(0.001, h); brH.position.set(TX + 0.45, SURF - h / 2, 0.46);
+  lh.show(V(TX + 0.58, SURF - h / 2, 0.46), on);
+  bm2.opacity = on; [brD, tk1, tk2].forEach((m) => (m.visible = on > 0.01));
+  brD.scale.y = Math.max(0.001, dh); brD.position.set(MX2 + 0.14, M0, 0.05); tk1.position.set(MX1 + 0.06 + 0.12, yl, 0.05); tk1.scale.x = 4.2; tk1.position.x = (MX1 + MX2) / 2 + 0.07; tk2.position.set(MX2 + 0.08, yr, 0.05);
+  ld.show(V(MX2 + 0.32, M0, 0.05), on);
+  const mN = V(0, -1, 0).applyEuler(fun.rotation); // мембрананың сыртқы нормалі
+  aP.set(c.clone().addScaledVector(mN, 0.05 + 0.4 * h).add(V(0, 0, 0.05)), mN.clone().negate(), 0.4 * h + 0.02, on);
+  lP.show(c.clone().addScaledVector(mN, 0.12 + 0.4 * h).add(V(0.1, 0, 0.05)), on);
+  orbit(camera, t, { ang: -0.1, swing: 0.28, rad: 4.0, y: 1.6, look: [0.25, 0.88, 0] });
+  return st.render();
+};
+ready();
+</script>
+</body></html>

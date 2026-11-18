@@ -33,6 +33,7 @@ export default function Board() {
   const [pages, setPages] = useState<{ pres: string[]; ws: string[] }>({ pres: [], ws: [] });
   const [src, setSrc] = useState<Src>('pres');
   const [videos, setVideos] = useState<Video[]>([]);
+  const [vidAt, setVidAt] = useState(0);
   const [idx, setIdx] = useState({ pres: 0, ws: 0 });
   const [tool, setToolS] = useState<Tool>('hand');
   const [color, setColor] = useState('#111111');
@@ -82,7 +83,7 @@ export default function Board() {
       [...p.pres, ...p.ws].forEach((u) => { const i = new Image(); i.decoding = 'async'; i.src = u; });
       // анимациялы презентация болса, «Слайд» соны көрсетеді
       if (dk?.slides?.length) { setDeck(dk); p.pres = dk.slides.map((_, k) => `deck:${k}`); }
-      setVideos(vids);
+      setVideos(vids); setVidAt(0);
       setLesson(lv); setPages(p); setStages(plan.stages || []); setSrc(p.pres.length ? 'pres' : 'board');
       setCur(0); setLeft((plan.stages?.[0]?.min || 0) * 60);
       document.title = `${l.topic} · Тақта`;
@@ -298,7 +299,8 @@ export default function Board() {
         <div className={`bd-view${src === 'board' ? ' bd-view--white' : ''}`}>
           {onDeck && <Deck data={deck!} index={i} step={step} theme={theme} stageRef={deckRef} />}
           {paged && !onDeck && list[i] && <img ref={imgRef} src={list[i]} alt={`${src === 'pres' ? 'Слайд' : 'Бет'} ${i + 1}`} draggable={false} onLoad={redraw} />}
-          {src === 'video' && videos[0] && <video key={videos[0].src} className="bd-video" src={videos[0].src} poster={videos[0].poster || undefined} autoPlay loop muted playsInline controls disablePictureInPicture aria-label={videos[0].title} />}
+          {src === 'video' && videos[vidAt] && <video key={videos[vidAt].src} className="bd-video" src={videos[vidAt].src} poster={videos[vidAt].poster || undefined} autoPlay loop muted playsInline controls disablePictureInPicture aria-label={videos[vidAt].title} />}
+          {src === 'video' && videos.length > 1 && <div className="bd-vids" role="tablist" aria-label="Видеолар">{videos.map((v, k) => <button key={v.src} type="button" role="tab" aria-selected={k === vidAt} className={k === vidAt ? 'on' : ''} onClick={() => setVidAt(k)}>{v.title}</button>)}</div>}
           {src === 'lab' && lab?.exp && <iframe src={`/lab/experiments/${lab.exp}?embed=1`} title="3D тәжірибе" allow="fullscreen" />}
         </div>
         <canvas ref={cvRef} className={`bd-ink${tool === 'hand' ? ' bd-ink--off' : ''}`} onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp} />
