@@ -10,6 +10,12 @@ import { deleteReview, myReview, sendReview, type Review } from '../../lib/revie
 import { markSeen } from '../../lib/seen';
 
 /* ───────── Қарау: ҚМЖ, слайд, парақ беттері ───────── */
+
+const svg = { width: 20, height: 20, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const, 'aria-hidden': true };
+const IcCopy = () => <svg {...svg}><rect x="9" y="9" width="11" height="11" rx="2.5" /><path d="M5 15V6a2 2 0 0 1 2-2h9" /></svg>;
+const IcOk = () => <svg {...svg} strokeWidth={2.6}><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>;
+const IcTg = () => <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M21.4 4.3 2.9 11.4c-1.3.5-1.2 1.2-.2 1.5l4.7 1.5 1.8 5.6c.2.6.4.8.8.8.4 0 .6-.2.9-.5l2.3-2.2 4.7 3.5c.9.5 1.5.2 1.7-.8l3.1-14.6c.3-1.3-.5-1.9-1.3-1.5zM9.1 14.2l9-5.7c.4-.3.8-.1.5.2l-7.4 6.7-.3 3.1-1.8-4.3z"/></svg>;
+const IcWa = () => <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2.2A9.8 9.8 0 0 0 3.6 17l-1.3 4.8 4.9-1.3A9.8 9.8 0 1 0 12 2.2zm0 17.9c-1.5 0-3-.4-4.2-1.2l-.3-.2-2.9.8.8-2.8-.2-.3A8.1 8.1 0 1 1 12 20.1zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.6 6.6 0 0 1-3.3-2.9c-.2-.4.2-.4.7-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 2.9 2.9 0 0 0-.9 2.2 5.1 5.1 0 0 0 1.1 2.7 11.6 11.6 0 0 0 4.5 4c1.7.7 2.3.8 3.2.6.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.1-1.2l-.4-.2z"/></svg>;
 const BANKS = [['kaspi', 'Kaspi'], ['halyk', 'Halyk'], ['forte', 'Forte']] as const;
 
 export function ViewerSheet({ lesson, onClose, onLock }: { lesson: Lesson | null; onClose: () => void; onLock: (g: number) => void }) {
@@ -100,6 +106,8 @@ export function SubscribeSheet({ open, onClose, preset }: { open: boolean; onClo
     await reload();
     setPay({ id: String(id), amount: row?.amount ?? (applied ? applied.amount : total), grades, plan });
   };
+  const [copied, setCopied] = useState(false);
+  const copyNum = async () => { try { await navigator.clipboard.writeText(CONFIG.kaspi.replace(/\s/g, '')); setCopied(true); setTimeout(() => setCopied(false), 2200); } catch { toast(CONFIG.kaspi); } };
   const status = { pending: ['warn', 'Төлем күтілуде'], approved: ['ok', 'Расталды'], rejected: ['err', 'Қабылданбады'] } as const;
   const waText = pay && `Сәлеметсіз бе! Сабақтас, өтінім №${pay.id.slice(0, 8).toUpperCase()}: ${pay.grades.join(', ')}-сынып, ${pay.plan === 'month' ? '1 ай' : '1 жыл'}, ${money(pay.amount)}. Аты-жөні: ${profile?.full_name}. Email: ${session?.user.email}. Төлем чегін қоса жіберемін.`;
 
@@ -117,20 +125,45 @@ export function SubscribeSheet({ open, onClose, preset }: { open: boolean; onClo
 
         {pay ? (
           <div className="pay rise">
-            <h3>Төлем</h3>
-            <div className="banks" aria-label="Аударуға болатын банктер">
-              {BANKS.map(([id, name]) => (
-                <div key={id} className="bank"><span className="bank__logo"><img src={`/assets/banks/${id}.png`} alt="" width={40} height={40} /></span><span className="bank__n">{name}</span></div>
-              ))}
+            <div className="payhero">
+              <span className="payhero__k">Төлеуге</span>
+              <b className="payhero__sum tabular">{money(pay.amount)}</b>
+              <span className="payhero__meta">{pay.grades.join(', ')}-сынып · {pay.plan === 'month' ? '1 ай' : '1 жыл'} · №{pay.id.slice(0, 8).toUpperCase()}</span>
             </div>
-            <p className="t-muted">1. Сомасын Kaspi, Halyk немесе Forte қосымшасынан төмендегі нөмірге аударыңыз. 2. Төлем чегін Telegram ботқа жіберіңіз. Төлем расталған сәтте жазылым өзі ашылады.</p>
-            <div className="group">
-              <div className="group__row group__row--static"><span className="group__t">Сомасы</span><b className="tabular">{money(pay.amount)}</b></div>
-              <div className="group__row group__row--static payto"><span className="payto__who"><b className="payto__num tabular">{CONFIG.kaspi}</b><span className="payto__name">{CONFIG.payName}</span></span>
-                <button className="link" type="button" onClick={async () => { try { await navigator.clipboard.writeText(CONFIG.kaspi.replace(/\s/g, '')); toast('Көшірілді'); } catch { toast(CONFIG.kaspi); } }}>Көшіру</button></div>
-            </div>
-            {CONFIG.telegramBot && <a className="btn btn--lg btn--primary btn--block" href={tgPayLink(pay.id)} target="_blank" rel="noopener">Чекті Telegram-ға жіберу</a>}
-            <a className="link" style={{ justifySelf: 'center' }} href={`https://wa.me/${CONFIG.whatsapp}?text=${encodeURIComponent(waText || '')}`} target="_blank" rel="noopener">Telegram жоқ па? WhatsApp-қа жіберу</a>
+            <ol className="steps">
+              <li className="step">
+                <span className="step__n">1</span>
+                <div className="step__b">
+                  <b className="step__t">Осы нөмірге аударыңыз</b>
+                  <div className="payto">
+                    <span className="payto__who"><b className="payto__num tabular">{CONFIG.kaspi}</b><span className="payto__name">{CONFIG.payName}</span></span>
+                    <button className={`payto__copy${copied ? ' is-on' : ''}`} type="button" onClick={copyNum} aria-label="Нөмірді көшіру">{copied ? <><IcOk /><span>Көшірілді</span></> : <><IcCopy /><span>Көшіру</span></>}</button>
+                  </div>
+                  <div className="banks" aria-label="Аударуға болатын банктер">
+                    {BANKS.map(([id, name]) => (
+                      <div key={id} className="bank"><span className="bank__logo"><img src={`/assets/banks/${id}.png`} alt="" width={34} height={34} /></span><span className="bank__n">{name}</span></div>
+                    ))}
+                  </div>
+                </div>
+              </li>
+              <li className="step">
+                <span className="step__n">2</span>
+                <div className="step__b">
+                  <b className="step__t">Төлем чегін жіберіңіз</b>
+                  <div className="paysend">
+                    {CONFIG.telegramBot && <a className="btn btn--lg btn--primary paysend__tg" href={tgPayLink(pay.id)} target="_blank" rel="noopener"><IcTg /> Telegram</a>}
+                    <a className="btn btn--lg paysend__wa" href={`https://wa.me/${CONFIG.whatsapp}?text=${encodeURIComponent(waText || '')}`} target="_blank" rel="noopener"><IcWa /> WhatsApp</a>
+                  </div>
+                </div>
+              </li>
+              <li className="step">
+                <span className="step__n step__n--ok"><IcOk /></span>
+                <div className="step__b">
+                  <b className="step__t">Жазылым ашылады</b>
+                  <span className="step__d">Төлем расталған сәтте сабақтар мен тақта өзі ашылады.</span>
+                </div>
+              </li>
+            </ol>
             <button className="link" style={{ justifySelf: 'center' }} type="button" onClick={() => setPay(null)}>Жаңа өтінім</button>
           </div>
         ) : (
