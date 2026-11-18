@@ -129,15 +129,42 @@
 .sum { display: flex; justify-content: space-between; align-items: baseline; padding-top: var(--s-3); border-top: 1px solid var(--line); }
 .sum b { font: 700 26px var(--font-display); }
 .pay { display: grid; gap: var(--s-4); }
+/* төлем */
+.payhero { display: grid; gap: 4px; padding: 22px 22px 20px; border-radius: var(--r-xl); color: #fff; background: radial-gradient(120% 140% at 100% 0%, #7c5cff 0%, transparent 55%), linear-gradient(135deg, #0a6cff 0%, #2b4fe0 60%, #5a3fe0 100%); box-shadow: 0 18px 40px -22px rgba(26, 72, 220, 0.75); position: relative; overflow: hidden; }
+.payhero::after { content: ""; position: absolute; right: -40px; bottom: -60px; width: 180px; height: 180px; border-radius: 50%; border: 22px solid rgba(255, 255, 255, 0.08); }
+.payhero__k { font-size: 14px; font-weight: 600; opacity: 0.85; letter-spacing: 0.02em; }
+.payhero__sum { font: 800 44px/1.05 var(--font-display); letter-spacing: -0.03em; }
+.payhero__meta { font-size: 14px; opacity: 0.85; }
+.steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; }
+.step { display: grid; grid-template-columns: 34px 1fr; gap: 14px; position: relative; padding-bottom: 20px; }
+.step:last-child { padding-bottom: 0; }
+.step:not(:last-child)::before { content: ""; position: absolute; left: 16px; top: 36px; bottom: 2px; width: 2px; background: var(--line); }
+.step__n { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; background: var(--accent); color: var(--on-accent); font: 700 16px var(--font-display); }
+.step__n--ok { background: var(--ok); color: #fff; }
+.step__n--ok svg { width: 18px; height: 18px; }
+.step__b { display: grid; gap: 10px; min-width: 0; padding-top: 5px; }
+.step__t { font-size: 17px; font-weight: 700; }
+.step__d { color: var(--fg-2); font-size: 15px; margin-top: -4px; }
+.payto { display: flex; align-items: center; gap: 12px; padding: 14px 14px 14px 18px; border-radius: var(--r-l); background: var(--bg-2); box-shadow: inset 0 0 0 1px var(--line); }
+.payto__who { flex: 1; min-width: 0; display: grid; gap: 2px; }
+.payto__num { font: 800 26px/1.1 var(--font-display); letter-spacing: -0.01em; white-space: nowrap; }
+.payto__name { font-size: 16px; font-weight: 600; color: var(--fg-2); }
+.payto__copy { display: inline-flex; align-items: center; gap: 6px; height: 40px; padding: 0 14px; border: 0; border-radius: var(--r-full); background: color-mix(in srgb, var(--accent) 14%, transparent); color: var(--accent); font: 600 15px var(--font, inherit); cursor: pointer; flex: none; transition: background var(--d-2), color var(--d-2); }
+.payto__copy:hover { background: color-mix(in srgb, var(--accent) 22%, transparent); }
+.payto__copy.is-on { background: var(--ok); color: #fff; }
+.payto__copy svg { width: 18px; height: 18px; }
 .banks { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-.bank { display: grid; justify-items: center; gap: 8px; padding: 14px 8px 12px; border-radius: var(--r-l); background: var(--bg-2); }
-.bank__logo { width: 56px; height: 56px; border-radius: 16px; display: grid; place-items: center; background: #fff; box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.06), 0 6px 16px -8px rgba(0, 0, 0, 0.35); }
-.bank__logo img { width: 40px; height: 40px; object-fit: contain; display: block; }
-.bank__n { font-size: 14px; font-weight: 600; }
-.payto { align-items: center; }
-.payto__who { flex: 1; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; }
-.payto__num { font: 700 24px var(--font-display); letter-spacing: -0.01em; }
-.payto__name { font-size: 18px; font-weight: 600; color: var(--fg-2, var(--fg)); }
+.bank { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: var(--r-m); background: var(--bg-2); min-width: 0; }
+.bank__logo { width: 44px; height: 44px; flex: none; border-radius: 12px; display: grid; place-items: center; background: #fff; box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.06), 0 4px 12px -6px rgba(0, 0, 0, 0.35); }
+.bank__logo img { width: 32px; height: 32px; object-fit: contain; display: block; }
+.bank__n { font-size: 15px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; }
+.paysend { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.paysend .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+.paysend__tg { background: #229ed9; color: #fff; }
+.paysend__tg:hover { background: #1b8dc4; }
+.paysend__wa { background: #25d366; color: #fff; }
+.paysend__wa:hover { background: #1fbd5a; }
+@media (max-width: 480px) { .payto { padding: 12px 12px 12px 16px; } .payto__num { font-size: 22px; } .payto__copy { width: 44px; height: 44px; padding: 0; justify-content: center; } .payto__copy span { display: none; } .bank { flex-direction: column; gap: 6px; padding: 10px 6px; } .bank__n { font-size: 13px; } .payhero__sum { font-size: 38px; } .step { grid-template-columns: 30px 1fr; gap: 12px; } .step__n { width: 30px; height: 30px; } .step:not(:last-child)::before { left: 14px; top: 32px; } }
 
 /* сыныптар */
 .classes { display: grid; gap: 8px; }
