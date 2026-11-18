@@ -10,6 +10,8 @@ import { deleteReview, myReview, sendReview, type Review } from '../../lib/revie
 import { markSeen } from '../../lib/seen';
 
 /* ───────── Қарау: ҚМЖ, слайд, парақ беттері ───────── */
+const BANKS = [['kaspi', 'Kaspi'], ['halyk', 'Halyk'], ['forte', 'Forte']] as const;
+
 export function ViewerSheet({ lesson, onClose, onLock }: { lesson: Lesson | null; onClose: () => void; onLock: (g: number) => void }) {
   const { subOf } = useAccount();
   const kinds = lesson ? (['kmzh', 'pres', 'ws', 'sa'] as Kind[]).filter((k) => lesson[k]) : [];
@@ -99,7 +101,7 @@ export function SubscribeSheet({ open, onClose, preset }: { open: boolean; onClo
     setPay({ id: String(id), amount: row?.amount ?? (applied ? applied.amount : total), grades, plan });
   };
   const status = { pending: ['warn', 'Төлем күтілуде'], approved: ['ok', 'Расталды'], rejected: ['err', 'Қабылданбады'] } as const;
-  const waText = pay && `Сәлеметсіз бе! Сабақтас, өтінім №${pay.id.slice(0, 8).toUpperCase()}: ${pay.grades.join(', ')}-сынып, ${pay.plan === 'month' ? '1 ай' : '1 жыл'}, ${money(pay.amount)}. Аты-жөні: ${profile?.full_name}. Email: ${session?.user.email}. Kaspi чегін қоса жіберемін.`;
+  const waText = pay && `Сәлеметсіз бе! Сабақтас, өтінім №${pay.id.slice(0, 8).toUpperCase()}: ${pay.grades.join(', ')}-сынып, ${pay.plan === 'month' ? '1 ай' : '1 жыл'}, ${money(pay.amount)}. Аты-жөні: ${profile?.full_name}. Email: ${session?.user.email}. Төлем чегін қоса жіберемін.`;
 
   return (
     <Sheet open={open} onClose={onClose} title="Жазылым">
@@ -116,7 +118,12 @@ export function SubscribeSheet({ open, onClose, preset }: { open: boolean; onClo
         {pay ? (
           <div className="pay rise">
             <h3>Төлем</h3>
-            <p className="t-muted">1. Сомасын Kaspi Gold-қа аударыңыз. 2. Kaspi чегін Telegram ботқа жіберіңіз. Төлем расталған сәтте жазылым өзі ашылады.</p>
+            <div className="banks" aria-label="Аударуға болатын банктер">
+              {BANKS.map(([id, name]) => (
+                <div key={id} className="bank"><span className="bank__logo"><img src={`/assets/banks/${id}.png`} alt="" width={40} height={40} /></span><span className="bank__n">{name}</span></div>
+              ))}
+            </div>
+            <p className="t-muted">1. Сомасын Kaspi, Halyk немесе Forte қосымшасынан төмендегі нөмірге аударыңыз. 2. Төлем чегін Telegram ботқа жіберіңіз. Төлем расталған сәтте жазылым өзі ашылады.</p>
             <div className="group">
               <div className="group__row group__row--static"><span className="group__t">Сомасы</span><b className="tabular">{money(pay.amount)}</b></div>
               <div className="group__row group__row--static"><span className="group__t">Kaspi Gold</span><b className="tabular">{CONFIG.kaspi}</b>
