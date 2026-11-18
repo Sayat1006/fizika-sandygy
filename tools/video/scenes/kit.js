@@ -380,4 +380,61 @@ export function hotplate(parent, { x = 0, z = 0, w = 0.5 } = {}) {
   return g;
 }
 
+/** Өлшеуіш аспап (амперметр/вольтметр): meter(parent,{max,sym}).set(v) — тілше */
+export function meter(parent, { max = 1, sym = 'A', step, x = 0, y = 0, z = 0, size = 0.36, color = '#1f6fd0' } = {}) {
+  const g = new THREE.Group(); g.position.set(x, y, z); parent.add(g);
+  mesh(new THREE.BoxGeometry(size, size * 0.8, 0.1), new THREE.MeshStandardMaterial({ color: '#f4f6f9', roughness: 0.4 }), { parent: g, pos: [0, size * 0.4, 0] });
+  const c = document.createElement('canvas'); c.width = 256; c.height = 200; const x2 = c.getContext('2d');
+  x2.fillStyle = '#fffdf6'; x2.fillRect(0, 0, 256, 200); x2.strokeStyle = x2.fillStyle = '#1b2230'; x2.lineWidth = 3;
+  const cx = 128, cy = 170, R = 120, A0 = Math.PI * 1.17, A1 = Math.PI * 1.83, st2 = step || max / 5;
+  x2.beginPath(); x2.arc(cx, cy, R - 10, A0, A1); x2.stroke(); x2.font = 'bold 20px Arial'; x2.textAlign = 'center';
+  for (let v = 0, i = 0; v <= max + 1e-9; v += st2 / 2, i++) { const a = A0 + (A1 - A0) * v / max, big = i % 2 === 0; x2.lineWidth = big ? 3 : 1.5;
+    x2.beginPath(); x2.moveTo(cx + Math.cos(a) * (R - 10), cy + Math.sin(a) * (R - 10)); x2.lineTo(cx + Math.cos(a) * (R - (big ? 26 : 20)), cy + Math.sin(a) * (R - (big ? 26 : 20))); x2.stroke();
+    if (big) x2.fillText(String(Math.round(v * 100) / 100).replace('.', ','), cx + Math.cos(a) * (R - 44), cy + Math.sin(a) * (R - 44) + 7); }
+  x2.font = 'bold 44px Georgia'; x2.fillStyle = color; x2.fillText(sym, cx, cy - 10);
+  const tx = new THREE.CanvasTexture(c); tx.colorSpace = THREE.SRGBColorSpace;
+  const face = new THREE.Mesh(new THREE.PlaneGeometry(size * 0.9, size * 0.7), new THREE.MeshBasicMaterial({ map: tx })); face.position.set(0, size * 0.42, 0.051); g.add(face);
+  const nd = new THREE.Group(); nd.position.set(0, size * 0.42 - size * 0.35 + size * 0.7 * (30 / 200), 0.055); g.add(nd);
+  mesh(new THREE.BoxGeometry(0.006, size * 0.5, 0.004), new THREE.MeshBasicMaterial({ color: '#e5322d' }), { parent: nd, pos: [0, size * 0.25, 0], shadow: false });
+  for (const sx of [-1, 1]) mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.04, 12), new THREE.MeshStandardMaterial({ color: sx < 0 ? '#1b2230' : '#e5322d' }), { parent: g, pos: [sx * size * 0.32, size * 0.8 + 0.02, 0] });
+  g.set = (v) => { const k = Math.max(0, Math.min(1.02, v / max)); nd.rotation.z = (0.33 - 0.66 * k) * Math.PI; };
+  g.term = (sx) => V(g.position.x + sx * size * 0.32, g.position.y + size * 0.8 + 0.04, g.position.z);
+  g.set(0); return g;
+}
+/** Сым: wire(scene, [V...], {r, color}) → .flow(n, color) электрондар; .set(offset, op) */
+export function wire(parent, pts, { r = 0.008, color = '#c46a2c' } = {}) {
+  const curve = new THREE.CurvePath(); for (let i = 0; i < pts.length - 1; i++) curve.add(new THREE.LineCurve3(pts[i], pts[i + 1]));
+  const g = new THREE.Group(); parent.add(g);
+  const m = new THREE.MeshStandardMaterial({ color, roughness: 0.4, metalness: 0.4 });
+  for (let i = 0; i < pts.length - 1; i++) { const a = pts[i], b = pts[i + 1], d = b.clone().sub(a), L = d.length(); const c = new THREE.Mesh(new THREE.CylinderGeometry(r, r, L, 8), m); c.position.copy(a).addScaledVector(d, 0.5); c.quaternion.setFromUnitVectors(UP, d.normalize()); g.add(c);
+    const j = new THREE.Mesh(new THREE.SphereGeometry(r, 8, 6), m); j.position.copy(b); g.add(j); }
+  g.curve = curve; g.len = curve.getLength();
+  g.flow = (n, col = '#ffd23f', every = 0.06) => { const k = n || Math.max(4, Math.round(g.len / every)); const im = new THREE.InstancedMesh(new THREE.SphereGeometry(r * 1.5, 8, 6), new THREE.MeshBasicMaterial({ color: col, transparent: true }), k); im.renderOrder = 7; parent.add(im);
+    const o = new THREE.Object3D(); im.set = (off, op = 1) => { im.material.opacity = op; im.visible = op > 0.01; for (let i = 0; i < k; i++) { const u = (((i / k + off / g.len) % 1) + 1) % 1; o.position.copy(curve.getPointAt(u)); o.updateMatrix(); im.setMatrixAt(i, o.matrix); } im.instanceMatrix.needsUpdate = true; }; return im; };
+  return g;
+}
+/** Шам: lamp(scene,{x,y,z}).set(k) — 0..1 жарықтығы */
+export function lamp(parent, { x = 0, y = 0, z = 0, s = 1 } = {}) {
+  const g = new THREE.Group(); g.position.set(x, y, z); g.scale.setScalar(s); parent.add(g);
+  mesh(new THREE.CylinderGeometry(0.07, 0.08, 0.06, 20), mat.dark, { parent: g, pos: [0, 0.03, 0] });
+  mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.06, 16), mat.metal, { parent: g, pos: [0, 0.09, 0] });
+  const gm = new THREE.MeshPhysicalMaterial({ color: '#ffffff', transparent: true, opacity: 0.35, roughness: 0.05, emissive: '#ffd25a', emissiveIntensity: 0, depthWrite: false });
+  const bulb = mesh(new THREE.SphereGeometry(0.06, 24, 18), gm, { parent: g, pos: [0, 0.17, 0], shadow: false }); bulb.renderOrder = 4;
+  const fm = new THREE.MeshBasicMaterial({ color: '#5a4a3a' }); const fil = mesh(new THREE.TorusGeometry(0.015, 0.003, 6, 16, Math.PI), fm, { parent: g, pos: [0, 0.16, 0], shadow: false });
+  const glowC = document.createElement('canvas'); glowC.width = glowC.height = 128; { const q = glowC.getContext('2d'), gr = q.createRadialGradient(64, 64, 4, 64, 64, 64); gr.addColorStop(0, 'rgba(255,230,140,1)'); gr.addColorStop(0.35, 'rgba(255,200,80,0.45)'); gr.addColorStop(1, 'rgba(255,180,60,0)'); q.fillStyle = gr; q.fillRect(0, 0, 128, 128); }
+  const glow = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(glowC), transparent: true, depthWrite: false, depthTest: false, blending: THREE.AdditiveBlending })); glow.position.y = 0.17; glow.renderOrder = 8; g.add(glow);
+  g.set = (k) => { k = Math.max(0, Math.min(1, k)); gm.emissiveIntensity = 1.6 * k; gm.opacity = 0.35 + 0.4 * k; fm.color.set(k > 0.05 ? '#fff2b0' : '#5a4a3a'); glow.material.opacity = k; glow.scale.setScalar(0.12 + 0.4 * k); glow.visible = k > 0.02; };
+  g.term = (sx) => V(g.position.x + sx * 0.06 * s, g.position.y + 0.03 * s, g.position.z);
+  g.set(0); return g;
+}
+/** Ток көзі (батарея): battery(scene,{x,z}) — қысқыштары: .term(-1|1) */
+export function battery(parent, { x = 0, y = 0, z = 0, w = 0.34 } = {}) {
+  const g = new THREE.Group(); g.position.set(x, y, z); parent.add(g);
+  mesh(new THREE.BoxGeometry(w, 0.16, 0.16), new THREE.MeshStandardMaterial({ color: '#2d3340', roughness: 0.5 }), { parent: g, pos: [0, 0.08, 0] });
+  mesh(new THREE.BoxGeometry(w * 0.4, 0.162, 0.162), new THREE.MeshStandardMaterial({ color: '#e5a823', roughness: 0.5 }), { parent: g, pos: [w * 0.3, 0.08, 0] });
+  for (const sx of [-1, 1]) mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.05, 12), new THREE.MeshStandardMaterial({ color: sx < 0 ? '#1b2230' : '#e5322d', metalness: 0.4 }), { parent: g, pos: [sx * w * 0.36, 0.185, 0] });
+  g.term = (sx) => V(g.position.x + sx * w * 0.36, g.position.y + 0.21, g.position.z);
+  return g;
+}
+
 export const ready = () => { window.ready = true; };

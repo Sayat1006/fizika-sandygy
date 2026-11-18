@@ -1,0 +1,57 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><style>html,body{margin:0;background:#eef2f7;overflow:hidden}canvas{display:block}</style>
+<script type="importmap">{"imports":{"three":"./lib/three.module.js"}}</script></head>
+<body>
+<script type="module">
+// «Тізбек бөлігі үшін Ом заңы» (8-сынып): реттелетін ток көзі, амперметр (тізбектей), резистор, вольтметр (параллель).
+// Кернеуді 1 В-тан 5 В-қа дейін арттырады: R = 5 Ом үшін I = U/R = 0,2…1 А; сосын R = 10 Ом: I = 0,1…0,5 А.
+// I(U) графигі — екі түзу (R үлкен болса, көлбеуі аз).
+import { THREE, V, stage, orbit, readout, meter, wire, battery, hudPlot, seg, win, lerp, mat, mesh, num, ready } from './kit.js';
+const st = stage({ table: [4.0, 2.4] }), { scene, camera, hud } = st;
+const src = battery(scene, { x: -0.9, z: 0.35, w: 0.42 });
+const knob = mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.04, 24), new THREE.MeshStandardMaterial({ color: '#e5322d' }), { parent: scene, pos: [-0.9, 0.18, 0.43], rot: [Math.PI / 2, 0, 0] });
+const am = meter(scene, { max: 1, sym: 'A', step: 0.2, x: -0.2, z: -0.25, size: 0.5, color: '#1f6fd0' });
+const vm = meter(scene, { max: 5, sym: 'V', step: 1, x: 0.6, z: -0.25, size: 0.5, color: '#e5483a' });
+// резистор
+const RX = 0.6, RZ = 0.4, RY = 0.08;
+mesh(new THREE.BoxGeometry(0.5, 0.04, 0.14), mat.woodDark, { parent: scene, pos: [RX, 0.02, RZ] });
+const resM = new THREE.MeshStandardMaterial({ color: '#d9c39c', roughness: 0.6 });
+const res = mesh(new THREE.CylinderGeometry(0.045, 0.045, 0.28, 24), resM, { parent: scene, pos: [RX, RY, RZ], rot: [0, 0, Math.PI / 2] });
+const bandM = [0, 1, 2].map(() => new THREE.MeshStandardMaterial({ color: '#000' }));
+bandM.forEach((m, i) => mesh(new THREE.CylinderGeometry(0.047, 0.047, 0.02, 24), m, { parent: scene, pos: [RX - 0.08 + i * 0.06, RY, RZ], rot: [0, 0, Math.PI / 2], shadow: false }));
+for (const sx of [-1, 1]) mesh(new THREE.CylinderGeometry(0.006, 0.006, 0.08, 8), mat.metal, { parent: scene, pos: [RX + sx * 0.18, RY, RZ], rot: [0, 0, Math.PI / 2] });
+const rL = V(RX - 0.22, RY, RZ), rR = V(RX + 0.22, RY, RZ);
+// сымдар: негізгі тізбек (электрондар «−»-тен шығады)
+const lo = 0.012;
+const pPlus = src.term(1), pMinus = src.term(-1), aL = am.term(-1), aR = am.term(1), vL = vm.term(-1), vR = vm.term(1);
+const main = wire(scene, [pPlus, V(pPlus.x, lo, pPlus.z), V(pPlus.x, lo, -0.05), V(aL.x, lo, -0.05), aL, V(aL.x, aL.y + 0.0, aL.z), aR, V(aR.x, lo, -0.05), V(rL.x, lo, -0.05), V(rL.x, lo, RZ), rL, rR, V(rR.x, lo, RZ), V(rR.x, lo, 0.68), V(pMinus.x, lo, 0.68), V(pMinus.x, lo, pMinus.z), pMinus]);
+const wv1 = wire(scene, [V(rL.x, lo, RZ - 0.02), V(rL.x - 0.02, lo, RZ - 0.25), V(vL.x, lo, vL.z + 0.12), vL], { color: '#3b6fd0' });
+const wv2 = wire(scene, [V(rR.x, lo, RZ - 0.02), V(rR.x + 0.02, lo, RZ - 0.25), V(vR.x, lo, vR.z + 0.12), vR], { color: '#3b6fd0' });
+const el = main.flow(0, '#ffd23f', 0.07);
+const rR1 = readout(scene, { color: '#1f6fd0', w: 0.5 }), rR2 = readout(scene, { color: '#e5483a', w: 0.54 });
+const plot = hudPlot(hud, { x: 950, y: 380, w: 300, h: 270, ax: ['U', ''], ay: ['I', ''] });
+const ptsM = new THREE.MeshBasicMaterial({ color: '#000' });
+// кесте: [басталу уақыты, U]
+const S1 = [[1.4, 1], [2.9, 2], [4.4, 3], [5.9, 4], [7.4, 5]], S2 = [[11.4, 1], [12.6, 2], [13.8, 3], [15.0, 4], [16.2, 5]];
+const Uof = (t) => { let u = 0; const L = t < 10.2 ? S1 : S2; for (const [a, v] of L) if (t >= a) u = lerp(u, v, seg(t, a, a + 0.5)); if (t > 9.4 && t < 11.4) u *= 1 - seg(t, 9.4, 9.9); return u; };
+const Rof = (t) => (t < 10.4 ? 5 : 10);
+const COL5 = ['#2d8a3c', '#000000', '#c8a400'], COL10 = ['#8b5a2b', '#000000', '#e5322d']; // 5 Ом / 10 Ом — шартты түстер
+let flowOff = 0;
+
+window.renderFrame = (t) => {
+  const U = Uof(t), R = Rof(t), I = U / R;
+  am.set(I); vm.set(U); knob.rotation.y = U * 0.9;
+  const swap = seg(t, 10.0, 10.8); res.scale.setScalar(1); resM.color.set(t < 10.4 ? '#d9c39c' : '#9fc2e8');
+  (t < 10.4 ? COL5 : COL10).forEach((c, i) => bandM[i].color.set(c));
+  const off = (t < 1.4 ? 0 : 0) + (() => { let s = 0; for (let x = 0; x < t; x += 1 / 60) s += Uof(x) / Rof(x) / 60; return s; })() * 0.9;
+  el.set(-off, Math.min(1, I * 4));
+  rR1.set('R = 5 Ом', win(t, 0.6, 1.1, 9.9, 10.4)); rR1.position.set(RX + 0.5, 0.1, RZ + 0.1); rR2.set('R = 10 Ом', win(t, 10.8, 11.3, 17.3, 17.9)); rR2.position.set(RX + 0.52, 0.1, RZ + 0.1);
+  // график: өлшенген нүктелер және түзулер
+  const pts1 = S1.filter(([a]) => t > a + 0.5).map(([, v]) => [v / 5.4, v / 5 / 1.05]), pts2 = S2.filter(([a]) => t > a + 0.5).map(([, v]) => [v / 5.4, v / 10 / 1.05]);
+  plot.draw([{ pts: pts1.length ? [[0, 0], ...pts1] : [], color: '#1f6fd0', label: '' }, { pts: pts2.length ? [[0, 0], ...pts2] : [], color: '#e5483a', label: '' }], seg(t, 0.6, 1.2));
+  orbit(camera, t, { ang: -0.05, swing: 0.16, rad: 2.7, y: 1.2, look: [0.22, 0.25, 0.05], cx: 0.0 });
+  return st.render();
+};
+ready();
+</script>
+</body></html>

@@ -1,0 +1,47 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><style>html,body{margin:0;background:#eef2f7;overflow:hidden}canvas{display:block}</style>
+<script type="importmap">{"imports":{"three":"./lib/three.module.js"}}</script></head>
+<body>
+<script type="module">
+// «Өткізгіштерді тізбектей және параллель жалғау» (8-сынып): U = 6 В көзге екі бірдей шам (R = 6 Ом) жалғанған.
+// Тізбектей: I = U/(2R) = 0,5 А, әр шамда 3 В — шамдар күңгірт. Параллель: әр шамда 6 В, I = 1 + 1 = 2 А — жарық.
+// Бір шамды бұрап алса: тізбектей тізбек үзіледі (екіншісі сөнеді), параллельде екіншісі жана береді.
+import { THREE, V, stage, orbit, readout, wire, lamp, battery, seg, win, lerp, mat, mesh, ready } from './kit.js';
+const st = stage({ table: [4.4, 2.4] }), { scene, camera } = st;
+const lo = 0.012;
+// тізбектей (сол жақ)
+const b1 = battery(scene, { x: -1.0, z: 0.45 }), L1 = lamp(scene, { x: -1.4, z: -0.25, s: 1.4 }), L2 = lamp(scene, { x: -0.6, z: -0.25, s: 1.4 });
+const sP = b1.term(1), sM = b1.term(-1);
+const ws = wire(scene, [sP, V(sP.x, lo, sP.z), V(sP.x, lo, 0.1), V(-0.35, lo, 0.1), V(-0.35, lo, -0.25), V(L2.term(1).x, lo, -0.25), L2.term(1), L2.term(-1), V(L2.term(-1).x, lo, -0.25), V(L1.term(1).x, lo, -0.25), L1.term(1), L1.term(-1), V(L1.term(-1).x, lo, -0.25), V(-1.65, lo, -0.25), V(-1.65, lo, 0.1), V(sM.x, lo, 0.1), V(sM.x, lo, sM.z), sM]);
+const es = ws.flow(0, '#ffd23f', 0.07);
+// параллель (оң жақ)
+const b2 = battery(scene, { x: 0.95, z: 0.5 }), L3 = lamp(scene, { x: 0.65, z: -0.15, s: 1.4 }), L4 = lamp(scene, { x: 1.25, z: -0.15, s: 1.4 });
+const pP = b2.term(1), pM = b2.term(-1), ZA = 0.15, ZB = -0.45;
+const l3a = L3.term(-1), l3b = L3.term(1), l4a = L4.term(-1), l4b = L4.term(1);
+const wA = wire(scene, [pM, V(pM.x, lo, pM.z), V(pM.x, lo, ZA), V(l3a.x, lo, ZA)]);
+const wA3 = wire(scene, [V(l3a.x, lo, ZA), V(l3a.x, lo, l3a.z), l3a]), wA4 = wire(scene, [V(pM.x, lo, ZA), V(l4a.x, lo, ZA), V(l4a.x, lo, l4a.z), l4a]);
+const wB3 = wire(scene, [l3b, V(l3b.x, lo, l3b.z), V(l3b.x, lo, ZB), V(l4b.x, lo, ZB)]), wB4 = wire(scene, [l4b, V(l4b.x, lo, l4b.z), V(l4b.x, lo, ZB)]);
+const wB = wire(scene, [V(l4b.x, lo, ZB), V(1.6, lo, ZB), V(1.6, lo, 0.5), V(pP.x + 0.15, lo, 0.5), V(pP.x, lo, pP.z), pP]);
+const eA = wA.flow(0), eA3 = wA3.flow(0), eA4 = wA4.flow(0), eB3 = wB3.flow(0), eB4 = wB4.flow(0), eB = wB.flow(0);
+const rS = readout(scene, { color: '#1f6fd0', w: 0.6 }), rP = readout(scene, { color: '#e5483a', w: 0.56 });
+// кілттер (ажыратқыш) — шартты: 1,4 с-та тізбек тұйықталады
+const ON = (t) => seg(t, 1.4, 1.7);
+const OUT = (t) => seg(t, 8.0, 9.0) * (1 - seg(t, 14.0, 15.0)); // L1 және L3 бұрап алынады
+
+window.renderFrame = (t) => {
+  const on = ON(t), out = OUT(t), sOpen = out > 0.5 ? 0 : 1;
+  L1.position.y = 0.32 * out; L1.rotation.y = out * 6; L3.position.y = 0.32 * out; L3.rotation.y = out * 6;
+  L1.set(0.32 * on * sOpen * (1 - out)); L2.set(0.32 * on * sOpen); L3.set(on * (1 - out)); L4.set(on);
+  const Is = 0.5 * on * sOpen, I3 = on * (1 - (out > 0.5 ? 1 : 0)), I4 = on;
+  // электрондар қозғалысы (жылдамдық ∝ I)
+  const cum = (f) => { let s = 0; for (let x = 0; x < t; x += 1 / 60) s += f(x) / 60; return s; };
+  const qs = cum((x) => 0.5 * ON(x) * (OUT(x) > 0.5 ? 0 : 1)), q3 = cum((x) => ON(x) * (OUT(x) > 0.5 ? 0 : 1)), q4 = cum((x) => ON(x));
+  es.set(-qs * 0.25, Is > 0 ? 1 : 0.35); eA3.set(q3 * 0.25, 1); eB3.set(q3 * 0.25, 1); eA4.set(q4 * 0.25, 1); eB4.set(q4 * 0.25, 1); eA.set((q3 + q4) * 0.25, 1); eB.set((q3 + q4) * 0.25, 1);
+  rS.set('I = ' + (Is > 0.01 ? '0,5' : '0') + ' А', win(t, 1.8, 2.3, 17.3, 17.9)); rS.position.set(-1.0, 0.3, 0.85);
+  const Ip = I3 + I4; rP.set('I = ' + (Ip > 1.5 ? '2' : Ip > 0.5 ? '1' : '0') + ' А', win(t, 1.8, 2.3, 17.3, 17.9)); rP.position.set(0.95, 0.3, 0.9);
+  orbit(camera, t, { ang: -0.02, rad: 3.2, y: 2.3, look: [0.0, 0.0, 0.05], swing: 0.12 });
+  return st.render();
+};
+ready();
+</script>
+</body></html>

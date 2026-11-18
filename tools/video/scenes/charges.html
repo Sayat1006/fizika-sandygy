@@ -1,0 +1,62 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><style>html,body{margin:0;background:#eef2f7;overflow:hidden}canvas{display:block}</style>
+<script type="importmap">{"imports":{"three":"./lib/three.module.js"}}</script></head>
+<body>
+<script type="module">
+// «Зарядтардың өзара әрекеттесуі. Электр өрісі» (8-сынып): жіпке ілінген екі жеңіл шар — аттас зарядталса тебіледі,
+// әр аттас болса тартылады (ауытқу бұрышы Кулон күшінен: tgα = F/mg, F ∝ 1/r², сандық шешіледі).
+// Сосын «+» және «−» зарядтың өріс сызықтары: E = Σ kq·r/r³ бойымен интегралданып сызылады, сынақ заряды сызық бойымен жүреді.
+import { THREE, V, stage, orbit, stand, label, arrow, seg, win, lerp, mat, mesh, ready } from './kit.js';
+const st = stage({ table: [4.4, 2.2] }), { scene, camera } = st;
+// 1) екі шар
+const sd = stand(scene, { x: -1.55, z: -0.1, h: 1.6, arm: 1.0 }); sd.setArmY(1.45);
+const L = 0.9, D0 = 0.24, PX = -0.95, PY = 1.45;
+const pins = [PX - D0 / 2, PX + D0 / 2];
+const thr = pins.map(() => mesh(new THREE.CylinderGeometry(0.004, 0.004, 1, 6), mat.dark, { parent: scene, shadow: false }));
+const ballM = [new THREE.MeshStandardMaterial({ color: '#f1d27a', metalness: 0.6, roughness: 0.3 }), new THREE.MeshStandardMaterial({ color: '#f1d27a', metalness: 0.6, roughness: 0.3 })];
+const balls = ballM.map((m) => mesh(new THREE.SphereGeometry(0.05, 24, 16), m, { parent: scene }));
+const sg = [label(scene, '+', '', '#e5483a', { size: 0.26 }), label(scene, '+', '', '#e5483a', { size: 0.26 }), label(scene, '−', '', '#1f6fd0', { size: 0.26 })];
+const aF = [arrow(scene, '#17a05d', { r: 0.012 }), arrow(scene, '#17a05d', { r: 0.012 })];
+// тепе-теңдік бұрышы: шарлар арасы x = D0 + 2L sinα; F = K/x² (тебілу +, тартылу −); tgα = F/mg
+const eqA = (sgn) => { let a = 0; for (let i = 0; i < 200; i++) { const x = Math.max(0.11, D0 + 2 * L * Math.sin(a)); const F = sgn * (sgn > 0 ? 0.02 : 0.0009) / (x * x); a = lerp(a, Math.atan(F), 0.2); } return a; };
+const A_REP = eqA(1), A_ATT = eqA(-1);
+// 2) өріс сызықтары (тік тақта, x ∈ [0.1; 1.9])
+const FX = 1.0, FY = 0.75, Q = [{ p: V(FX - 0.38, FY, 0), q: 1 }, { p: V(FX + 0.38, FY, 0), q: -1 }];
+mesh(new THREE.BoxGeometry(1.8, 1.2, 0.02), new THREE.MeshStandardMaterial({ color: '#f8fafc', roughness: 0.9 }), { parent: scene, pos: [FX, FY, -0.03] });
+mesh(new THREE.BoxGeometry(0.08, FY - 0.6, 0.08), mat.metal, { parent: scene, pos: [FX, (FY - 0.6) / 2, -0.06] });
+const qm = Q.map((c) => mesh(new THREE.SphereGeometry(0.06, 28, 20), new THREE.MeshStandardMaterial({ color: c.q > 0 ? '#e5483a' : '#1f6fd0', roughness: 0.35 }), { parent: scene, pos: [c.p.x, c.p.y, 0.02] }));
+const ql = Q.map((c) => label(scene, c.q > 0 ? '+' : '−', '', '#ffffff', { size: 0.2 }));
+const E = (p) => { const e = V(); for (const c of Q) { const r = p.clone().sub(c.p); const d = Math.max(0.03, r.length()); e.addScaledVector(r, c.q / d ** 3); } return e; };
+const LINES = [];
+for (let i = 0; i < 14; i++) { const a = (i + 0.5) / 14 * Math.PI * 2, p = Q[0].p.clone().add(V(Math.cos(a) * 0.07, Math.sin(a) * 0.07, 0)), pts = [p.clone()];
+  for (let s = 0; s < 900; s++) { const e = E(p); p.addScaledVector(e.normalize(), 0.006); pts.push(p.clone()); if (p.distanceTo(Q[1].p) < 0.06 || Math.abs(p.x - FX) > 0.86 || Math.abs(p.y - FY) > 0.56) break; }
+  const g = new THREE.BufferGeometry().setFromPoints(pts.map((q) => q.clone().setZ(0.012))); const l = new THREE.Line(g, new THREE.LineBasicMaterial({ color: '#1b2230' })); scene.add(l); LINES.push({ l, pts, n: pts.length }); }
+const heads = LINES.map(() => mesh(new THREE.ConeGeometry(0.018, 0.05, 12), new THREE.MeshBasicMaterial({ color: '#1b2230' }), { parent: scene, shadow: false }));
+const probe = mesh(new THREE.SphereGeometry(0.025, 16, 12), new THREE.MeshStandardMaterial({ color: '#e5683a', emissive: '#e5683a', emissiveIntensity: 0.4 }), { parent: scene, shadow: false });
+
+window.renderFrame = (t) => {
+  // 1) шарлар: 0,5–1,5 с зарядталады (тебілу), 6 с-та оңдағысы теріс → тартылу
+  const kRep = seg(t, 0.8, 2.6) * (1 - seg(t, 5.6, 6.6)), kAtt = seg(t, 6.4, 8.2);
+  const a = A_REP * kRep + A_ATT * kAtt + 0.02 * Math.sin(t * 3) * (kRep + kAtt) * 0.3;
+  pins.forEach((px, i) => { const s = i ? 1 : -1, ang = s * a; const b = V(px + Math.sin(ang) * L, PY - Math.cos(ang) * L, 0); balls[i].position.copy(b);
+    thr[i].scale.y = L; thr[i].position.set((px + b.x) / 2, (PY + b.y) / 2, 0); thr[i].rotation.z = ang; });
+  const neg = t > 6.1;
+  sg[0].show(balls[0].position.clone().add(V(0, 0.12, 0.06)), seg(t, 0.5, 1.0) * (1 - seg(t, 9.5, 10)));
+  sg[1].show(balls[1].position.clone().add(V(0, 0.12, 0.06)), seg(t, 0.5, 1.0) * (neg ? 0 : 1));
+  sg[2].show(balls[1].position.clone().add(V(0, 0.12, 0.06)), neg ? seg(t, 6.1, 6.5) * (1 - seg(t, 9.5, 10)) : 0);
+  const fo = win(t, 2.4, 2.9, 5.4, 5.9) + win(t, 8.0, 8.5, 9.4, 9.9), dirx = t < 6 ? 1 : -1;
+  aF[0].set(balls[0].position.clone().add(V(0, 0, 0.08)), V(-dirx, 0, 0), 0.22, fo); aF[1].set(balls[1].position.clone().add(V(0, 0, 0.08)), V(dirx, 0, 0), 0.22, fo);
+  // 2) өріс сызықтары 10,5–14 с сызылады
+  const k = seg(t, 10.6, 13.6);
+  LINES.forEach((L2, i) => { const n = Math.max(2, Math.floor(L2.n * k)); L2.l.geometry.setDrawRange(0, n); L2.l.visible = t > 10.5;
+    const j = Math.floor(L2.n * 0.5), p = L2.pts[j], q = L2.pts[Math.min(L2.n - 1, j + 2)]; heads[i].position.set(p.x, p.y, 0.014); heads[i].quaternion.setFromUnitVectors(V(0, 1, 0), q.clone().sub(p).normalize()); heads[i].visible = k > 0.6; });
+  qm.forEach((m, i) => (m.visible = true)); ql.forEach((l, i) => l.show(V(Q[i].p.x, Q[i].p.y, 0.09), 1));
+  // сынақ заряды «+» сызық бойымен «+»-тен «−»-ге
+  const LL = LINES[3], u = seg(t, 14.2, 17.4); probe.visible = t > 14.0 && t < 17.6; const pp = LL.pts[Math.min(LL.n - 1, Math.floor(u * (LL.n - 1)))]; probe.position.set(pp.x, pp.y, 0.04);
+  const kc = seg(t, 9.6, 11.0), lx = lerp(-0.95, FX, kc);
+  orbit(camera, t, { ang: lerp(-0.1, 0, kc), swing: 0.12 * (1 - kc) + 0.05, rad: lerp(2.3, 2.4, kc), y: lerp(1.15, 0.95, kc), look: [lx, lerp(0.95, FY, kc), 0], cx: lx });
+  return st.render();
+};
+ready();
+</script>
+</body></html>

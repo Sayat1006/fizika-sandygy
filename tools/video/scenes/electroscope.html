@@ -1,0 +1,68 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><style>html,body{margin:0;background:#eef2f7;overflow:hidden}canvas{display:block}</style>
+<script type="importmap">{"imports":{"three":"./lib/three.module.js"}}</script></head>
+<body>
+<script type="module">
+// «Денелердің электрленуі» (8-сынып): эбонит таяқшаны жүнге үйкегенде ол теріс зарядталады (электрондар жүннен
+// таяқшаға өтеді). Таяқшаны электроскопқа жақындатқанда — индукция: шарда «+», жапырақшаларда «−», жапырақшалар
+// ажырайды. Жанасқанда заряд электроскопқа өтеді, таяқша алынса да жапырақшалар ашық қалады. Жерге қосқанда — жабылады.
+import { THREE, V, stage, orbit, label, seg, win, lerp, mat, mesh, ready } from './kit.js';
+const st = stage({ table: [3.6, 2.2] }), { scene, camera } = st;
+// электроскоп
+const EX = 0.45;
+mesh(new THREE.CylinderGeometry(0.3, 0.32, 0.06, 40), mat.dark, { parent: scene, pos: [EX, 0.03, 0] });
+const jar = mesh(new THREE.CylinderGeometry(0.28, 0.28, 0.6, 48, 1, true), mat.glass(), { parent: scene, pos: [EX, 0.36, 0], shadow: false }); jar.renderOrder = 5;
+mesh(new THREE.CylinderGeometry(0.28, 0.28, 0.03, 48), mat.dark, { parent: scene, pos: [EX, 0.67, 0] });
+mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.62, 10), mat.metal, { parent: scene, pos: [EX, 0.62, 0] });
+const ball = mesh(new THREE.SphereGeometry(0.06, 28, 20), mat.metal, { parent: scene, pos: [EX, 0.95, 0] });
+const PIV = V(EX, 0.36, 0);
+const leafM = new THREE.MeshStandardMaterial({ color: '#d9b45a', metalness: 0.7, roughness: 0.3, side: THREE.DoubleSide });
+const leaves = [-1, 1].map((s) => { const g = new THREE.Group(); g.position.copy(PIV); scene.add(g); mesh(new THREE.PlaneGeometry(0.06, 0.26), leafM, { parent: g, pos: [0, -0.13, 0.0], shadow: false }); g.userData.s = s; return g; });
+// жүн мен таяқша
+const wool = mesh(new THREE.BoxGeometry(0.34, 0.08, 0.24), new THREE.MeshStandardMaterial({ color: '#efe6d2', roughness: 1 }), { parent: scene, pos: [-0.75, 0.04, 0.1] }); wool.scale.set(1.1, 1, 1);
+const rod = new THREE.Group(); scene.add(rod);
+mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.7, 20), new THREE.MeshStandardMaterial({ color: '#15171c', roughness: 0.35 }), { parent: rod, pos: [0, 0.35, 0] });
+// зарядтар: «−» таяқшада (8), «+» / «−» электроскопта
+const minusR = Array.from({ length: 8 }, () => label(scene, '−', '', '#1f6fd0', { size: 0.36 }));
+const plusB = Array.from({ length: 3 }, () => label(scene, '+', '', '#e5483a', { size: 0.32 }));
+const minusL = Array.from({ length: 4 }, () => label(scene, '−', '', '#1f6fd0', { size: 0.32 }));
+const minusB = Array.from({ length: 3 }, () => label(scene, '−', '', '#1f6fd0', { size: 0.32 }));
+// жерге қосу сымы
+const gw = mesh(new THREE.CylinderGeometry(0.006, 0.006, 1, 8), new THREE.MeshStandardMaterial({ color: '#2e8b57' }), { parent: scene, shadow: false });
+
+window.renderFrame = (t) => {
+  // 1) үйкеу 0,6–4 с: таяқша жүннің үстінде алға-артқа (жатқан күйде)
+  const rub = win(t, 0.4, 0.8, 3.8, 4.4);
+  const tip = (() => {
+    if (t < 4.4) { rod.rotation.set(0, 0, Math.PI / 2); rod.position.set(-0.4 + 0.15 * Math.sin(t * 8) * rub, 0.11, 0.1); return null; }
+    // 2) жақындау 4,4–8 с, 3) жанасу 9–10, кету 11–12,5
+    const k1 = seg(t, 4.4, 6.0), k2 = seg(t, 6.6, 8.6), k3 = seg(t, 9.0, 9.6), k4 = seg(t, 11.0, 12.4);
+    const a = lerp(Math.PI / 2, Math.PI * 0.62, k1);
+    const end = V(lerp(-0.4, -0.2, k1), lerp(0.12, 1.15, k1), 0.05).lerp(V(EX - 0.35, 0.98, 0), k2).lerp(V(EX - 0.07, 0.97, 0), k3).lerp(V(-0.6, 1.1, 0.2), k4);
+    rod.rotation.set(0, 0, a); rod.position.copy(end).add(V(Math.sin(a) * 0.7, -Math.cos(a) * 0.7, 0)); return end;
+  })();
+  const tipP = tip || V(-0.4 - 0.35, 0.12, 0.1);
+  // зарядтар таяқшада: үйкеу кезінде пайда болады
+  const nR = Math.round(8 * seg(t, 0.9, 3.9));
+  const dir = V(Math.cos(rod.rotation.z + Math.PI / 2), Math.sin(rod.rotation.z + Math.PI / 2), 0);
+  const transferred = seg(t, 9.6, 10.4); // жанасқанда «−» электроскопқа өтеді
+  minusR.forEach((m, i) => { const p = rod.position.clone().addScaledVector(dir, 0.1 + i * 0.07).add(V(0, 0.05, 0.06)); m.show(p, i < nR ? (i < 3 ? 1 - transferred : 1) : 0); });
+  // индукция: таяқша жақын болса (тек жанасқанға дейін)
+  const dist = tip ? tip.distanceTo(ball.position) : 9, ind = t < 9.6 ? Math.max(0, Math.min(1, (0.75 - dist) / 0.5)) : 0;
+  const ground = seg(t, 14.2, 15.0) * (1 - seg(t, 16.6, 17.2));
+  const own = transferred * (1 - seg(t, 15.0, 15.8)); // электроскоптың өз заряды (теріс)
+  plusB.forEach((m, i) => m.show(V(EX - 0.05 + i * 0.05, 1.05 + (i % 2) * 0.04, 0.08), ind));
+  minusL.forEach((m, i) => m.show(V(EX + (i < 2 ? -1 : 1) * (0.08 + 0.05 * (i % 2)), 0.25 + (i % 2) * 0.06, 0.06), Math.max(ind, own)));
+  minusB.forEach((m, i) => m.show(V(EX - 0.05 + i * 0.05, 1.05 + (i % 2) * 0.04, 0.08), own * (i < 2 ? 1 : 0.0)));
+  const open = Math.max(ind, own) * 0.5;
+  leaves.forEach((g) => (g.rotation.z = g.userData.s * open));
+  // жерге қосу: сымның бір ұшы шарда
+  gw.visible = ground > 0.01; const g0 = V(EX + 0.05, 0.98, 0), g1 = V(EX + 0.6, 0.0, 0.2); const gp = g1.clone().lerp(g0, ground);
+  const d = gp.clone().sub(g1); gw.scale.y = Math.max(0.001, d.length()); gw.position.copy(g1).addScaledVector(d, 0.5); gw.quaternion.setFromUnitVectors(V(0, 1, 0), d.clone().normalize());
+  const lx = lerp(-0.55, 0.25, seg(t, 3.8, 5.5));
+  orbit(camera, t, { ang: -0.05, swing: 0.15, rad: lerp(1.9, 2.5, seg(t, 3.8, 5.5)), y: lerp(0.8, 1.15, seg(t, 3.8, 5.5)), look: [lx, lerp(0.15, 0.72, seg(t, 3.8, 5.5)), 0], cx: lx });
+  return st.render();
+};
+ready();
+</script>
+</body></html>

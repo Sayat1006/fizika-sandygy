@@ -1,0 +1,76 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><style>html,body{margin:0;background:#eef2f7;overflow:hidden}canvas{display:block}</style>
+<script type="importmap">{"imports":{"three":"./lib/three.module.js"}}</script></head>
+<body>
+<script type="module">
+// «Газдың жұмысы. Жылу қозғалтқыштары» (8-сынып): 1) поршеньді цилиндрдегі газды қыздырғанда ол ұлғайып, жүкті Δh
+// биіктікке көтереді — газ жұмыс істейді (A = pΔV). 2) Төрт тактілі іштен жанатын қозғалтқыш (кесіндісі): сору (кіру
+// клапаны ашық, поршень төмен), сығу, жұмыс жүрісі (ұшқын, газ поршеньді итереді), шығару (шығу клапаны ашық).
+// Поршень орны иінді біліктің бұрышынан: y = r·cosφ + √(l² − r²sin²φ).
+import { THREE, V, stage, orbit, label, readout, hotplate, seg, win, lerp, mat, mesh, ready } from './kit.js';
+const st = stage({ table: [4.6, 2.2] }), { scene, camera } = st;
+// 1) газдың жұмысы
+const GX = -1.25, hp = hotplate(scene, { x: GX, w: 0.5 }), CB = hp.top, CR = 0.15, CH = 0.75;
+const cyl = mesh(new THREE.CylinderGeometry(CR, CR, CH, 40, 1, true), mat.glass(), { parent: scene, pos: [GX, CB + CH / 2, 0], shadow: false }); cyl.renderOrder = 5;
+mesh(new THREE.CylinderGeometry(CR + 0.01, CR + 0.01, 0.02, 40), mat.metal, { parent: scene, pos: [GX, CB + 0.01, 0] });
+const gasM = new THREE.MeshPhysicalMaterial({ color: '#8fc3ff', transparent: true, opacity: 0.45, depthWrite: false });
+const gas = mesh(new THREE.CylinderGeometry(CR - 0.006, CR - 0.006, 1, 40), gasM, { parent: scene, shadow: false }); gas.renderOrder = 2;
+const pis = mesh(new THREE.CylinderGeometry(CR - 0.004, CR - 0.004, 0.05, 40), mat.dark, { parent: scene });
+const wt = mesh(new THREE.CylinderGeometry(0.09, 0.09, 0.14, 32), new THREE.MeshStandardMaterial({ color: '#9aa4b2', metalness: 0.35, roughness: 0.4 }), { parent: scene });
+const lh = label(scene, 'Δh', '', '#17a05d', { size: 0.28 });
+const brM = new THREE.MeshBasicMaterial({ color: '#17a05d', transparent: true, depthTest: false });
+const br = mesh(new THREE.BoxGeometry(0.01, 1, 0.01), brM, { parent: scene, shadow: false }); br.renderOrder = 9;
+const H1 = 0.3, H2 = 0.52;
+// 2) қозғалтқыш (кесінді)
+const EX = 0.85, EB = 0.55, R = 0.12, LR = 0.36, BORE = 0.17, TOPY = EB + R + LR + 0.17, WC = (EB - R + LR + TOPY) / 2, WH = TOPY - (EB - R + LR) + 0.02;
+mesh(new THREE.BoxGeometry(0.7, 0.06, 0.4), mat.woodDark, { parent: scene, pos: [EX, 0.03, 0] });
+const block = new THREE.MeshPhysicalMaterial({ color: '#aeb7c4', transparent: true, opacity: 0.28, depthWrite: false, side: THREE.DoubleSide });
+for (const s of [-1, 1]) mesh(new THREE.BoxGeometry(0.04, WH, 0.3), new THREE.MeshStandardMaterial({ color: '#8c96a4', metalness: 0.4, roughness: 0.4 }), { parent: scene, pos: [EX + s * (BORE + 0.02), WC, -0.0] });
+const head = mesh(new THREE.BoxGeometry(BORE * 2 + 0.08, 0.06, 0.3), new THREE.MeshStandardMaterial({ color: '#8c96a4', metalness: 0.4, roughness: 0.4 }), { parent: scene, pos: [EX, TOPY + 0.03, 0] });
+const back = mesh(new THREE.BoxGeometry(BORE * 2, WH, 0.02), block, { parent: scene, pos: [EX, WC, -0.14], shadow: false });
+const egM = new THREE.MeshBasicMaterial({ color: '#7fb4ff', transparent: true, opacity: 0.6, depthWrite: false });
+const eg = mesh(new THREE.BoxGeometry(BORE * 2 - 0.01, 1, 0.26), egM, { parent: scene, shadow: false }); eg.renderOrder = 2;
+const ep = mesh(new THREE.BoxGeometry(BORE * 2 - 0.01, 0.08, 0.27), mat.dark, { parent: scene });
+const rodM = mesh(new THREE.BoxGeometry(0.04, LR, 0.04), mat.metal, { parent: scene });
+const crank = new THREE.Group(); crank.position.set(EX, EB, 0); scene.add(crank);
+mesh(new THREE.CylinderGeometry(R + 0.05, R + 0.05, 0.05, 40), mat.metal, { parent: crank, rot: [Math.PI / 2, 0, 0], pos: [0, 0, 0.1] });
+mesh(new THREE.BoxGeometry(0.03, 0.03, 0.06), new THREE.MeshStandardMaterial({ color: '#e5322d' }), { parent: crank, pos: [0, R, 0.13] });
+mesh(new THREE.BoxGeometry(0.5, EB + 0.02, 0.06), new THREE.MeshStandardMaterial({ color: '#6c7684', metalness: 0.3, roughness: 0.5 }), { parent: scene, pos: [EX, (EB + 0.02) / 2, -0.12] });
+mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.4, 16), mat.dark, { parent: scene, rot: [Math.PI / 2, 0, 0], pos: [EX, EB, 0] });
+// клапандар мен шам
+const valve = (x) => { const g = new THREE.Group(); scene.add(g); mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.18, 8), mat.metal, { parent: g, pos: [0, 0.09, 0] }); mesh(new THREE.CylinderGeometry(0.045, 0.02, 0.02, 20), mat.metal, { parent: g }); g.position.x = x; return g; };
+const vIn = valve(EX - 0.09), vOut = valve(EX + 0.09);
+mesh(new THREE.CylinderGeometry(0.014, 0.014, 0.12, 10), new THREE.MeshStandardMaterial({ color: '#f4f6f9' }), { parent: scene, pos: [EX, TOPY + 0.07, 0] });
+const spark = mesh(new THREE.SphereGeometry(0.035, 16, 12), new THREE.MeshBasicMaterial({ color: '#fff4a0', transparent: true }), { parent: scene, pos: [EX, TOPY - 0.03, 0.02], shadow: false });
+const tl = label(scene, '', '', '#1b2230', { size: 0.3 });
+const strokeLab = ['1', '2', '3', '4'].map((s) => readout(scene, { color: '#e5683a', w: 0.42 }));
+
+window.renderFrame = (t) => {
+  // 1) газ қызады 0,8–5 с, поршень H1 → H2
+  hp.set(seg(t, 0.4, 1.0)); const k = seg(t, 1.2, 5.0), hg = lerp(H1, H2, k);
+  gas.scale.y = hg; gas.position.set(GX, CB + hg / 2, 0); gasM.color.set(new THREE.Color('#8fc3ff').lerp(new THREE.Color('#ff9a7a'), k));
+  pis.position.set(GX, CB + hg + 0.025, 0); wt.position.set(GX, CB + hg + 0.12, 0);
+  const bo = win(t, 4.6, 5.0, 17.3, 17.9); br.scale.y = (H2 - H1); br.position.set(GX + CR + 0.08, CB + (H1 + H2) / 2 + 0.05, 0.05); brM.opacity = bo; br.visible = bo > 0.01;
+  lh.show(V(GX + CR + 0.24, CB + (H1 + H2) / 2 + 0.05, 0.05), bo);
+  // 2) қозғалтқыш: φ — иінді біліктің бұрышы; бір цикл = 4π (6,6–16,6 с), сосын жылдамдайды
+  const u = Math.max(0, t - 6.6), phi = u < 10 ? u / 10 * 4 * Math.PI : 4 * Math.PI + (u - 10) * 2.6 * Math.PI;
+  crank.rotation.z = -phi;
+  const cp = V(EX + R * Math.sin(phi), EB + R * Math.cos(phi), 0), py = EB + R * Math.cos(phi) + Math.sqrt(LR * LR - (R * Math.sin(phi)) ** 2);
+  ep.position.set(EX, py + 0.04, 0);
+  const d = V(EX, py, 0).sub(cp); rodM.position.copy(cp).addScaledVector(d, 0.5); rodM.rotation.z = -Math.atan2(d.x, d.y);
+  const top = TOPY, gh = Math.max(0.01, top - py - 0.08); eg.scale.y = gh; eg.position.set(EX, py + 0.08 + gh / 2, 0);
+  const stroke = Math.floor((phi % (4 * Math.PI)) / Math.PI); // 0 сору, 1 сығу, 2 жұмыс, 3 шығару
+  const sp = (phi % Math.PI) / Math.PI;
+  vIn.position.y = TOPY - 0.01 - (stroke === 0 ? 0.04 * Math.sin(Math.PI * sp) : 0); vOut.position.y = TOPY - 0.01 - (stroke === 3 ? 0.04 * Math.sin(Math.PI * sp) : 0);
+  const cols = ['#7fb4ff', '#4f8dff', '#ff7a3a', '#9aa1ab'];
+  egM.color.set(stroke === 2 ? new THREE.Color('#ffd23f').lerp(new THREE.Color('#ff5a2e'), Math.min(1, sp * 2)) : cols[stroke]);
+  egM.opacity = stroke === 1 ? 0.45 + 0.35 * sp : stroke === 2 ? 0.85 - 0.3 * sp : 0.5;
+  const sk = stroke === 2 && sp < 0.12 && t > 6.6 ? 1 - sp / 0.12 : 0; spark.material.opacity = sk; spark.scale.setScalar(0.5 + sk * 1.5); spark.visible = sk > 0.01;
+  strokeLab.forEach((r, i) => { r.set(String(i + 1), t > 6.6 && t < 17.3 ? (i === stroke ? 1 : 0.0) : 0); r.position.set(EX - 0.45, TOPY - 0.1, 0.1); });
+  const kc = seg(t, 5.4, 6.8), lx = lerp(GX, EX, kc);
+  orbit(camera, t, { ang: -0.12, swing: 0.12, rad: lerp(2.3, 2.3, kc), y: lerp(1.0, 1.05, kc), look: [lx, lerp(0.5, 0.72, kc), 0], cx: lx });
+  return st.render();
+};
+ready();
+</script>
+</body></html>
