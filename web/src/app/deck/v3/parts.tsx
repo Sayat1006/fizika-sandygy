@@ -25,7 +25,7 @@ export const Sun = ({ x, y, r = 60 }: { x: number; y: number; r?: number }) => (
 );
 export const Label = ({ x, y, children, c = 'var(--a3-ink)', size = 30, anchor = 'middle', bg }: { x: number; y: number; children: ReactNode; c?: string; size?: number; anchor?: 'start' | 'middle' | 'end'; bg?: boolean }) => (
   <g>
-    {bg && (() => { const w = String(children).length * size * 0.56 + 44; return <rect x={anchor === 'middle' ? x - w / 2 : anchor === 'start' ? x - 22 : x - w + 22} y={y - size - 8} width={w} height={size + 26} rx="14" fill="var(--a3-card)" opacity=".94" />; })()}
+    {bg && (() => { const w = String(children).length * size * 0.61 + 44; return <rect x={anchor === 'middle' ? x - w / 2 : anchor === 'start' ? x - 22 : x - w + 22} y={y - size - 8} width={w} height={size + 26} rx="14" fill="var(--a3-card)" opacity=".94" />; })()}
     <text x={x} y={y} textAnchor={anchor} fontSize={size} fontWeight="700" fill={c} fontFamily="var(--d-body)">{children}</text>
   </g>
 );

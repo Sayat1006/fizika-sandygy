@@ -1,13 +1,22 @@
 /* ═══════════ Тақта: толық экранды сабақ режимі ═══════════
    Қараңғы жиек — слайдқа назар аудару үшін; барлық батырма кемінде 52 px (саусақ пен стилус). */
 .bd { --chrome: #0b0b0c; --chrome-2: #1c1c1e; --chrome-3: #2c2c2e; --ink: #f5f5f7; --ink-2: #a1a1a6; --bh: 52px;
-  position: fixed; inset: 0; display: grid; grid-template-rows: auto 1fr auto auto; background: var(--chrome); color: var(--ink);
+  position: fixed; inset: 0; display: grid; grid-template-rows: 1fr; background: #000; color: var(--ink);
   overscroll-behavior: none; -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; color-scheme: dark; }
 .bd--msg { display: grid; place-items: center; grid-template-rows: 1fr; color: var(--ink-2); }
 .bd-msg { max-width: 36ch; text-align: center; display: grid; gap: 14px; justify-items: center; padding: 24px; color: var(--ink-2); }
 .bd-msg b { color: var(--ink); font-size: 24px; font-family: var(--font-display); }
 
-.bd-top { display: flex; align-items: center; gap: 14px; padding: max(10px, env(safe-area-inset-top)) 14px 10px; }
+.bd-top { position: absolute; z-index: 5; top: 0; left: 0; right: 0; display: flex; align-items: center; gap: 14px; padding: max(10px, env(safe-area-inset-top)) 14px 22px; background: linear-gradient(rgba(0, 0, 0, 0.78), rgba(0, 0, 0, 0.5) 70%, transparent); }
+/* слайд толық экранда; панельдер тінтуір қозғалғанда / жиекті басқанда шығып, 2,6 с-тан соң жасырынады */
+.bd-top, .bd-tools, .bd-pno, .bd-nav { transition: opacity 0.35s var(--out), transform 0.35s var(--out); }
+.bd--idle .bd-top { opacity: 0; transform: translateY(-100%); pointer-events: none; }
+.bd--idle .bd-tools { opacity: 0; transform: translateY(100%); pointer-events: none; }
+.bd--idle .bd-pno, .bd--idle .bd-nav { opacity: 0; }
+.bd--idle { cursor: none; }
+.bd-wake { position: absolute; z-index: 4; left: 50%; bottom: 6px; transform: translateX(-50%); width: 64px; height: 28px; border: 0; border-radius: 99px; background: rgba(0, 0, 0, 0.18); display: flex; gap: 5px; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.35s; }
+.bd-wake i { width: 5px; height: 5px; border-radius: 50%; background: rgba(255, 255, 255, 0.85); }
+.bd--idle .bd-wake { opacity: 0.55; pointer-events: auto; }
 .bd-ib { width: var(--bh); height: var(--bh); flex: none; display: grid; place-items: center; border: 0; border-radius: 16px; background: transparent; color: var(--ink); transition: background var(--d-1), transform var(--d-1); }
 .bd-ib:hover { background: var(--chrome-2); text-decoration: none; }
 .bd-ib:active { transform: scale(0.94); }
@@ -16,13 +25,8 @@
 .bd-ttl { flex: 1; min-width: 0; }
 .bd-ttl small { display: block; color: var(--ink-2); font-size: 13px; font-weight: 500; }
 .bd-ttl b { display: block; font-size: 18px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.bd-clock { display: flex; align-items: center; gap: 10px; padding: 6px 8px 6px 14px; border-radius: 16px; background: var(--chrome-2); }
-.bd-clock span { color: var(--ink-2); font-size: 14px; white-space: nowrap; max-width: 22vw; overflow: hidden; text-overflow: ellipsis; }
-.bd-clock b { font: 600 26px/1 var(--font-display); font-variant-numeric: tabular-nums; min-width: 3.4em; text-align: right; }
-.bd-clock--over b { color: #ff9f0a; }
-.bd-clock .bd-ib { width: 44px; height: 44px; border-radius: 12px; }
 
-.bd-stage { position: relative; min-height: 0; margin: 0 14px; border-radius: 18px; overflow: hidden; overflow: clip; background: #000; touch-action: none; }
+.bd-stage { position: relative; min-height: 0; margin: 0; overflow: hidden; overflow: clip; background: #000; touch-action: none; }
 .bd-view { position: absolute; inset: 0; }
 .bd-view--white { background: #fff; }
 .bd-view > img { position: absolute; inset: 0; width: 100%; height: 100%; max-width: none; object-fit: contain; -webkit-user-drag: none; }
@@ -40,15 +44,15 @@
 .bd-nav:disabled { visibility: hidden; }
 .bd-nav--prev { left: 0; border-radius: 0 18px 18px 0; }
 .bd-nav--next { right: 0; border-radius: 18px 0 0 18px; }
-.bd-pno { position: absolute; z-index: 2; right: 14px; bottom: 12px; padding: 4px 10px; border-radius: var(--r-full); background: rgba(0, 0, 0, 0.55); color: #fff; font: 600 13px var(--font); font-variant-numeric: tabular-nums; pointer-events: none; }
+.bd-pno { position: absolute; z-index: 6; right: 14px; bottom: 86px; padding: 4px 10px; border-radius: var(--r-full); background: rgba(0, 0, 0, 0.55); color: #fff; font: 600 13px var(--font); font-variant-numeric: tabular-nums; pointer-events: none; }
 
-.bd-notes { position: absolute; z-index: 3; top: 12px; right: 12px; bottom: 12px; width: min(420px, 46%); overflow: auto; padding: 18px 20px; border-radius: 16px; background: rgba(28, 28, 30, 0.94); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); font-size: 15px; line-height: 1.45; -webkit-user-select: text; user-select: text; transform: translateX(calc(100% + 24px)); transition: transform 0.45s var(--out); }
+.bd-notes { position: absolute; z-index: 6; top: 84px; right: 12px; bottom: 90px; width: min(420px, 46%); overflow: auto; padding: 18px 20px; border-radius: 16px; background: rgba(28, 28, 30, 0.94); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); font-size: 15px; line-height: 1.45; -webkit-user-select: text; user-select: text; transform: translateX(calc(100% + 24px)); transition: transform 0.45s var(--out); }
 .bd-notes--open { transform: none; }
 .bd-notes h3 { font: 600 13px var(--font); color: var(--ink-2); margin: 14px 0 6px; }
 .bd-notes h3:first-child { margin-top: 0; }
 .bd-notes p { margin: 0 0 6px; }
 
-.bd-tools { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; padding: 10px 14px 6px; }
+.bd-tools { position: absolute; z-index: 5; left: 0; right: 0; bottom: 0; display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; padding: 22px 14px max(10px, env(safe-area-inset-bottom)); background: linear-gradient(transparent, rgba(0, 0, 0, 0.5) 30%, rgba(0, 0, 0, 0.78)); }
 .bd-grp { display: flex; align-items: center; gap: 4px; padding: 4px; border-radius: 18px; background: var(--chrome-2); }
 .bd-src button { height: 44px; padding: 0 16px; border: 0; border-radius: 14px; background: none; color: var(--ink-2); font-weight: 600; font-size: 15px; display: inline-flex; align-items: center; gap: 8px; transition: background var(--d-2) var(--out), color var(--d-2); }
 .bd-src button svg { width: 20px; height: 20px; }
@@ -58,22 +62,9 @@
 .bd-col[aria-pressed="true"] { background: transparent; }
 .bd-col[aria-pressed="true"] .bd-dot { box-shadow: 0 0 0 3px var(--chrome), 0 0 0 5px var(--ink); }
 
-/* сабақ кезеңдері: ықшам прогресс жолағы + қазіргі кезең */
-.bd-stages { display: grid; gap: 6px; padding: 4px 14px max(10px, env(safe-area-inset-bottom)); }
-.bd-snow { display: flex; align-items: center; gap: 12px; min-width: 0; }
-.bd-snow small { color: var(--ink-2); font-size: 13px; font-weight: 600; }
-.bd-snow b { font-size: 16px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.bd-snext { margin-left: auto; flex: none; max-width: 45%; min-height: 36px; padding: 0 14px; border: 0; border-radius: 999px; background: var(--chrome-2); color: var(--ink-2); font: 500 14px var(--font); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; }
-.bd-snext:hover { background: var(--chrome-3); color: var(--ink); }
-.bd-sbar { display: flex; gap: 4px; }
-.bd-seg { position: relative; flex-basis: 0; height: 10px; padding: 0; border: 0; border-radius: 5px; background: var(--chrome-3); overflow: hidden; cursor: pointer; }
-.bd-seg::after { content: ''; position: absolute; inset: -12px 0; } /* саусаққа үлкенірек басу аймағы */
-.bd-seg--done { background: color-mix(in srgb, #2997ff 55%, var(--chrome-3)); }
-.bd-seg--on { background: color-mix(in srgb, #2997ff 22%, var(--chrome-3)); box-shadow: 0 0 0 2px var(--ink); }
-.bd-seg i { position: absolute; inset: 0 auto 0 0; width: 0; background: #2997ff; transition: width 0.9s linear; }
 
 /* мәтін өлшемі (A− / A+): жолақтар үлкейеді, слайд өзі экранға сыяды */
-.bd-top, .bd-tools, .bd-stages { zoom: var(--bz, 1); }
+.bd-top, .bd-tools { zoom: var(--bz, 1); }
 .bd-zoom { display: flex; gap: 2px; padding: 3px; border-radius: 14px; background: var(--chrome-2); }
 .bd-zoom button { min-width: 44px; height: 38px; border: 0; border-radius: 11px; background: none; color: var(--ink); font: 700 15px var(--font); cursor: pointer; }
 .bd-zoom button:hover:not(:disabled) { background: var(--chrome-3); }
@@ -114,8 +105,8 @@
 .bd-tbig--end .bd-big { color: #ff9f0a; }
 .bd-tbig .bd-row { position: absolute; bottom: 7vh; left: 0; right: 0; }
 
-@media (max-width: 760px) { .bd-clock span, .bd-src button span, .bd-snext { display: none; } }
-@media (prefers-reduced-motion: reduce) { .bd-skel i, .bd-skel b, .bd-skel em, .bd-skel__stage { animation: none; } .bd-notes, .bd-seg i { transition: none; } .bd-big--roll { animation: none; } }
+@media (max-width: 760px) { .bd-src button span { display: none; } }
+@media (prefers-reduced-motion: reduce) { .bd-skel i, .bd-skel b, .bd-skel em, .bd-skel__stage { animation: none; } .bd-notes { transition: none; } .bd-big--roll { animation: none; } }
 .bd-steps { display: inline-flex; gap: 4px; margin-left: 10px; vertical-align: middle; }
 .bd-steps i { width: 7px; height: 7px; border-radius: 50%; background: rgba(255, 255, 255, 0.35); }
 .bd-steps i.on { background: #fff; }
@@ -219,8 +210,6 @@
 /* телефон: тақта экраннан шықпайды */
 .bd { grid-template-columns: minmax(0, 1fr); }
 .bd-top, .bd-tools, .bd-stages, .bd-snow { min-width: 0; }
-@media (max-width: 760px) { .bd-clock { padding-left: 10px; } .bd-tools { justify-content: center; } .bd-pen { order: 3; overflow-x: auto; max-width: 100%; } .bd-more__pop { width: min(300px, 86vw); } }
+@media (max-width: 760px) { .bd-tools { justify-content: center; } .bd-pen { order: 3; overflow-x: auto; max-width: 100%; } .bd-more__pop { width: min(300px, 86vw); } }
 .bd-live__end { flex: none; padding: 8px 0 2px; }
 .bd-ttl small, .bd-snow small { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.bd-clock, .bd-more, .bd-top > .bd-ib { flex: none; }
-.bd-snow small { flex: none; overflow: visible; }

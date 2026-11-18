@@ -91,7 +91,7 @@ const Relativity = () => (
       <circle cx="400" cy="395" r="20" fill="#c98b5e" /><rect x="385" y="415" width="30" height="25" fill="#e5483a" /><circle cx="260" cy="540" r="26" fill="#2b3245" /><circle cx="620" cy="540" r="26" fill="#2b3245" /></g>
     <g transform="translate(780 470)"><circle r="22" fill="#c98b5e" /><rect x="-18" y="22" width="36" height="70" rx="12" fill="#17a05d" /></g>
     <Label x={300} y={260} size={28} bg>жолаушыға қатысты — тыныштықта</Label>
-    <Label x={700} y={330} size={28} bg>жерге қатысты — қозғалыста</Label>
+    <Label x={655} y={330} size={28} bg>жерге қатысты — қозғалыста</Label>
   </g>
 );
 const GraphXT = () => (
@@ -293,7 +293,7 @@ const Pulley = () => (
     <path d="M380 190 V 470 M520 190 V 560" stroke="#8a6a3a" strokeWidth="6" />
     <rect x="320" y="470" width="120" height="110" rx="10" fill="#e5483a" />
     <Arrow x1={520} y1={480} x2={520} y2={640} c="var(--a3-hot)" label="F" />
-    <Label x={710} y={300} size={30} bg>күштен ұтыс жоқ — бағыт өзгереді</Label>
+    <Label x={600} y={300} size={30} bg>күштен ұтыс жоқ — бағыт өзгереді</Label>
   </g>
 );
 const Incline = () => (
@@ -308,7 +308,7 @@ const CenterMass = () => (
     <path d="M250 520 L 450 140 L 680 560 Z" fill="#ffb020" opacity=".85" />
     <path d="M450 140 L 465 540 M250 520 L 572 350 M680 560 L 350 330" stroke="var(--a3-line)" strokeWidth="4" strokeDasharray="12 10" />
     <circle cx="460" cy="406" r="18" fill="var(--a3-hot)" /><path d="M460 425 V 640" stroke="var(--a3-ink)" strokeWidth="4" /><path d="M430 640 h60 l-30 -40z" fill="var(--a3-ink)" />
-    <Label x={640} y={120} size={30} bg>массалар центрі — медианалар қиылысы</Label>
+    <Label x={450} y={120} size={30} bg>массалар центрі — медианалар қиылысы</Label>
   </g>
 );
 
