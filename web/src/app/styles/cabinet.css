@@ -10,6 +10,8 @@
 
 /* сабақтар */
 .lessons { display: grid; gap: var(--s-4); }
+/* grid элементі мазмұнынан тар бола алады: сынып ауыстырғыш айналады, бет экраннан шықпайды */
+.cab__main, .lessons > *, .tabs { min-width: 0; }
 .lessons__bar { margin-top: var(--s-2); }
 .lessons__meta { display: flex; align-items: center; justify-content: space-between; gap: 12px; color: var(--fg-2); font-size: 15px; }
 .lessons__meta button.chip { border: 0; cursor: pointer; }
