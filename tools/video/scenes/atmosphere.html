@@ -1,0 +1,64 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><style>html,body{margin:0;background:#eef2f7;overflow:hidden}canvas{display:block}</style>
+<script type="importmap">{"imports":{"three":"./lib/three.module.js"}}</script></head>
+<body>
+<script type="module">
+// «Атмосфералық қысым» (7-сынып): Торричелли тәжірибесі — сынап бағаны 760 мм-ге дейін түседі, үстінде бос кеңістік;
+// түтікті еңкейтсе де бағанның тік биіктігі 760 мм.
+import { THREE, V, stage, orbit, arrow, label, readout, ruler, seg, win, lerp, mat, mesh, ready } from './kit.js';
+const st = stage({ table: [4.2, 2.2] }), { scene, camera } = st;
+
+const X0 = -0.15, R = 0.04, TL = 1.15, YB = 0.04; // түтіктің төменгі ұшы, радиусы, ұзындығы
+const merc = new THREE.MeshStandardMaterial({ color: '#c7ccd3', metalness: 0.65, roughness: 0.18 });
+// ыдыс (тостаған) және ондағы сынап
+const bowl = new THREE.Mesh(new THREE.LatheGeometry([[0.001, 0], [0.36, 0], [0.4, 0.03], [0.42, 0.13]].map(([r, y]) => new THREE.Vector2(r, y)), 48), mat.glass()); bowl.position.x = X0; bowl.renderOrder = 3; scene.add(bowl);
+const YS = 0.085; // сынаптың беті
+mesh(new THREE.CylinderGeometry(0.395, 0.36, YS - 0.004, 48), merc, { parent: scene, pos: [X0, (YS - 0.004) / 2 + 0.002, 0] });
+// түтік: төменгі ұшы айналу нүктесі
+const tube = new THREE.Group(); tube.position.set(X0, YB, 0); scene.add(tube);
+const glass = new THREE.Mesh(new THREE.CylinderGeometry(R, R, TL, 24, 1, true), mat.glass()); glass.position.y = TL / 2; glass.renderOrder = 3; tube.add(glass);
+const cap = new THREE.Mesh(new THREE.SphereGeometry(R, 24, 12, 0, Math.PI * 2, 0, Math.PI / 2), mat.glass()); cap.position.y = TL; cap.renderOrder = 3; tube.add(cap);
+const col = mesh(new THREE.CylinderGeometry(R - 0.006, R - 0.006, 1, 20), merc, { parent: tube, shadow: false });
+const meniscus = mesh(new THREE.SphereGeometry(R - 0.006, 20, 8, 0, Math.PI * 2, 0, Math.PI / 2), merc, { parent: tube, shadow: false }); meniscus.scale.y = 0.5;
+// штатив пен қысқыш (түтікпен бірге жылжиды)
+const SX = X0 - 0.75;
+mesh(new THREE.CylinderGeometry(0.035, 0.035, 1.5, 16), mat.metal, { parent: scene, pos: [SX, 0.75, -0.15] });
+mesh(new THREE.BoxGeometry(0.5, 0.05, 0.4), mat.metal, { parent: scene, pos: [SX, 0.025, -0.15] });
+const arm = mesh(new THREE.CylinderGeometry(0.02, 0.02, 1, 12), mat.metal, { parent: scene }); arm.rotation.z = Math.PI / 2;
+const clampRing = mesh(new THREE.TorusGeometry(R + 0.012, 0.01, 8, 20), mat.dark, { parent: scene });
+// сызғыш: 0 — сынап беті, мм
+const rl = ruler(scene, { len: 1.0, n: 20, every: 2, width: 0.12, text: (i) => String((20 - i) * 50) }); rl.position.set(X0 - 0.26, YS + 0.5, 0.1);
+const ro = readout(scene, { color: '#1b2230', w: 0.62 });
+const lineM = new THREE.LineDashedMaterial({ color: '#1f6fd0', dashSize: 0.03, gapSize: 0.02, transparent: true, depthTest: false });
+const line = new THREE.Line(new THREE.BufferGeometry().setFromPoints([V(0, 0, 0), V(1, 0, 0)]), lineM); line.computeLineDistances(); line.renderOrder = 8; scene.add(line);
+const AX = [-0.3, -0.18, 0.2, 0.31]; const atm = AX.map(() => arrow(scene, '#1f6fd0', { r: 0.014 }));
+const lAtm = label(scene, 'p', 'атм', '#1f6fd0', { size: 0.34 });
+const H760 = 0.76;
+
+window.renderFrame = (t) => {
+  const th = 0.66 * seg(t, 9.0, 11.6) * (1 - seg(t, 14.6, 16.6)); // еңкею бұрышы
+  tube.rotation.z = -th;
+  // бағанның тік биіктігі: толық → 760 мм (өшетін тербеліспен)
+  const full = YB + TL - YS - 0.01, k = Math.max(0, t - 2.4);
+  const H = t < 2.4 ? full : H760 + (full - H760) * Math.exp(-k * 2.6) * Math.cos(k * 5);
+  const L = Math.min(TL - 0.01, (H + YS - YB) / Math.cos(th));
+  col.scale.y = L; col.position.y = L / 2; meniscus.position.y = L;
+  // қысқыш түтіктің 0.85 нүктесінде
+  const cp = V(X0 + 0.85 * Math.sin(th), YB + 0.85 * Math.cos(th), 0);
+  arm.scale.y = cp.x - SX; arm.position.set((cp.x + SX) / 2, cp.y, -0.0); clampRing.position.copy(cp); clampRing.rotation.set(Math.PI / 2, 0, -th);
+  // мәндер: биіктік (мм), тік сызық бағанның деңгейінде
+  const yTop = YB + L * Math.cos(th), mm = Math.round((yTop - YS) * 1000);
+  const settled = t > 4.6;
+  ro.set((settled ? 760 : mm) + ' мм', seg(t, 4.4, 5.0)); ro.position.set(X0 - 0.75, yTop + 0.12, 0.1);
+  const lOn = win(t, 9.6, 10.2, 15.6, 16.2);
+  line.position.set(X0 - 0.27, yTop, 0.06); line.scale.x = 0.27 + L * Math.sin(th) + 0.02; lineM.opacity = lOn; line.visible = lOn > 0.01;
+  // атмосфералық қысым сынап бетіне
+  const aOn = win(t, 5.4, 6.0, 8.6, 9.2) + win(t, 12.6, 13.2, 17.2, 17.8);
+  atm.forEach((a, i) => a.set(V(X0 + AX[i], YS + 0.3, 0.22), V(0, -1, 0), 0.28, aOn));
+  lAtm.show(V(X0 + 0.46, YS + 0.3, 0.22), aOn);
+  orbit(camera, t, { ang: 0.15, swing: 0.25, rad: 2.9, y: 1.1, look: [X0 - 0.05, 0.58, 0] });
+  return st.render();
+};
+ready();
+</script>
+</body></html>

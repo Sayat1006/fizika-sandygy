@@ -217,7 +217,7 @@ export function ruler(parent, { len = 1, n = 10, every = 1, vertical = true, wid
   x.fillStyle = color; x.fillRect(0, 0, c.width, c.height); x.strokeStyle = x.fillStyle = '#1b2230'; x.font = 'bold ' + (vertical ? 46 : 40) + 'px Arial'; x.textAlign = 'center';
   for (let i = 0; i <= n; i++) {
     const p = 12 + (i / n) * (L - 24), big = i % every === 0; x.lineWidth = big ? 5 : 2.5; x.beginPath();
-    if (vertical) { x.moveTo(0, p); x.lineTo(big ? 52 : 30, p); x.stroke(); if (big) x.fillText(String(from + (flip ? n - i : i)), 92, p + 14); }
+    if (vertical) { x.moveTo(0, p); x.lineTo(big ? 52 : 30, p); x.stroke(); if (big) x.fillText(text ? text(i) : String(from + (flip ? n - i : i)), 92, p + 14); }
     else { x.moveTo(p, 0); x.lineTo(p, big ? 52 : 30); x.stroke(); if (big) x.fillText(text ? text(i) : String(from + i), p, 100); }
   }
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4;
@@ -248,6 +248,42 @@ export function hudGraph(hud, { x = 960, y = 420, w = 280, h = 230, ax = ['x', '
     t.needsUpdate = true;
   };
   return s;
+}
+
+
+// ── электрондық таразы: беті y = 0.09 (жергілікті), set(text) — дисплейдегі мән ──
+export function scaleLCD(parent, { w = 0.6, d = 0.5 } = {}) {
+  const g = new THREE.Group(); parent.add(g);
+  mesh(new THREE.BoxGeometry(w, 0.07, d), new THREE.MeshStandardMaterial({ color: '#e9edf2', roughness: 0.5 }), { parent: g, pos: [0, 0.035, 0] });
+  mesh(new THREE.CylinderGeometry(w * 0.36, w * 0.36, 0.02, 40), new THREE.MeshStandardMaterial({ color: '#c3cad3', metalness: 0.3, roughness: 0.35 }), { parent: g, pos: [0, 0.08, -0.03] });
+  const c = document.createElement('canvas'); c.width = 256; c.height = 96; const x = c.getContext('2d');
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace;
+  const lcd = new THREE.Mesh(new THREE.PlaneGeometry(w * 0.55, w * 0.2), new THREE.MeshBasicMaterial({ map: t, toneMapped: false }));
+  lcd.position.set(0, 0.04, d / 2 + 0.002); g.add(lcd);
+  let last = null;
+  g.set = (txt) => { if (txt === last) return; last = txt; x.fillStyle = '#c9dcc0'; x.fillRect(0, 0, 256, 96); x.fillStyle = '#1b2a1b'; x.font = 'bold 64px Arial'; x.textAlign = 'right'; x.fillText(txt, 240, 72); t.needsUpdate = true; };
+  g.set('0 г'); g.top = 0.09; return g;
+}
+/** өлшеуіш цилиндр (мензурка): r, h, ml — шкаланың жоғарғы мәні, step — сызық аралығы (мл); setLevel(мл, t, amp) */
+export function cylinder(parent, { r = 0.2, h = 1.4, ml = 100, step = 10, x = 0, z = 0 } = {}) {
+  const g = new THREE.Group(); g.position.set(x, 0, z); parent.add(g);
+  const H0 = 0.06, per = (h - 0.16) / ml; // 1 мл биіктігі
+  const glass = new THREE.Mesh(new THREE.CylinderGeometry(r, r, h, 48, 1, true), mat.glass()); glass.position.y = h / 2 + H0; glass.renderOrder = 3; g.add(glass);
+  mesh(new THREE.CylinderGeometry(r * 1.6, r * 1.7, H0, 40), new THREE.MeshStandardMaterial({ color: '#b8c7d8', roughness: 0.3 }), { parent: g, pos: [0, H0 / 2, 0] });
+  mesh(new THREE.TorusGeometry(r, 0.006, 8, 48), new THREE.MeshStandardMaterial({ color: '#9fb6cf' }), { parent: g, pos: [0, h + H0, 0], rot: [Math.PI / 2, 0, 0], shadow: false });
+  // шкала: алдыңғы бетінде сызықтар мен сандар (canvas → иілген жолақ)
+  const c = document.createElement('canvas'); c.width = 128; c.height = 1024; const x2 = c.getContext('2d');
+  x2.strokeStyle = x2.fillStyle = '#1b2a3a'; x2.font = 'bold 34px Arial'; x2.textAlign = 'left';
+  const n = ml / step * 2, yOf = (v) => 1024 - (v / ml) * 1024 * (ml * per) / (h - 0.06);
+  for (let i = 0; i <= n; i++) { const v = (i / n) * ml, y = yOf(v); x2.lineWidth = i % 2 ? 2 : 4; x2.beginPath(); x2.moveTo(0, y); x2.lineTo(i % 2 ? 26 : 46, y); x2.stroke(); if (i % 2 === 0 && v > 0) x2.fillText(String(v), 52, y + 12); }
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace;
+  const sc = new THREE.Mesh(new THREE.CylinderGeometry(r + 0.003, r + 0.003, h - 0.06, 32, 1, true, -0.35, 0.7), new THREE.MeshBasicMaterial({ map: t, transparent: true, depthWrite: false }));
+  sc.position.y = H0 + (h - 0.06) / 2; sc.renderOrder = 5; g.add(sc);
+  const water = new THREE.Mesh(new THREE.CylinderGeometry(r - 0.008, r - 0.008, 1, 40), mat.water()); water.renderOrder = 2; g.add(water);
+  const top = new THREE.Mesh(new THREE.CircleGeometry(r - 0.008, 40), mat.waterTop()); top.rotation.x = -Math.PI / 2; top.renderOrder = 2; g.add(top);
+  g.yOf = (v) => H0 + v * per;
+  g.setLevel = (v, t2 = 0, amp = 0) => { const y = v * per; water.scale.y = Math.max(0.001, y); water.position.y = H0 + y / 2; top.position.y = H0 + y + amp * Math.sin(t2 * 9); };
+  return g;
 }
 
 export const ready = () => { window.ready = true; };

@@ -1,0 +1,64 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><style>html,body{margin:0;background:#eef2f7;overflow:hidden}canvas{display:block}</style>
+<script type="importmap">{"imports":{"three":"./lib/three.module.js"}}</script></head>
+<body>
+<script type="module">
+// «Үйкеліс күші» (7-сынып): үш брусок динамометрмен бірқалыпты тартылады:
+// 1) ағаш бетте; 2) үстінде жүгі бар (қысым күші 2 есе) — күш 2 есе; 3) кедір-бұдыр (зімпара) бетте — күш көп.
+import { THREE, V, stage, orbit, dynamometer, arrow, label, readout, seg, win, lerp, mat, mesh, num, ready } from './kit.js';
+const st = stage({ table: [5.2, 2.4] }), { scene, camera } = st;
+
+const lanes = [
+  { z: 0.7, F: 0.6, surf: '#d8b98e', extra: false },
+  { z: 0.0, F: 1.2, surf: '#d8b98e', extra: true },
+  { z: -0.7, F: 1.5, surf: '#6f6a64', extra: false },
+];
+const BX0 = -1.6, LEN = 1.5; // брусоктың бастапқы орны, жүретін жолы
+const T0 = 2.0, T1 = 13.5; // тарту басталады / аяқталады
+for (const L of lanes) {
+  const rough = L.surf === '#6f6a64';
+  mesh(new THREE.BoxGeometry(3.9, 0.03, 0.45), new THREE.MeshStandardMaterial({ color: L.surf, roughness: rough ? 1 : 0.6 }), { parent: scene, pos: [0, 0.015, L.z] });
+  L.block = new THREE.Group(); scene.add(L.block);
+  mesh(new THREE.BoxGeometry(0.42, 0.16, 0.28), new THREE.MeshStandardMaterial({ color: '#c58f55', roughness: 0.7 }), { parent: L.block, pos: [0, 0.03 + 0.08, 0] });
+  mesh(new THREE.TorusGeometry(0.025, 0.007, 8, 16), mat.metal, { parent: L.block, pos: [0.215, 0.11, 0], rot: [0, Math.PI / 2, 0] });
+  if (L.extra) {
+    const w = new THREE.MeshStandardMaterial({ color: '#9aa4b2', metalness: 0.25, roughness: 0.35 });
+    mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.16, 32), w, { parent: L.block, pos: [0, 0.27, 0] });
+  }
+  // динамометр жатық: корпусы оңда, ілгегі солға (брусокқа)
+  L.dynG = new THREE.Group(); scene.add(L.dynG);
+  L.dyn = dynamometer(L.dynG, { max: 2, K: 0.18 }); L.dyn.rotation.set(-Math.PI / 2, 0, -Math.PI / 2); L.dyn.scale.setScalar(0.8);
+  L.thread = mesh(new THREE.CylinderGeometry(0.005, 0.005, 1, 6), mat.dark, { parent: scene, shadow: false }); L.thread.rotation.z = Math.PI / 2;
+  L.aF = arrow(scene, '#1f6fd0', { r: 0.02 }); L.aR = arrow(scene, '#e5483a', { r: 0.02 });
+  L.lF = label(scene, 'F', '', '#1f6fd0', { size: 0.3 }); L.lR = label(scene, 'F', 'үйк', '#e5483a', { size: 0.34 });
+  L.ro = readout(scene, { color: '#1b2230', w: 0.5 });
+}
+const S = 0.42; // 1 Н = 0.42 бірлік (сызба)
+
+window.renderFrame = (t) => {
+  // күш алдымен тыныштық үйкелісінің шегіне дейін өседі, брусок қозғалған соң тұрақты
+  const ramp = seg(t, T0, T0 + 1.2), slide = Math.max(0, Math.min(t, T1) - (T0 + 1.2));
+  const stop = seg(t, T1, T1 + 0.6);
+  lanes.forEach((L) => {
+    const peak = 1 + 0.18 * Math.exp(-slide * 4) * (slide > 0 ? 1 : 0);
+    const F = (t < T0 + 1.2 ? L.F * 1.15 * ramp : L.F * (1 + 0.15 * Math.exp(-slide * 5)) + 0.02 * Math.sin(t * 9)) * (1 - stop);
+    const bx = BX0 + LEN * Math.min(1, slide / (T1 - T0 - 1.2));
+    L.block.position.set(bx, 0.0, L.z);
+    const hookX = bx + 0.24 + 0.12; // жіптің ұзындығы 0.12
+    const lenDyn = L.dyn.set(Math.max(0, F)) * 0.8; // жергілікті −y бойындағы ілгек (масштабпен)
+    // динамометрдің ілгегі hookX-та: корпус центрі = hookX − lenDyn (ось +x бойымен)
+    L.dynG.position.set(hookX - lenDyn, 0.07, L.z);
+    L.thread.scale.y = 0.12; L.thread.position.set(bx + 0.21 + 0.06 + 0.01, 0.11, L.z);
+    const on = win(t, T0 + 1.5, T0 + 2.0, T1 + 0.6, T1 + 1.2);
+    const top = L.extra ? 0.42 : 0.3;
+    L.aF.set(V(bx, top, L.z), V(1, 0, 0), F * S, on); L.lF.show(V(bx + F * S + 0.12, top + 0.06, L.z), on);
+    L.aR.set(V(bx - 0.2, 0.05, L.z + 0.16), V(-1, 0, 0), F * S, on); L.lR.show(V(bx - 0.2 - F * S - 0.14, 0.1, L.z + 0.16), on);
+    L.ro.set(num(Math.max(0, Math.round(F * 10) / 10)) + ' Н', seg(t, T0, T0 + 0.5) * (1 - seg(t, T1 + 1.5, T1 + 2.0)));
+    L.ro.position.set(hookX - lenDyn + 0.05, 0.36, L.z - 0.05);
+  });
+  orbit(camera, t, { ang: -0.55, swing: 0.25, rad: 3.7, y: 2.1, look: [-0.15, 0.05, 0] });
+  return st.render();
+};
+ready();
+</script>
+</body></html>

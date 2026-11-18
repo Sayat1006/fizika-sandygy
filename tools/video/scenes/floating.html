@@ -1,0 +1,52 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><style>html,body{margin:0;background:#eef2f7;overflow:hidden}canvas{display:block}</style>
+<script type="importmap">{"imports":{"three":"./lib/three.module.js"}}</script></head>
+<body>
+<script type="module">
+// «Денелердің жүзу шарттары» (7-сынып): өлшемі бірдей үш шар суға түседі:
+// болат (ρ > ρ_с) батады, ρ = ρ_с шар судың ішінде қалқиды, ағаш (ρ < ρ_с) бетінде жүзеді. mg мен F_A салыстырылады.
+import { THREE, V, stage, orbit, tank, arrow, label, seg, win, simulate, clamp, mesh, ready } from './kit.js';
+const st = stage({ table: [4.4, 2.2] }), { scene, camera } = st;
+
+const LEVEL = 0.95, tk = tank(scene, { w: 2.4, h: 1.25, d: 0.9 }), SURF = 0.025 + LEVEL, BOT = 0.05;
+const R = 0.14, G = 3.0, C = 4.2;
+const balls = [
+  { x: -0.72, rho: 2.5, t0: 1.2, m: new THREE.MeshStandardMaterial({ color: '#8b939c', metalness: 0.35, roughness: 0.3 }) },
+  { x: 0.0, rho: 1.0, t0: 3.0, m: new THREE.MeshStandardMaterial({ color: '#3fb27f', roughness: 0.45 }) },
+  { x: 0.72, rho: 0.5, t0: 4.8, m: new THREE.MeshStandardMaterial({ color: '#d2a46c', roughness: 0.8 }) },
+];
+const Y0 = SURF + 0.65;
+// батқан бөлік (шар сегментінің көлемі / шар көлемі)
+const frac = (y) => { const h = clamp(SURF - (y - R), 0, 2 * R); return (h * h * (3 * R - h)) / (4 * R * R * R); };
+for (const b of balls) {
+  b.mesh = mesh(new THREE.SphereGeometry(R, 40, 28), b.m, { parent: scene });
+  b.S = simulate({ y: Y0, v: 0 }, (s, t, dt) => {
+    if (t < b.t0) return;
+    const f = frac(s.y), a = G * (f / b.rho - 1) - C * f * s.v;
+    s.v += a * dt; s.y += s.v * dt;
+    if (s.y < BOT + R) { s.y = BOT + R; s.v = Math.max(0, s.v) * 0; }
+  });
+  b.aG = arrow(scene, '#e5483a', { r: 0.018 }); b.aA = arrow(scene, '#17a05d', { r: 0.018 });
+  b.lG = label(scene, 'mg', '', '#e5483a', { size: 0.3 }); b.lA = label(scene, 'F', 'A', '#17a05d', { size: 0.3 });
+}
+const SC = 0.16; // ρ_с көлемдегі салмақ = 0.16 бірлік
+
+window.renderFrame = (t) => {
+  let splash = 0;
+  balls.forEach((b) => {
+    const s = b.S(t); b.mesh.position.set(b.x, s.y, 0); b.mesh.rotation.y = 0.3 + t * 0.05;
+    splash += Math.exp(-Math.max(0, t - b.t0 - 0.6) * 1.5) * (t > b.t0 + 0.55 ? 1 : 0);
+    const on = win(t, 8.6, 9.3, 17.2, 17.8), f = frac(s.y), z = R + 0.06;
+    const c = V(b.x, s.y, z);
+    b.aG.set(c.clone().add(V(-0.06, 0, 0)), V(0, -1, 0), b.rho * SC + 0.04, on);
+    b.aA.set(c.clone().add(V(0.06, 0, 0)), V(0, 1, 0), f * SC + 0.04, on);
+    b.lG.show(c.clone().add(V(-0.2, -b.rho * SC * 0.6 - 0.05, 0)), on);
+    b.lA.show(c.clone().add(V(0.2, f * SC * 0.6 + 0.05, 0)), on);
+  });
+  tk.setLevel(LEVEL, t, 0.012 * Math.min(1, splash));
+  orbit(camera, t, { ang: -0.2, swing: 0.3, rad: 3.8, y: 1.5, look: [0, 0.62, 0] });
+  return st.render();
+};
+ready();
+</script>
+</body></html>
