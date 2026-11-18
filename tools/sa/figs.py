@@ -109,23 +109,24 @@ def balance(weights, obj='cube'):
 
 
 # ── графиктер ──
-def graph(series, xmax, ymax, xstep, ystep, xl='t, с', yl='s, м', labels=None, w=440, h=310):
-    """series: [[(x,y),…], …] — сынық сызықтар; labels: әр сызыққа белгі (I, II)"""
+def graph(series, xmax, ymax, xstep, ystep, xl='t, с', yl='s, м', labels=None, w=440, h=310, ymin=0):
+    """series: [[(x,y),…], …] — сынық сызықтар; labels: әр сызыққа белгі (I, II); ymin < 0 болса, t осі нөлде"""
     L, B, R, T = 60, h - 54, w - 30, 24
-    sx, sy = (R - L) / xmax, (B - T) / ymax
+    sx, sy = (R - L) / xmax, (B - T) / (ymax - ymin)
+    Y = lambda y: B - (y - ymin) * sy
     b = ''
     for i in range(0, int(round(xmax / xstep)) + 1):
         x = L + i * xstep * sx; b += line(x, T, x, B, '#d5dbe3', 1) + text(x, B + 20, num(i * xstep), 13)
-    for i in range(0, int(round(ymax / ystep)) + 1):
-        y = B - i * ystep * sy; b += line(L, y, R, y, '#d5dbe3', 1) + text(L - 8, y + 5, num(i * ystep), 13, 'end')
-    b += arrow(L, B, R + 18, B, INK, 1.6, 9) + arrow(L, B, L, T - 14, INK, 1.6, 9)
+    for i in range(0, int(round((ymax - ymin) / ystep)) + 1):
+        y = B - i * ystep * sy; b += line(L, y, R, y, '#d5dbe3', 1) + text(L - 8, y + 5, num(ymin + i * ystep), 13, 'end')
+    b += arrow(L, Y(0), R + 18, Y(0), INK, 1.6, 9) + arrow(L, B, L, T - 14, INK, 1.6, 9)
     b += text(R + 20, B + 38, xl, 14, 'end', italic=True) + text(L + 8, T - 6, yl, 14, 'start', italic=True)
     cols = [BLUE, RED, GREEN]
     for k, s in enumerate(series):
-        pts = ' '.join(f'{L + x * sx:.1f},{B - y * sy:.1f}' for x, y in s)
+        pts = ' '.join(f'{L + x * sx:.1f},{Y(y):.1f}' for x, y in s)
         b += f"<polyline points='{pts}' fill='none' stroke='{cols[k % 3]}' stroke-width='2.6'/>"
         if labels:
-            x, y = s[-1]; b += text(L + x * sx - 4, B - y * sy - 10, labels[k], 15, 'end', cols[k % 3], bold=True)
+            x, y = s[-1]; b += text(L + x * sx - 4, Y(y) - 10, labels[k], 15, 'end', cols[k % 3], bold=True)
     return svg(w, h, b)
 
 
@@ -251,12 +252,13 @@ def crane(h, m):
     return svg(420, 300, b)
 
 
-def moon_phases():
+def moon_phases(start=0):
     """Жер, Ай орбитасы, 4 орын (1–4), Күн сәулесі сол жақтан"""
     b = ''.join(arrow(20, 60 + i * 50, 70, 60 + i * 50, '#f0b429', 2, 8) for i in range(4)) + text(45, 40, 'Күн сәулесі', 13, color=MUTED)
     cx, cy, R = 280, 140, 100
     b += f"<circle cx='{cx}' cy='{cy}' r='{R}' fill='none' stroke='{MUTED}' stroke-dasharray='5 4'/>" + f"<circle cx='{cx}' cy='{cy}' r='26' fill='#5aa0e0' stroke='{INK}'/>" + text(cx, cy + 5, 'Жер', 12, color='#fff')
-    for i, (dx, dy) in enumerate(((-1, 0), (0, -1), (1, 0), (0, 1)), 1):
+    for i0, (dx, dy) in enumerate(((-1, 0), (0, -1), (1, 0), (0, 1))):
+        i = (i0 - start) % 4 + 1
         x, y = cx + dx * R, cy + dy * R
         b += f"<circle cx='{x}' cy='{y}' r='13' fill='#2b2f38'/><path d='M{x},{y - 13} A13,13 0 0,0 {x},{y + 13} Z' fill='#f6f0d8'/>" + text(x + dx * 26 + (14 if dx == 0 else 0), y + dy * 26 + 5, str(i), 14, bold=True)
     return svg(420, 280, b)
