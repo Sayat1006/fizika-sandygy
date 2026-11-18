@@ -56,10 +56,13 @@ export function stage({ table = [5.2, 2.6], fog = [12, 22], shadow = 4, bg = '#e
   Object.assign(sun.shadow.camera, { left: -shadow, right: shadow, top: shadow, bottom: -shadow, near: 1, far: 15 });
   sun.shadow.radius = 4; sun.shadow.bias = -0.0005; scene.add(sun);
   const fill = new THREE.DirectionalLight('#dbe8ff', 0.6); fill.position.set(-4, 3, -2); scene.add(fill);
-  const floor = mesh(new THREE.PlaneGeometry(40, 40), new THREE.MeshStandardMaterial({ color: '#e4e9f0', roughness: 1 }), { shadow: false, parent: scene, pos: [0, -0.9, 0], rot: [-Math.PI / 2, 0, 0] });
-  const [tw, td] = table;
-  const top = mesh(new THREE.BoxGeometry(tw, 0.16, td), mat.wood, { parent: scene, pos: [0, -0.08, 0] });
-  for (const sx of [-1, 1]) for (const sz of [-1, 1]) mesh(new THREE.BoxGeometry(0.12, 0.74, 0.12), mat.woodDark, { parent: scene, pos: [sx * (tw / 2 - 0.2), -0.53, sz * (td / 2 - 0.2)] });
+  let floor = null, top = null;
+  if (table) { // table: false — үстелсіз (ғарыш т.б.)
+    floor = mesh(new THREE.PlaneGeometry(40, 40), new THREE.MeshStandardMaterial({ color: '#e4e9f0', roughness: 1 }), { shadow: false, parent: scene, pos: [0, -0.9, 0], rot: [-Math.PI / 2, 0, 0] });
+    const [tw, td] = table;
+    top = mesh(new THREE.BoxGeometry(tw, 0.16, td), mat.wood, { parent: scene, pos: [0, -0.08, 0] });
+    for (const sx of [-1, 1]) for (const sz of [-1, 1]) mesh(new THREE.BoxGeometry(0.12, 0.74, 0.12), mat.woodDark, { parent: scene, pos: [sx * (tw / 2 - 0.2), -0.53, sz * (td / 2 - 0.2)] });
+  }
   // HUD: пиксель координатасы (0,0 — сол жақ төменгі бұрыш)
   const hud = new THREE.Scene(), hudCam = new THREE.OrthographicCamera(0, W, H, 0, -10, 10);
   return {
