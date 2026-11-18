@@ -1,0 +1,47 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><style>html,body{margin:0;background:#eef2f7;overflow:hidden}canvas{display:block}</style>
+<script type="importmap">{"imports":{"three":"./lib/three.module.js"}}</script></head>
+<body>
+<script type="module">
+// «Электромагниттік индукция» (8-сынып): шарғы гальванометрге жалғанған. Магнитті шарғыға енгізгенде тілше бір жаққа,
+// шығарғанда — екінші жаққа ауытқиды; магнит қозғалмаса — ток жоқ; жылдам қозғалса — ток көп (I ∝ ΔΦ/Δt, сандық есеп).
+// Соңында магнит тұрады, шарғы қозғалады — нәтиже бірдей (салыстырмалы қозғалыс). I(t) графигі.
+import { THREE, V, stage, orbit, meter, wire, label, hudPlot, seg, win, lerp, mat, mesh, ready } from './kit.js';
+const st = stage({ table: [4.4, 2.2] }), { scene, camera, hud } = st;
+const CY = 0.16, CL = 0.5, CR = 0.12;
+const coil = new THREE.Group(); scene.add(coil);
+const hc = new THREE.Curve(); hc.getPoint = (u) => V(-CL / 2 + CL * u, CR * Math.cos(u * Math.PI * 2 * 18), CR * Math.sin(u * Math.PI * 2 * 18));
+mesh(new THREE.TubeGeometry(hc, 700, 0.01, 6), new THREE.MeshStandardMaterial({ color: '#c46a2c', metalness: 0.5, roughness: 0.35 }), { parent: coil });
+const core = mesh(new THREE.CylinderGeometry(CR - 0.012, CR - 0.012, CL, 32, 1, true), new THREE.MeshStandardMaterial({ color: '#f1e3c2', roughness: 0.8, side: THREE.DoubleSide }), { parent: coil, rot: [0, 0, Math.PI / 2] });
+for (const s of [-1, 1]) mesh(new THREE.BoxGeometry(0.04, CY - 0.0, 0.2), mat.woodDark, { parent: coil, pos: [s * (CL / 2 - 0.03), -CY / 2, 0] });
+const gal = meter(scene, { min: -2, max: 2, step: 1, sym: 'G', x: 0.15, z: -0.55, size: 0.5, color: '#1b2230' });
+const magnet = new THREE.Group(); scene.add(magnet);
+mesh(new THREE.BoxGeometry(0.25, 0.09, 0.09), new THREE.MeshStandardMaterial({ color: '#e5322d', roughness: 0.45 }), { parent: magnet, pos: [0.125, 0, 0] });
+mesh(new THREE.BoxGeometry(0.25, 0.09, 0.09), new THREE.MeshStandardMaterial({ color: '#2f6fe0', roughness: 0.45 }), { parent: magnet, pos: [-0.125, 0, 0] });
+const lN = label(magnet, 'N', '', '#ffffff', { size: 0.16, parent: magnet }), lS = label(magnet, 'S', '', '#ffffff', { size: 0.16, parent: magnet });
+lN.show(V(0.15, 0.08, 0.05), 1); lS.show(V(-0.1, 0.08, 0.05), 1);
+const plot = hudPlot(hud, { x: 940, y: 400, w: 310, h: 250, ax: ['t', ''], ay: ['I', ''] });
+// қозғалыс: магниттің шарғыға қатысты орны s (0 — центрінде), шарғының орны
+const OUT = -0.75, IN = 0.05;
+const ss = (t, a, b, x0, x1) => (t < a ? x0 : t > b ? x1 : lerp(x0, x1, seg(t, a, b)));
+const magX = (t) => (t < 4 ? ss(t, 1.4, 2.6, OUT, IN) : t < 7 ? ss(t, 4.6, 5.8, IN, OUT) : t < 9 ? ss(t, 7.6, 8.1, OUT, IN) : t < 11.6 ? ss(t, 9.6, 10.1, IN, OUT) : OUT);
+const coilX = (t) => (t < 11.6 ? 0.0 : t < 14.5 ? ss(t, 12.0, 13.2, 0, OUT - IN) : ss(t, 14.8, 16.0, OUT - IN, 0));
+const flux = (t) => { const d = magX(t) - coilX(t) - 0.1; return 1 / (1 + (d / 0.22) ** 2); };
+const Iof = (t) => -(flux(t + 0.01) - flux(t - 0.01)) / 0.02 * 0.9;
+// сымдар (шарғы ұштарынан гальванометрге)
+const gL = gal.term(-1), gR = gal.term(1);
+const wires = [-1, 1].map((s) => mesh(new THREE.CylinderGeometry(0.006, 0.006, 1, 6), new THREE.MeshStandardMaterial({ color: '#1b2230' }), { parent: scene, shadow: false }));
+const seg3 = (m, a, b) => { const d = b.clone().sub(a); m.scale.y = d.length(); m.position.copy(a).addScaledVector(d, 0.5); m.quaternion.setFromUnitVectors(V(0, 1, 0), d.normalize()); };
+
+window.renderFrame = (t) => {
+  const cx = coilX(t); coil.position.set(cx, CY, 0); magnet.position.set(magX(t) - 0.25, CY, 0);
+  const I = Iof(t); gal.set(Math.max(-2.1, Math.min(2.1, I)));
+  seg3(wires[0], V(cx - CL / 2, CY + CR, 0), gL); seg3(wires[1], V(cx + CL / 2, CY + CR, 0), gR);
+  const pts = []; for (let k = 0; k <= 170; k++) { const tt = 0.5 + k * 0.1; if (tt > t) break; pts.push([tt / 17.6, 0.5 + Math.max(-2.2, Math.min(2.2, Iof(tt))) / 4.6]); }
+  plot.draw([{ pts: [[0, 0.5], [1, 0.5]], color: '#c9ced6', label: '' }, { pts, color: '#e5483a', label: '' }], seg(t, 0.4, 1.0));
+  orbit(camera, t, { ang: -0.08, swing: 0.15, rad: 2.3, y: 1.15, look: [0.12, 0.25, -0.1], cx: -0.05 });
+  return st.render();
+};
+ready();
+</script>
+</body></html>

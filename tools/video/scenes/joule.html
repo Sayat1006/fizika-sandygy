@@ -1,0 +1,65 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><style>html,body{margin:0;background:#eef2f7;overflow:hidden}canvas{display:block}</style>
+<script type="importmap">{"imports":{"three":"./lib/three.module.js"}}</script></head>
+<body>
+<script type="module">
+// «Токтың жылулық әсері. Джоуль–Ленц заңы. Сақтандырғыш» (8-сынып): никелин спиральдан өтетін ток артқан сайын
+// (1 → 2 → 3 А) ол қызады, қызарады (Q = I²Rt — 3 А-да 1 А-мен салыстырғанда 9 есе көп жылу). Сосын спираль
+// қалың сыммен тұйықталады (қысқа тұйықталу): ток күрт өседі, сақтандырғыштың жіңішке сымы балқып үзіледі, ток тоқтайды.
+import { THREE, V, stage, orbit, readout, meter, wire, battery, seg, win, lerp, mat, mesh, ready } from './kit.js';
+const st = stage({ table: [4.0, 2.4] }), { scene, camera } = st;
+const lo = 0.012;
+const src = battery(scene, { x: -1.0, z: 0.4, w: 0.42 });
+const am = meter(scene, { max: 5, sym: 'A', step: 1, x: -0.25, z: -0.3, size: 0.48 });
+// спираль (тіректер арасында)
+const SX = 0.75, SZ = 0.25, SY = 0.32, SL = 0.6;
+for (const s of [-1, 1]) { mesh(new THREE.CylinderGeometry(0.02, 0.025, SY, 12), mat.dark, { parent: scene, pos: [SX + s * (SL / 2 + 0.04), SY / 2, SZ] }); }
+const helix = new THREE.Curve(); helix.getPoint = (u) => V(SX - SL / 2 + SL * u, SY + 0.045 * Math.cos(u * Math.PI * 2 * 14), SZ + 0.045 * Math.sin(u * Math.PI * 2 * 14));
+const spM = new THREE.MeshStandardMaterial({ color: '#8a8f99', metalness: 0.6, roughness: 0.4, emissive: '#ff3a10', emissiveIntensity: 0 });
+mesh(new THREE.TubeGeometry(helix, 400, 0.006, 6), spM, { parent: scene });
+const glowC = document.createElement('canvas'); glowC.width = glowC.height = 128; { const q = glowC.getContext('2d'), gr = q.createRadialGradient(64, 64, 4, 64, 64, 64); gr.addColorStop(0, 'rgba(255,120,40,0.9)'); gr.addColorStop(1, 'rgba(255,80,20,0)'); q.fillStyle = gr; q.fillRect(0, 0, 128, 128); }
+const glow = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(glowC), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending })); glow.position.set(SX, SY, SZ); glow.scale.set(0.9, 0.35, 1); scene.add(glow);
+// сақтандырғыш: шыны түтік ішіндегі жіңішке сым
+const FX = 0.25, FZ = 0.62, FY = 0.12;
+const tube = mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.26, 24, 1, true), mat.glass(), { parent: scene, pos: [FX, FY, FZ], rot: [0, 0, Math.PI / 2], shadow: false }); tube.renderOrder = 5;
+for (const s of [-1, 1]) mesh(new THREE.CylinderGeometry(0.038, 0.038, 0.04, 24), mat.metal, { parent: scene, pos: [FX + s * 0.13, FY, FZ], rot: [0, 0, Math.PI / 2] });
+mesh(new THREE.BoxGeometry(0.4, 0.05, 0.12), mat.woodDark, { parent: scene, pos: [FX, 0.025, FZ] });
+const fM = new THREE.MeshStandardMaterial({ color: '#c9ccd2', metalness: 0.6, emissive: '#ff6a10', emissiveIntensity: 0 });
+const fw = [-1, 1].map((s) => mesh(new THREE.CylinderGeometry(0.0035, 0.0035, 0.11, 6), fM, { parent: scene, pos: [FX + s * 0.055, FY, FZ], rot: [0, 0, Math.PI / 2], shadow: false }));
+const drop = mesh(new THREE.SphereGeometry(0.008, 10, 8), fM, { parent: scene, shadow: false });
+// сымдар
+const pP = src.term(1), pM = src.term(-1), aL = am.term(-1), aR = am.term(1);
+const w1 = wire(scene, [pP, V(pP.x, lo, pP.z), V(pP.x, lo, -0.0), V(aL.x, lo, 0.0), aL]);
+const w2 = wire(scene, [aR, V(aR.x, lo, 0.0), V(SX - SL / 2 - 0.04, lo, 0.0), V(SX - SL / 2 - 0.04, lo, SZ), V(SX - SL / 2 - 0.04, SY, SZ)]);
+const w3 = wire(scene, [V(SX + SL / 2 + 0.04, SY, SZ), V(SX + SL / 2 + 0.04, lo, SZ), V(SX + SL / 2 + 0.04, lo, FZ), V(FX + 0.15, lo, FZ), V(FX + 0.15, FY, FZ)]);
+const w4 = wire(scene, [V(FX - 0.15, FY, FZ), V(FX - 0.15, lo, FZ), V(pM.x, lo, FZ), V(pM.x, lo, pM.z), pM]);
+const els = [w1, w2, w3, w4].map((w) => w.flow(0));
+// қысқа тұйықтаушы қалың сым
+const bridge = mesh(new THREE.BoxGeometry(SL + 0.12, 0.02, 0.02), new THREE.MeshStandardMaterial({ color: '#c46a2c', metalness: 0.5, roughness: 0.4 }), { parent: scene });
+const rI = readout(scene, { color: '#1f6fd0', w: 0.56 });
+// ток: 1 → 2 → 3 А, 10,6 с-та қысқа тұйықталу (≈ 5 А), 11,6 с-та сақтандырғыш үзіледі
+const TB = 10.6, TF = 11.7;
+const Iof = (t) => { if (t >= TF) return 0; if (t >= TB) return lerp(3, 5.2, seg(t, TB, TB + 0.25)); return seg(t, 0.8, 1.3) + seg(t, 3.8, 4.3) + seg(t, 6.8, 7.3); };
+
+window.renderFrame = (t) => {
+  const I = Iof(t); am.set(I);
+  // спираль температурасы (Q ∝ I²) — инерциямен
+  let heat = 0; for (let x = Math.max(0, t - 3); x <= t; x += 1 / 30) { const i2 = x >= TB ? 0 : Iof(x) ** 2; heat += (i2 / 9 - heat) * (1 / 30) / 0.8; }
+  spM.emissiveIntensity = 2.2 * heat ** 1.5; spM.color.set(new THREE.Color('#8a8f99').lerp(new THREE.Color('#ff7a3a'), Math.min(1, heat))); glow.material.opacity = Math.max(0, heat - 0.35) * 1.4; glow.visible = heat > 0.36;
+  // сақтандырғыш
+  const fh = seg(t, TB + 0.2, TF); fM.emissiveIntensity = 3 * fh * (t < TF + 0.4 ? 1 : 0); const br = t >= TF ? Math.min(1, (t - TF) / 0.3) : 0;
+  fw[0].scale.y = 1 - 0.45 * br; fw[0].position.x = FX - 0.055 - 0.025 * br; fw[1].scale.y = 1 - 0.45 * br; fw[1].position.x = FX + 0.055 + 0.025 * br;
+  drop.visible = t >= TF && t < TF + 1.2; drop.position.set(FX, Math.max(FY - 0.03, FY - 0.6 * (t - TF) ** 2), FZ);
+  // қалың сым түседі
+  const kb = seg(t, TB - 0.8, TB); bridge.position.set(SX, lerp(SY + 0.5, SY + 0.0, kb), SZ + 0.0); bridge.visible = t > TB - 0.9;
+  // электрондар
+  let q = 0; for (let x = 0; x < t; x += 1 / 60) q += Iof(x) / 60;
+  els.forEach((e) => e.set(-q * 0.1, I > 0.02 ? 1 : 0.3));
+  rI.set('I = ' + (I > 4 ? '5' : Math.round(I)) + ' А', win(t, 1.0, 1.4, 17.3, 17.9)); rI.position.set(-0.25, 0.75, -0.2);
+  const k = seg(t, 9.6, 10.4) * (1 - seg(t, 13.2, 14.4)), lx = lerp(0.1, 0.5, k);
+  orbit(camera, t, { ang: lerp(-0.05, 0.1, k), swing: 0.15, rad: lerp(2.8, 2.0, k), y: lerp(1.35, 1.0, k), look: [lx, lerp(0.25, 0.25, k), lerp(0.05, 0.4, k)], cx: lx });
+  return st.render();
+};
+ready();
+</script>
+</body></html>

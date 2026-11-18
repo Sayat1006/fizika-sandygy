@@ -1,0 +1,64 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><style>html,body{margin:0;background:#eef2f7;overflow:hidden}canvas{display:block}</style>
+<script type="importmap">{"imports":{"three":"./lib/three.module.js"}}</script></head>
+<body>
+<script type="module">
+// «Тұрақты магниттер. Тогы бар өткізгіштің магнит өрісі» (8-сынып): 1) жолақ магниттің үстіндегі шыныға себілген темір
+// үгінділері шыныны қаққанда магнит өрісінің сызықтары бойымен тізіледі (бағыт — екі полюстің өрісінен есептеледі);
+// 2) Эрстед тәжірибесі: тік өткізгіштің айналасындағы магнит тілшелері ток жүргенде шеңбер бойымен тізіледі,
+// ток бағыты өзгерсе — кері бұрылады (оң бұранда ережесі).
+import { THREE, V, stage, orbit, label, arrow, seg, win, lerp, mat, mesh, ready } from './kit.js';
+const st = stage({ table: [4.6, 2.2] }), { scene, camera } = st;
+let sd = 13; const rnd = () => ((sd = (sd * 16807) % 2147483647) / 2147483647);
+// 1) магнит + үгінділер
+const MX = -0.95, MY = 0.04, ML = 0.5;
+mesh(new THREE.BoxGeometry(ML / 2, 0.07, 0.12), new THREE.MeshStandardMaterial({ color: '#e5322d', roughness: 0.45 }), { parent: scene, pos: [MX + ML / 4, MY, 0] });
+mesh(new THREE.BoxGeometry(ML / 2, 0.07, 0.12), new THREE.MeshStandardMaterial({ color: '#2f6fe0', roughness: 0.45 }), { parent: scene, pos: [MX - ML / 4, MY, 0] });
+const lN = label(scene, 'N', '', '#ffffff', { size: 0.2 }), lS = label(scene, 'S', '', '#ffffff', { size: 0.2 });
+const PY = 0.1, PW = 1.5, PD = 1.0;
+const plate = mesh(new THREE.BoxGeometry(PW, 0.012, PD), mat.glass(), { parent: scene, pos: [MX, PY, 0], shadow: false }); plate.renderOrder = 5;
+for (const sx of [-1, 1]) for (const sz of [-1, 1]) mesh(new THREE.CylinderGeometry(0.015, 0.015, PY, 8), mat.metal, { parent: scene, pos: [MX + sx * (PW / 2 - 0.05), PY / 2, sz * (PD / 2 - 0.05)] });
+const NF = 1400, fil = new THREE.InstancedMesh(new THREE.BoxGeometry(0.03, 0.004, 0.006), new THREE.MeshStandardMaterial({ color: '#3a3d44', metalness: 0.6, roughness: 0.5 }), NF); scene.add(fil);
+const P1 = V(MX + ML / 2 - 0.03, PY, 0), P2 = V(MX - ML / 2 + 0.03, PY, 0); // N (+) және S (−) «полюстер»
+const Bat = (p) => { const b = V(); for (const [q, c] of [[1, P1], [-1, P2]]) { const r = p.clone().sub(c); r.y = 0; const d = Math.max(0.03, r.length()); b.addScaledVector(r, q / d ** 3); } return b; };
+const FL = Array.from({ length: NF }, () => { const p = V(MX + (rnd() - 0.5) * (PW - 0.06), PY + 0.009, (rnd() - 0.5) * (PD - 0.06)); const b = Bat(p); return { p, a0: rnd() * Math.PI, a1: Math.atan2(-b.z, b.x), ph: rnd() * 6.28 }; });
+const dm = new THREE.Object3D();
+// 2) Эрстед
+const OX = 1.05, CY = 0.35;
+mesh(new THREE.BoxGeometry(0.9, 0.012, 0.9), new THREE.MeshStandardMaterial({ color: '#f8fafc', roughness: 0.9 }), { parent: scene, pos: [OX, CY, 0] });
+for (const sx of [-1, 1]) for (const sz of [-1, 1]) mesh(new THREE.CylinderGeometry(0.012, 0.012, CY, 8), mat.metal, { parent: scene, pos: [OX + sx * 0.4, CY / 2, sz * 0.4] });
+const wM = new THREE.MeshStandardMaterial({ color: '#c46a2c', metalness: 0.5, roughness: 0.35 });
+mesh(new THREE.CylinderGeometry(0.014, 0.014, 1.0, 12), wM, { parent: scene, pos: [OX, 0.5, 0] });
+const comp = Array.from({ length: 8 }, (_, i) => { const a = i / 8 * Math.PI * 2, g = new THREE.Group(); g.position.set(OX + 0.24 * Math.cos(a), CY + 0.012, -0.24 * Math.sin(a)); scene.add(g);
+  mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.012, 24), new THREE.MeshStandardMaterial({ color: '#f1f3f6' }), { parent: g, pos: [0, 0.006, 0] });
+  const n = new THREE.Group(); n.position.y = 0.02; g.add(n);
+  mesh(new THREE.ConeGeometry(0.012, 0.04, 8), new THREE.MeshStandardMaterial({ color: '#e5322d' }), { parent: n, pos: [0.02, 0, 0], rot: [0, 0, -Math.PI / 2] });
+  mesh(new THREE.ConeGeometry(0.012, 0.04, 8), new THREE.MeshStandardMaterial({ color: '#2f6fe0' }), { parent: n, pos: [-0.02, 0, 0], rot: [0, 0, Math.PI / 2] });
+  return { g, n, a }; });
+const aI = arrow(scene, '#e5483a', { r: 0.02 }), lI = label(scene, 'I', '', '#e5483a', { size: 0.3 });
+const circ = new THREE.Line(new THREE.BufferGeometry().setFromPoints(Array.from({ length: 65 }, (_, i) => V(OX + 0.36 * Math.cos(i / 64 * Math.PI * 2), CY + 0.02, -0.36 * Math.sin(i / 64 * Math.PI * 2)))), new THREE.LineDashedMaterial({ color: '#17a05d', dashSize: 0.03, gapSize: 0.02, transparent: true }));
+circ.computeLineDistances(); scene.add(circ);
+const cA = arrow(scene, '#17a05d', { r: 0.012 }), lB = label(scene, 'B', '', '#17a05d', { size: 0.26 });
+
+window.renderFrame = (t) => {
+  // үгінділер: 1,4–5 с аралығында тізіледі (шыныны қағу — діріл)
+  const k = seg(t, 1.4, 5.0), tap = win(t, 1.2, 1.5, 4.6, 5.2);
+  FL.forEach((f, i) => { let a = lerp(f.a0, f.a1, k); if (Math.abs(f.a1 - f.a0) > Math.PI / 2) a = lerp(f.a0, f.a1 + Math.sign(f.a0 - f.a1) * Math.PI, k);
+    dm.position.set(f.p.x, f.p.y + tap * 0.01 * Math.abs(Math.sin(t * 40 + f.ph)), f.p.z); dm.rotation.set(0, a, 0); dm.updateMatrix(); fil.setMatrixAt(i, dm.matrix); });
+  fil.instanceMatrix.needsUpdate = true;
+  lN.show(V(MX + ML / 4, MY + 0.12, 0.08), 1); lS.show(V(MX - ML / 4, MY + 0.12, 0.08), 1);
+  // Эрстед: 10,5 с — ток жоғары, 14,2 с — ток төмен
+  const on = seg(t, 10.4, 11.4), rev = seg(t, 14.0, 15.0), dir = 1 - 2 * rev;
+  comp.forEach((c) => { const tang = c.a + Math.PI / 2 * dir; // B бағыты: жоғары ток — сағат тіліне қарсы (жоғарыдан)
+    const north = 0; let a = lerp(north, tang, on); c.n.rotation.y = a + 0.05 * Math.sin(t * 7 + c.a) * (on > 0 && on < 1 ? 1 : 0); });
+  const io = on * (1 - seg(t, 17.3, 17.9));
+  aI.set(V(OX + 0.06, 0.62, 0), V(0, dir, 0), 0.26, io * Math.abs(dir)); lI.show(V(OX + 0.14, 0.82, 0), io);
+  circ.material.opacity = io * 0.9 * Math.abs(dir); circ.visible = io > 0.01;
+  const ca = Math.PI * 0.25; cA.set(V(OX + 0.36 * Math.cos(ca), CY + 0.02, -0.36 * Math.sin(ca)), V(-Math.sin(ca) * dir, 0, -Math.cos(ca) * dir), 0.14, io * Math.abs(dir)); lB.show(V(OX + 0.36, CY + 0.12, -0.32), io * Math.abs(dir));
+  const kc = seg(t, 7.6, 9.6), lx = lerp(MX, OX, kc);
+  orbit(camera, t, { ang: lerp(0.0, 0.2, kc), swing: 0.12, rad: lerp(1.6, 1.8, kc), y: lerp(1.45, 1.2, kc), look: [lx, lerp(0.05, 0.38, kc), 0], cx: lx });
+  return st.render();
+};
+ready();
+</script>
+</body></html>
