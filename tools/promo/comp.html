@@ -5,61 +5,71 @@
 @font-face{font-family:I;src:url(../../public/assets/fonts/inter-latin-wght-normal.woff2) format('woff2-variations');font-weight:100 900;unicode-range:U+0000-00FF,U+2000-206F,U+20AC,U+2122,U+2190-2199,U+2212,U+2713}
 *{box-sizing:border-box}
 html,body{margin:0;background:#000;font-family:I,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
-#st{position:relative;width:1920px;height:1080px;overflow:hidden;background:#eef2f7}
-/* фон: ағатын дақтар */
-#bgL,#bgD{position:absolute;inset:0}
-#bgL{background:linear-gradient(160deg,#f7f9fc 0%,#e9eef6 55%,#dfe7f2 100%)}
-#bgD{background:linear-gradient(160deg,#151a24 0%,#0c0f16 100%)}
-.blob{position:absolute;width:900px;height:900px;border-radius:50%;filter:blur(90px);opacity:.55;mix-blend-mode:normal}
-#grid{position:absolute;inset:0;background-image:radial-gradient(rgba(20,40,80,.13) 1.6px,transparent 1.7px);background-size:44px 44px;mask-image:radial-gradient(ellipse at 50% 45%,#000 30%,transparent 75%)}
-/* камера мен монитор */
-#cam{position:absolute;inset:0;perspective:2600px;perspective-origin:50% 42%}
-#mon{position:absolute;left:256px;top:70px;width:1408px;height:792px;transform-style:preserve-3d;will-change:transform}
-#bez{position:absolute;inset:-20px;border-radius:30px;background:linear-gradient(145deg,#2b2f38,#121419 60%);box-shadow:0 60px 120px -40px rgba(15,25,45,.55),0 0 0 1.5px rgba(255,255,255,.08) inset}
-#scr{position:absolute;inset:0;border-radius:8px;overflow:hidden;background:#000}
+#st{position:relative;width:1920px;height:1080px;overflow:hidden;background:#0b1030}
+/* фон: сахна түсі (градиент) + жарық дақтар + түйіршік */
+#bg{position:absolute;inset:0}
+.glow{position:absolute;width:1100px;height:1100px;border-radius:50%;filter:blur(110px);opacity:.55}
+#dots{position:absolute;inset:-60px;background-image:radial-gradient(rgba(255,255,255,.22) 1.6px,transparent 1.8px);background-size:48px 48px;mask-image:radial-gradient(ellipse at 50% 45%,#000 20%,transparent 72%)}
+#deco{position:absolute;inset:0;overflow:visible}
+#formula{position:absolute;font-weight:900;font-size:300px;letter-spacing:-.04em;color:transparent;-webkit-text-stroke:3px rgba(255,255,255,.16);white-space:nowrap;font-style:italic}
+/* браузер терезесі (3D) */
+#cam{position:absolute;inset:0;perspective:2400px;perspective-origin:50% 42%}
+#mon{position:absolute;left:256px;top:60px;width:1408px;height:836px;transform-style:preserve-3d;will-change:transform}
+#win{position:absolute;inset:0;border-radius:26px;overflow:hidden;background:#fff;box-shadow:0 90px 150px -50px rgba(5,10,40,.65),0 0 0 1.5px rgba(255,255,255,.5)}
+#bar{position:absolute;left:0;right:0;top:0;height:44px;background:#f3f5f9;display:flex;align-items:center;gap:10px;padding:0 20px;border-bottom:1px solid #e3e7ee}
+#bar i{width:14px;height:14px;border-radius:50%;display:block}
+#bar .u{margin-left:22px;flex:0 0 520px;height:28px;border-radius:9px;background:#fff;border:1px solid #e1e5ec;display:flex;align-items:center;gap:8px;padding:0 14px;font-size:16px;font-weight:600;color:#5b6472}
+#scr{position:absolute;left:0;right:0;top:44px;bottom:0;overflow:hidden;background:#000}
 #scr img{position:absolute;inset:0;width:100%;height:100%;display:block}
-#glare{position:absolute;inset:0;background:linear-gradient(115deg,rgba(255,255,255,.18) 0%,rgba(255,255,255,0) 32%);pointer-events:none}
-#stand{position:absolute;left:50%;top:812px;width:170px;height:78px;margin-left:-85px;background:linear-gradient(#c7ccd4,#9ea5af);clip-path:polygon(20% 0,80% 0,100% 100%,0 100%)}
-#base{position:absolute;left:50%;top:888px;width:440px;height:16px;margin-left:-220px;border-radius:10px;background:linear-gradient(#d6dae0,#aeb5be)}
+#glare{position:absolute;inset:0;pointer-events:none}
 /* телефон */
-#ph{position:absolute;width:300px;height:650px;border-radius:52px;background:#0d0e11;padding:14px;box-shadow:0 50px 90px -30px rgba(0,0,0,.55),0 0 0 2px #2a2c31 inset;will-change:transform}
+#ph{position:absolute;width:300px;height:650px;border-radius:52px;background:#0d0e11;padding:14px;box-shadow:0 60px 100px -30px rgba(5,10,40,.7),0 0 0 2px #2a2c31 inset;will-change:transform}
 #ph img{width:100%;height:100%;border-radius:40px;display:block;object-fit:cover}
 #ph::before{content:"";position:absolute;left:50%;top:22px;width:92px;height:26px;margin-left:-46px;border-radius:20px;background:#0d0e11;z-index:2}
-/* субтитр (кинетикалық) */
-#sub{position:absolute;left:0;right:0;bottom:56px;display:flex;justify-content:center}
-#sub .pill{display:flex;gap:14px;align-items:center;padding:16px 34px;border-radius:999px;background:rgba(255,255,255,.92);box-shadow:0 18px 40px -18px rgba(20,30,50,.45);backdrop-filter:blur(10px);font-weight:750;font-size:40px;color:#121620;letter-spacing:-.015em;white-space:nowrap}
-#sub .w{display:inline-block}
-#sub .hl{background:linear-gradient(transparent 62%,#ffd84d 62%,#ffd84d 92%,transparent 92%);background-repeat:no-repeat}
-/* fx элементтер */
+/* тақырып (кинетикалық): ортада үлкен → төменге */
+#title{position:absolute;left:0;top:0;width:1920px;display:flex;justify-content:center;pointer-events:none;will-change:transform}
+#title .tx{font-weight:850;font-size:66px;letter-spacing:-.03em;color:#fff;white-space:nowrap;text-shadow:0 6px 30px rgba(5,10,40,.35);display:flex;gap:.28em;align-items:center}
+#title .w{display:inline-block;overflow:hidden;padding:.06em 0 .1em;margin:-.06em 0 -.1em}
+#title .w>span{display:inline-block;will-change:transform}
+#title .acc>span{color:var(--hl)}
+#title .sep{width:14px;height:14px;border-radius:50%;background:var(--hl);display:inline-block;flex:none}
+#kick{position:absolute;font-weight:800;font-size:22px;letter-spacing:.24em;color:rgba(255,255,255,.75)}
+/* fx */
 .fx{position:absolute;will-change:transform,opacity}
-.card{background:#fff;border-radius:28px;box-shadow:0 28px 60px -26px rgba(20,30,60,.45),0 0 0 1px rgba(20,30,60,.06);padding:26px 34px}
-.stat b{display:block;font-weight:850;font-size:78px;letter-spacing:-.04em;color:#0b0d12;line-height:1}
-.stat span{display:block;margin-top:8px;font-size:24px;font-weight:600;color:#59616e}
-.chip{display:inline-flex;align-items:center;gap:14px;padding:14px 26px;border-radius:999px;background:#fff;font-weight:700;font-size:30px;color:#141820;box-shadow:0 20px 40px -20px rgba(20,30,60,.45)}
-.ic{width:64px;height:64px;border-radius:18px;display:grid;place-items:center;color:#fff;font-weight:800;font-size:22px}
-.doc{width:150px;height:186px;border-radius:20px;background:#fff;box-shadow:0 26px 50px -24px rgba(20,30,60,.5);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;font-weight:750;font-size:24px;color:#1b2230;text-align:center;line-height:1.1}
-.doc i{width:76px;height:76px;border-radius:18px;display:grid;place-items:center;color:#fff;font-style:normal;font-weight:850;font-size:30px}
-.clock{font-weight:850;font-size:120px;color:#fff;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
-.clock small{display:block;font-size:30px;font-weight:600;color:#8d96a8;letter-spacing:0;margin-top:4px}
-.dark .chip{background:#1f2430;color:#e8ecf3;box-shadow:0 20px 40px -20px rgba(0,0,0,.7),0 0 0 1px rgba(255,255,255,.07)}
-.ring{border-radius:50%;border:5px solid #0a84ff;box-shadow:0 0 0 10px rgba(10,132,255,.15)}
+.card{background:#fff;border-radius:30px;box-shadow:0 36px 70px -30px rgba(5,10,40,.6);padding:24px 34px 26px}
+.stat b{display:block;font-weight:900;font-size:84px;letter-spacing:-.045em;line-height:1;background:linear-gradient(120deg,var(--a),var(--b));-webkit-background-clip:text;color:transparent}
+.stat span{display:block;margin-top:8px;font-size:24px;font-weight:650;color:#4f5867}
+.chip{display:inline-flex;align-items:center;gap:16px;padding:14px 28px 14px 14px;border-radius:999px;background:#fff;font-weight:750;font-size:31px;color:#121620;box-shadow:0 26px 50px -22px rgba(5,10,40,.6);white-space:nowrap}
+.ic{width:62px;height:62px;border-radius:50%;display:grid;place-items:center;color:#fff;font-weight:850;font-size:24px;flex:none}
+.doc{width:166px;height:204px;border-radius:24px;background:#fff;box-shadow:0 34px 60px -26px rgba(5,10,40,.65);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;font-weight:780;font-size:25px;color:#1b2230;text-align:center;line-height:1.1;position:relative;overflow:hidden}
+.doc::after{content:"";position:absolute;left:0;right:0;bottom:0;height:10px;background:var(--c)}
+.doc i{width:84px;height:84px;border-radius:24px;display:grid;place-items:center;color:#fff;font-style:normal;font-weight:900;font-size:34px;background:var(--c);box-shadow:0 14px 26px -12px var(--c)}
+.clock{font-weight:900;font-size:150px;color:#fff;letter-spacing:-.04em;font-variant-numeric:tabular-nums;line-height:1;text-shadow:0 0 60px rgba(120,140,255,.55)}
+.clock small{display:block;font-size:30px;font-weight:650;color:#9aa6d6;letter-spacing:.02em;margin-top:10px}
+.dark .chip{background:rgba(30,36,72,.92);color:#eef1ff;box-shadow:0 26px 50px -22px rgba(0,0,0,.8),0 0 0 1px rgba(255,255,255,.12) inset}
 .dot{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;color:#fff;font-weight:800;font-size:15px}
+/* ауысу қабаттары */
+.wp{position:absolute;inset:0;display:none}
+/* соңғы кадр */
 #end{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:34px;text-align:center}
-#end .logo{display:flex;align-items:center;gap:22px;font-weight:750;font-size:70px;color:#11141b}
-#end .h{font-weight:850;font-size:128px;letter-spacing:-.045em;color:#0b0d12;line-height:1}
-#end .btn{background:#0a6cff;color:#fff;font-weight:750;font-size:54px;padding:30px 66px;border-radius:999px;box-shadow:0 30px 60px -24px rgba(10,108,255,.75)}
-#end .url{font-weight:650;font-size:46px;color:#3a4250}
-#end .tr{display:flex;gap:44px;font-size:34px;color:#4a525e;font-weight:550}#end .tr b{color:#17a05d}
+#end .logo{display:flex;align-items:center;gap:22px;font-weight:800;font-size:72px;color:#fff}
+#end .h{font-weight:900;font-size:134px;letter-spacing:-.05em;color:#fff;line-height:1}
+#end .h em{font-style:normal;color:#ffe14d}
+#end .btn{background:#fff;color:#1747ff;font-weight:850;font-size:54px;padding:30px 70px;border-radius:999px;box-shadow:0 30px 70px -24px rgba(0,0,40,.6)}
+#end .url{font-weight:700;font-size:46px;color:#dfe6ff;min-height:56px}
+#end .tr{display:flex;gap:44px;font-size:34px;color:#e8edff;font-weight:600}#end .tr b{color:#7dffb8}
 </style></head><body>
 <div id="st">
-  <div id="bgL"></div><div id="bgD"></div>
-  <div class="blob" id="b1"></div><div class="blob" id="b2"></div><div class="blob" id="b3"></div>
-  <div id="grid"></div>
-  <div id="cam"><div id="mon"><div id="bez"></div><div id="scr"><img id="iA"><img id="iB"><div id="glare"></div></div><div id="stand"></div><div id="base"></div></div></div>
+  <div id="bg"><div class="glow" id="g1"></div><div class="glow" id="g2"></div><div class="glow" id="g3"></div></div>
+  <div id="dots"></div>
+  <div id="formula"></div>
+  <svg id="deco" width="1920" height="1080" viewBox="0 0 1920 1080"></svg>
+  <div id="cam"><div id="mon"><div id="win"><div id="bar"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i><div class="u"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#7a8392" stroke-width="2.6"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>sabaqtas-kz.vercel.app</div></div><div id="scr"><img id="iA"><img id="iB"><div id="glare"></div></div></div></div></div>
   <div id="fxl"></div>
   <div id="ph"><img id="iP"></div>
+  <div id="title"><div class="tx" id="tx"></div></div>
   <div id="end"></div>
-  <div id="sub"><div class="pill" id="pill"></div></div>
+  <div class="wp" id="w0"></div><div class="wp" id="w1"></div><div class="wp" id="w2"></div>
 </div>
 <script>
 const TL = window.TL || [];   // [{id, D, start, n, phone}]
@@ -68,159 +78,225 @@ const $ = (id) => document.getElementById(id);
 const cl = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
 const ease = (x) => { x = cl(x); return x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2; };
 const out = (x) => 1 - Math.pow(1 - cl(x), 3);
-const spring = (x) => { x = Math.max(0, x); return 1 - Math.exp(-7 * x) * Math.cos(11 * x); };
+const out5 = (x) => 1 - Math.pow(1 - cl(x), 5);
+const spring = (x) => { x = Math.max(0, x); return 1 - Math.exp(-6 * x) * Math.cos(10 * x); };
 const lerp = (a, b, k) => a + (b - a) * k;
 const seg = (u, a, b) => ease((u - a) / (b - a));
+
+/* ── түстер: әр сахнаның өз палитрасы [фон1, фон2, жарық1, жарық2, жарық3, белгі түсі] ── */
+const PAL = {
+  '01': ['#070b24', '#161a4a', '#3b2fd6', '#1f6dff', '#7a2fd0', '#ffd34d'],
+  '02': ['#1238ff', '#3a7bff', '#00c2ff', '#7a5cff', '#2f9bff', '#ffe14d'],
+  '03': ['#5a2ee0', '#9c63ff', '#ff5fd2', '#4f7bff', '#b18cff', '#ffe14d'],
+  '04': ['#ff5a36', '#ff9a3c', '#ffcf3c', '#ff3c7a', '#ff7a3c', '#ffffff'],
+  '05': ['#00897b', '#14c79a', '#00e0ff', '#7dff9a', '#0bb3a0', '#ffe14d'],
+  '06': ['#3420d6', '#b23cff', '#ff4fb0', '#2f6bff', '#8f3cff', '#7dfff0'],
+  '07': ['#0a9d5c', '#5fd36b', '#d4ff5e', '#00c2a8', '#2fbf71', '#ffffff'],
+  '08': ['#ff3d57', '#ff8a3d', '#ffd23f', '#ff3dab', '#ff6a3d', '#ffffff'],
+  '09': ['#1238ff', '#4a6cff', '#00c2ff', '#8a5cff', '#2f9bff', '#ffe14d'],
+};
+const FORM = { '02': 'F = ma', '03': 'υ = s / t', '04': 'p = F / S', '05': 'Fₐ = ρgV', '06': 'E = mgh', '07': 'I = U / R', '08': 'Q = cmΔt' };
 /* сахна камерасы: [rotY, rotX, scale, tx, ty] басы → соңы */
 const CAM = {
-  '01': [[24, 7, .78, -170, 10], [17, 5, .82, -140, 0]],
-  '02': [[0, 0, .9, 0, -10], [-10, 3, .84, -250, -10]],
-  '03': [[9, 3, .9, 220, 0], [5, 2, .93, 240, 0]],
-  '04': [[-11, 3, .82, -200, -10], [-7, 2, .85, -185, -10]],
-  '05': [[0, 0, .98, 0, -10], [0, 0, 1.06, 0, -14]],
-  '06': [[11, -3, .84, 240, -10], [7, -2, .87, 230, -10]],
-  '07': [[-9, 3, .8, -210, -10], [-6, 2, .83, -190, -10]],
-  '08': [[0, 5, .86, 0, 0], [0, 2, .92, 0, 0]],
-  '09': [[0, 0, .9, 0, -10], [0, 0, .9, 0, -10]],
+  '01': [[22, 6, 0.78, -190, -10], [16, 4, 0.82, -160, -16]],
+  '02': [[0, 0, 0.86, 0, -40], [-10, 3, 0.82, -250, -40]],
+  '03': [[9, 3, 0.84, 230, -40], [5, 2, 0.87, 240, -40]],
+  '04': [[-11, 3, 0.82, -210, -40], [-7, 2, 0.85, -195, -40]],
+  '05': [[0, 0, 0.90, 0, -50], [0, 0, 0.94, 0, -54]],
+  '06': [[11, -3, 0.82, 240, -40], [7, -2, 0.85, 230, -40]],
+  '07': [[-9, 3, 0.80, -220, -40], [-6, 2, 0.83, -200, -40]],
+  '08': [[0, 5, 0.84, 0, -40], [0, 2, 0.88, 0, -40]],
+  '09': [[0, 0, 0.86, 0, -40], [0, 0, 0.86, 0, -40]],
 };
-const TR = 0.75; // сахна ауысуы (с)
-let loaded = {};
+const INTRO = .8; // сахна басындағы үлкен тақырып (с)
 function img(el, src) { if (el.getAttribute('src') !== src) el.setAttribute('src', src); return el.decode().catch(() => {}); }
 function sceneAt(t) { for (let i = 0; i < TL.length; i++) if (t < TL[i].start + TL[i].D || i === TL.length - 1) return i; }
 const pad = (n) => String(n).padStart(5, '0');
 const frameOf = (s, u) => 'work/fr/' + s.id + '/' + pad(Math.min(s.n, Math.max(1, Math.floor(u * 30) + 1))) + '.jpg';
 
-/* ── fx: әр сахнаның өз элементтері (уақытпен анықталады) ── */
+/* ── fx элементтер ── */
 const fxl = $('fxl');
 function put(key, html, cls = 'fx') { let e = fxl.querySelector('[data-k="' + key + '"]'); if (!e) { e = document.createElement('div'); e.dataset.k = key; e.className = cls; e.innerHTML = html; fxl.appendChild(e); } e.dataset.on = '1'; return e; }
 function pose(e, x, y, k, op, r = 0, extra = '') { e.style.left = x + 'px'; e.style.top = y + 'px'; e.style.opacity = op; e.style.transform = `translate(-50%,-50%) scale(${k}) rotate(${r}deg) ${extra}`; e.style.display = op <= .005 ? 'none' : ''; }
-/* шығу: a уақытта серіппемен пайда болады, b-де жоғалады */
-function pop(u, a, b, D) { const i = spring((u - a) / .9), o = 1 - seg(u, (b ?? D) - .45, (b ?? D)); return { k: u < a ? 0 : (.6 + .4 * i) * (1 - .15 * (1 - o)), op: u < a ? 0 : Math.min(1, (u - a) / .25) * o, i }; }
-const DOC = (c, t, l) => `<div class="doc"><i style="background:${c}">${t}</i>${l}</div>`;
+/* a уақытта серіппемен пайда болады (сахна басындағы тақырыптан кейін), b-де жоғалады */
+function pop(u, a, b, D) { a = Math.max(a, INTRO + .5); const i = spring((u - a) / .8), o = 1 - seg(u, (b ?? D) - .4, (b ?? D)); return { k: u < a ? 0 : (.5 + .5 * i) * (1 - .2 * (1 - o)), op: u < a ? 0 : Math.min(1, (u - a) / .2) * o, i, a }; }
+const DOC = (c, t, l) => `<div class="doc" style="--c:${c}"><i>${t}</i>${l}</div>`;
 const SVG = {
-  pen: '<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20l4-1 11-11-3-3L5 16z"/></svg>',
-  board: '<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg>',
-  timer: '<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l3 2M9 2h6"/></svg>',
-  dice: '<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2"><rect x="4" y="4" width="16" height="16" rx="4"/><circle cx="9" cy="9" r="1.3" fill="#fff"/><circle cx="15" cy="15" r="1.3" fill="#fff"/><circle cx="12" cy="12" r="1.3" fill="#fff"/></svg>',
-  play: '<svg width="40" height="40" viewBox="0 0 24 24" fill="#fff"><path d="M8 5v14l11-7z"/></svg>',
-  cube: '<svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linejoin="round"><path d="M12 2l9 5v10l-9 5-9-5V7z"/><path d="M3 7l9 5 9-5M12 12v10"/></svg>',
-  wifi: '<svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round"><path d="M2 9a15 15 0 0 1 20 0M5 12.5a10 10 0 0 1 14 0M8.5 16a5 5 0 0 1 7 0"/><circle cx="12" cy="19.5" r="1.2" fill="#fff"/></svg>',
-  check: '<svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>',
-  logo: '<svg width="82" height="82" viewBox="0 0 24 24" fill="none" stroke="#11141b" stroke-width="1.7" stroke-linejoin="round"><path d="M12 3l9 4.5-9 4.5-9-4.5z"/><path d="M3 12l9 4.5 9-4.5"/><path d="M3 16.5l9 4.5 9-4.5"/></svg>',
+  pen: '<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20l4-1 11-11-3-3L5 16z"/></svg>',
+  board: '<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg>',
+  timer: '<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l3 2M9 2h6"/></svg>',
+  dice: '<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4"><rect x="4" y="4" width="16" height="16" rx="4"/><circle cx="9" cy="9" r="1.3" fill="#fff"/><circle cx="15" cy="15" r="1.3" fill="#fff"/><circle cx="12" cy="12" r="1.3" fill="#fff"/></svg>',
+  play: '<svg width="34" height="34" viewBox="0 0 24 24" fill="#fff"><path d="M8 5v14l11-7z"/></svg>',
+  cube: '<svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linejoin="round"><path d="M12 2l9 5v10l-9 5-9-5V7z"/><path d="M3 7l9 5 9-5M12 12v10"/></svg>',
+  wifi: '<svg width="84" height="84" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round"><path d="M2 9a15 15 0 0 1 20 0M5 12.5a10 10 0 0 1 14 0M8.5 16a5 5 0 0 1 7 0"/><circle cx="12" cy="19.5" r="1.2" fill="#fff"/></svg>',
+  check: '<svg width="84" height="84" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>',
+  clock: '<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>',
+  logo: '<svg width="86" height="86" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linejoin="round"><path d="M12 3l9 4.5-9 4.5-9-4.5z"/><path d="M3 12l9 4.5 9-4.5"/><path d="M3 16.5l9 4.5 9-4.5"/></svg>',
 };
 const FX = {
   '01'(u, D) { // түн: сағат, жүктеме
-    const c = put('clock', '<div class="clock">23:47<small>сейсенбі, түн</small></div>'); const p = pop(u, .2, null, D);
+    const c = put('clock', '<div class="clock">23:47<small>сейсенбі · түн</small></div>'); const p = pop(u, .3, null, D);
     const mm = 47 + Math.min(12, Math.floor(u * 1.4)); c.firstChild.firstChild.nodeValue = '23:' + String(mm).padStart(2, '0');
     pose(c, 1560, 250, p.k, p.op);
-    [['ҚМЖ', 1.0, '#2b6be6', 'W'], ['Презентация', 2.3, '#e5683a', 'P'], ['Жұмыс парағы', 3.5, '#17a05d', '✓']].forEach(([t, a, col, s], i) => {
-      const e = put('t' + i, `<div class="chip"><span class="ic" style="width:46px;height:46px;border-radius:13px;font-size:20px;background:${col}">${s}</span>${t}</div>`); const q = pop(u, a, null, D);
-      pose(e, 1560 + Math.sin(u * 2 + i) * 6, 470 + i * 104 + Math.cos(u * 1.6 + i) * 4, q.k, q.op, Math.sin(u * 1.3 + i * 2) * 2.5);
+    [['ҚМЖ', 1.0, '#2b6be6', 'W'], ['Презентация', 2.3, '#ff6a3d', 'P'], ['Жұмыс парағы', 3.5, '#17a05d', '✓']].forEach(([t, a, col, s], i) => {
+      const e = put('t' + i, `<div class="chip"><span class="ic" style="background:${col}">${s}</span>${t}</div>`); const q = pop(u, a, null, D);
+      pose(e, 1560 + Math.sin(u * 2 + i) * 8 + (1 - out(q.i)) * 120, 470 + i * 112 + Math.cos(u * 1.6 + i) * 5, q.k, q.op, Math.sin(u * 1.3 + i * 2) * 3);
     });
   },
   '02'(u, D) { // сандар санала шығады
-    [['646', 'сабақтың ҚМЖ-сы', 6.6, 646], ['615', 'анимациялы презентация', 9.6, 615], ['16', 'физикалық модель', 11.2, 16], ['6 900+', 'сұрақ пен тест', 12.3, 6900]].forEach(([s, l, a, n], i) => {
-      const e = put('s' + i, `<div class="card stat"><b>0</b><span>${l}</span></div>`); const q = pop(u, a, null, D);
-      const v = Math.round(n * out((u - a) / 1.1)); e.querySelector('b').textContent = n === 6900 ? (v >= 6900 ? '6 900+' : v.toLocaleString('ru').replace(/ /g, ' ')) : String(v);
-      const fy = 200 + i * 172; pose(e, lerp(1180, 1640, out((u - a) / .8)), fy, q.k, q.op);
+    [['646', 'сабақтың ҚМЖ-сы', 6.6, 646, '#1238ff', '#00a6ff'], ['615', 'анимациялы презентация', 9.6, 615, '#7a2fd0', '#ff4fb0'], ['16', 'физикалық модель', 11.2, 16, '#0a9d5c', '#00c2a8'], ['6 900+', 'сұрақ пен тест', 12.3, 6900, '#ff5a36', '#ffb03d']].forEach(([s, l, a, n, c1, c2], i) => {
+      const e = put('s' + i, `<div class="card stat" style="--a:${c1};--b:${c2}"><b>0</b><span>${l}</span></div>`); const q = pop(u, a, null, D);
+      const v = Math.round(n * out((u - a) / 1.1)); e.querySelector('b').textContent = n === 6900 ? (v >= 6900 ? '6 900+' : v.toLocaleString('ru').replace(/ /g, ' ')) : String(v);
+      pose(e, lerp(1300, 1620, out5((u - a) / .8)), 190 + i * 178, q.k, q.op, (1 - out(q.i)) * -8);
     });
   },
-  '03'(u, D) { // 1 минут, сыныптар, бүгін
-    const m = put('m', '<div class="chip"><span class="ic" style="width:46px;height:46px;border-radius:13px;background:#0a6cff">⏱</span>1 минут</div>'); const a = pop(u, .3, 3.6, D); pose(m, 250, 230, a.k, a.op, 0);
-    ['7', '8', '9', '10', '11'].forEach((g, i) => { const e = put('g' + i, `<div class="chip" style="padding:12px 22px"><span class="dot" style="background:#17a05d;width:30px;height:30px">✓</span>${g}-сынып</div>`); const q = pop(u, 1.9 + i * .18, null, D); pose(e, 215, 360 + i * 92, q.k, q.op); });
+  '03'(u, D) { // 1 минут, сыныптар
+    const m = put('m', `<div class="chip"><span class="ic" style="background:#1238ff">${SVG.clock}</span>1 минут</div>`); const a = pop(u, .3, 3.6, D); pose(m, 260, 210, a.k, a.op, 0);
+    ['7', '8', '9', '10', '11'].forEach((g, i) => { const e = put('g' + i, `<div class="chip" style="padding:10px 26px 10px 10px"><span class="ic" style="background:#17a05d;width:46px;height:46px;font-size:22px">✓</span>${g}-сынып</div>`); const q = pop(u, 1.9 + i * .16, null, D); pose(e, 215 - (1 - out(q.i)) * 100, 340 + i * 96, q.k, q.op); });
   },
   '04'(u, D) { // файлдар экраннан ұшып шығады
-    const items = [['#2b6be6', 'W', 'ҚМЖ<br><small style="font-weight:600;color:#6b7380">.docx</small>', 1.5], ['#e5683a', 'P', 'Презентация<br><small style="font-weight:600;color:#6b7380">.pptx</small>', 3.0], ['#17a05d', '✎', 'Жұмыс<br>парағы', 4.0], ['#8b5cf6', 'Б', 'БЖБ / ТЖБ<br>жинақтары', 12.7]];
-    items.forEach(([c, t, l, a], i) => { const e = put('d' + i, DOC(c, t, l)); const q = pop(u, a, null, D); const k = out((u - a) / .9);
-      const x = lerp(1050, 1460 + (i % 2) * 200, k), y = lerp(520, 260 + Math.floor(i / 2) * 250, k); pose(e, x, y, q.k, q.op, lerp(-12, (i % 2 ? 4 : -4), k)); });
-    const nm = put('nm', '<div class="chip"><span class="dot" style="background:#17a05d;width:34px;height:34px">✓</span>Аты-жөніңіз өзі жазылады</div>'); const q = pop(u, 8.1, 12.4, D); pose(nm, 1560, 800, q.k, q.op);
+    const items = [['#2b6be6', 'W', 'ҚМЖ<br><small style="font-weight:650;color:#6b7380">.docx</small>', 1.5], ['#ff6a3d', 'P', 'Презентация<br><small style="font-weight:650;color:#6b7380">.pptx</small>', 3.0], ['#17a05d', '✎', 'Жұмыс<br>парағы', 4.0], ['#8b5cf6', 'Б', 'БЖБ / ТЖБ<br>жинақтары', 12.7]];
+    items.forEach(([c, t, l, a], i) => { const e = put('d' + i, DOC(c, t, l)); const q = pop(u, a, null, D); const k = out5((u - q.a) / .9);
+      const x = lerp(1000, 1480 + (i % 2) * 210, k), y = lerp(560, 250 + Math.floor(i / 2) * 270, k) + Math.sin(u * 1.4 + i) * 6; pose(e, x, y, q.k, q.op, lerp(-25, (i % 2 ? 5 : -5), k)); });
+    const nm = put('nm', '<div class="chip"><span class="ic" style="background:#17a05d;width:48px;height:48px">✓</span>Аты-жөніңіз өзі жазылады</div>'); const q = pop(u, 8.1, 12.4, D); pose(nm, 1530, 820, q.k, q.op);
   },
   '05'(u, D) { // тақта құралдары
-    const b = put('btn', '<div class="chip" style="background:#0a6cff;color:#fff;font-size:34px;padding:18px 34px">▶&nbsp; Тақтада ашу</div>'); const q = pop(u, 1.85, 4.2, D); pose(b, 960, 470, q.k * 1.15, q.op);
-    [['pen', 'Қалам', 9.9, '#e5483a'], ['board', 'Ақ тақта', 11.8, '#0a6cff'], ['timer', 'Таймер', 14.0, '#f08c00'], ['dice', 'Кездейсоқ оқушы', 15.2, '#8b5cf6']].forEach(([ic, l, a, c], i) => {
-      const e = put('tl' + i, `<div class="chip"><span class="ic" style="background:${c}">${SVG[ic]}</span>${l}</div>`); const p = pop(u, a, null, D); pose(e, 330 + i * 420, 880, p.k, p.op);
+    const b = put('btn', '<div class="chip" style="background:#1238ff;color:#fff;font-size:36px;padding:20px 40px">▶&nbsp; Тақтада ашу</div>'); const q = pop(u, 1.85, 4.2, D); pose(b, 960, 470, q.k * 1.15, q.op);
+    [['pen', 'Қалам', 9.9, '#ff3d57'], ['board', 'Ақ тақта', 11.8, '#1238ff'], ['timer', 'Таймер', 14.0, '#ff8a00'], ['dice', 'Кездейсоқ оқушы', 15.2, '#8b5cf6']].forEach(([ic, l, a, c], i) => {
+      const e = put('tl' + i, `<div class="chip"><span class="ic" style="background:${c}">${SVG[ic]}</span>${l}</div>`); const p = pop(u, a, null, D); pose(e, 330 + i * 420, 790 + (1 - out(p.i)) * 80, p.k, p.op);
     });
   },
   '06'(u, D) {
-    [['play', '3D видео', 2.75, '#e5483a'], ['cube', 'Виртуалды зертхана', 5.95, '#0a6cff']].forEach(([ic, l, a, c], i) => {
-      const e = put('b' + i, `<div class="chip" style="font-size:34px"><span class="ic" style="background:${c};transform:rotate(${(u * 40) % 360 * (ic === 'cube' ? 1 : 0)}deg)">${SVG[ic]}</span>${l}</div>`); const p = pop(u, a, null, D); pose(e, 330, 380 + i * 170, p.k, p.op);
+    [['play', '3D видео', 2.75, '#ff3d57'], ['cube', 'Виртуалды зертхана', 5.95, '#1238ff']].forEach(([ic, l, a, c], i) => {
+      const e = put('b' + i, `<div class="chip" style="font-size:36px"><span class="ic" style="background:${c};transform:rotate(${(u * 40) % 360 * (ic === 'cube' ? 1 : 0)}deg)">${SVG[ic]}</span>${l}</div>`); const p = pop(u, a, null, D); pose(e, 330 - (1 - out(p.i)) * 120, 360 + i * 170, p.k, p.op);
     });
   },
   '07'(u, D) { // жауаптар телефоннан тақтаға ұшады
     for (let i = 0; i < 12; i++) { const a = 5.9 + i * .18, k = (u - a) / .9; if (k < 0 || k > 1) continue;
-      const ok = i % 4 !== 2; const e = put('p' + i, `<div class="dot" style="background:${ok ? '#17a05d' : '#3b5bdb'};width:34px;height:34px;font-size:17px">${ok ? 'A' : 'B'}</div>`);
-      const x = lerp(1640, 1060, out(k)), y = lerp(560, 300 + (i % 4) * 60, out(k)) - Math.sin(Math.PI * k) * 160; pose(e, x, y, 1, 1 - seg(k, .8, 1)); }
-    const c = put('ok', '<div class="chip" style="font-size:34px"><span class="dot" style="background:#17a05d;width:40px;height:40px">✓</span>Тіркелусіз</div>'); const p = pop(u, 2.9, 5.2, D); pose(c, 1640, 200, p.k, p.op);
+      const ok = i % 4 !== 2; const e = put('p' + i, `<div class="dot" style="background:${ok ? '#17a05d' : '#3b5bdb'};width:40px;height:40px;font-size:19px;box-shadow:0 10px 20px -8px rgba(0,0,0,.5),0 0 0 4px #fff">${ok ? 'A' : 'B'}</div>`);
+      const x = lerp(1640, 1060, out(k)), y = lerp(560, 300 + (i % 4) * 60, out(k)) - Math.sin(Math.PI * k) * 170; pose(e, x, y, 1 + .3 * Math.sin(Math.PI * k), 1 - seg(k, .8, 1)); }
+    const c = put('ok', '<div class="chip" style="font-size:34px"><span class="ic" style="background:#17a05d;width:50px;height:50px">✓</span>Тіркелусіз</div>'); const p = pop(u, 2.9, 5.2, D); pose(c, 1640, 190, p.k, p.op);
   },
   '08'(u, D) { // wifi → ✓
-    const m = cl((u - 1.6) / .6); const e = put('w', `<div class="ic" style="width:150px;height:150px;border-radius:44px;background:${m < .5 ? '#e5483a' : '#17a05d'}"></div>`);
-    e.firstChild.innerHTML = m < .5 ? SVG.wifi + '<div style="position:absolute;width:110px;height:7px;background:#fff;border-radius:4px;transform:rotate(-40deg)"></div>' : SVG.check;
-    e.firstChild.style.position = 'relative'; const p = pop(u, .25, null, D); pose(e, 1640, 300, p.k * (1 + .18 * Math.sin(Math.PI * m)), p.op, (1 - spring(u - 1.6)) * 0);
+    const m = cl((u - 1.6) / .6); const e = put('w', `<div class="ic" style="width:190px;height:190px;border-radius:56px;position:relative;box-shadow:0 40px 80px -30px rgba(0,0,0,.55),0 0 0 8px rgba(255,255,255,.9)"></div>`);
+    e.firstChild.style.background = m < .5 ? '#ff3d57' : '#17a05d';
+    e.firstChild.innerHTML = m < .5 ? SVG.wifi + '<div style="position:absolute;width:130px;height:8px;background:#fff;border-radius:4px;transform:rotate(-40deg)"></div>' : SVG.check;
+    const p = pop(u, .25, null, D); pose(e, 1640, 300, p.k * (1 + .22 * Math.sin(Math.PI * m)), p.op, (1 - spring((u - 1.9) / .8)) * (u > 1.9 ? 25 : 0));
   },
   '09'(u, D) {
-    const c = put('free', '<div class="chip" style="font-size:36px;background:#0a6cff;color:#fff;padding:18px 34px">3 күн тегін</div>'); const p = pop(u, .2, 4.6, D); pose(c, 1500, 210, p.k, p.op, -4);
-    const k = put('card', '<div class="chip" style="font-size:32px"><span class="dot" style="background:#17a05d;width:36px;height:36px">✓</span>Карта керек емес</div>'); const q = pop(u, 3.15, 4.6, D); pose(k, 420, 260, q.k, q.op, 3);
+    const c = put('free', '<div class="chip" style="font-size:38px;background:#ffe14d;color:#121620;padding:20px 40px">3 күн тегін</div>'); const p = pop(u, .2, 4.6, D); pose(c, 1500, 190, p.k, p.op, -5);
+    const k = put('card', '<div class="chip" style="font-size:32px"><span class="ic" style="background:#17a05d;width:50px;height:50px">✓</span>Карта керек емес</div>'); const q = pop(u, 3.15, 4.6, D); pose(k, 420, 240, q.k, q.op, 3);
   },
 };
-/* ── соңғы кадр: монитор логотипке айналады ── */
+/* ── соңғы кадр ── */
 const END = $('end');
-END.innerHTML = `<div class="logo">${SVG.logo}<span>Сабақтас</span></div><div class="h">Физика сабағы — дайын.</div><div class="btn">3 күн тегін бастау</div><div class="url"></div><div class="tr"><span><b>✓</b> Тіркелу — 1 минут</span><span><b>✓</b> Карта керек емес</span><span><b>✓</b> 7–11-сынып</span></div>`;
+END.innerHTML = `<div class="logo">${SVG.logo}<span>Сабақтас</span></div><div class="h">Физика сабағы — <em>дайын.</em></div><div class="btn">3 күн тегін бастау</div><div class="url"></div><div class="tr"><span><b>✓</b> Тіркелу — 1 минут</span><span><b>✓</b> Карта керек емес</span><span><b>✓</b> 7–11-сынып</span></div>`;
 const ENDS = 4.75; // 09-сахнада соңғы кадр басталатын сәт
 
-function blobs(t, dark) {
-  const B = [['b1', '#4f8dff', 360, 260, 1.0], ['b2', '#7c5cff', 1500, 300, 1.3], ['b3', '#22c3c3', 1100, 860, .8]];
-  B.forEach(([id, c, x, y, s], i) => { const e = $(id); e.style.background = `radial-gradient(circle,${c} 0%,transparent 68%)`;
-    const px = x + Math.sin(t * .23 * s + i) * 160, py = y + Math.cos(t * .19 * s + i * 2) * 120, k = 1 + .18 * Math.sin(t * .31 + i);
-    e.style.transform = `translate(${px - 450}px,${py - 450}px) scale(${k},${k * (1 + .12 * Math.sin(t * .27 + i))}) rotate(${t * 6 * (i % 2 ? -1 : 1)}deg)`; e.style.opacity = dark ? .28 : .42; });
+/* ── декор (SVG): орбиталар, синусоида, фигуралар ── */
+const NS = 'http://www.w3.org/2000/svg', deco = $('deco');
+const sv = (tag, at, par = deco) => { const e = document.createElementNS(NS, tag); for (const k in at) e.setAttribute(k, at[k]); par.appendChild(e); return e; };
+const atom = sv('g', {}); const orbs = [0, 60, 120].map((r) => sv('ellipse', { cx: 0, cy: 0, rx: 230, ry: 78, fill: 'none', stroke: 'rgba(255,255,255,.28)', 'stroke-width': 3, transform: `rotate(${r})` }, atom));
+const nuc = sv('circle', { r: 16, fill: 'rgba(255,255,255,.5)' }, atom);
+const els = [0, 1, 2].map(() => sv('circle', { r: 10, fill: '#fff' }, atom));
+const wave = sv('path', { fill: 'none', stroke: 'rgba(255,255,255,.35)', 'stroke-width': 4, 'stroke-linecap': 'round' });
+const wave2 = sv('path', { fill: 'none', stroke: 'rgba(255,255,255,.18)', 'stroke-width': 3, 'stroke-linecap': 'round' });
+const SH = []; let sd = 3; const rnd = () => ((sd = (sd * 16807) % 2147483647) / 2147483647);
+for (let i = 0; i < 16; i++) { const kind = i % 4, g = sv('g', {});
+  if (kind === 0) sv('circle', { r: 14 + rnd() * 16, fill: 'none', stroke: 'rgba(255,255,255,.45)', 'stroke-width': 4 }, g);
+  else if (kind === 1) sv('path', { d: 'M-14 0H14M0 -14V14', stroke: 'rgba(255,255,255,.55)', 'stroke-width': 5, 'stroke-linecap': 'round' }, g);
+  else if (kind === 2) sv('path', { d: 'M0 -16L15 11H-15Z', fill: 'none', stroke: 'rgba(255,255,255,.4)', 'stroke-width': 4, 'stroke-linejoin': 'round' }, g);
+  else sv('circle', { r: 6 + rnd() * 6, fill: 'rgba(255,255,255,.5)' }, g);
+  SH.push({ g, x: rnd() * 1920, y: rnd() * 1080, z: .3 + rnd() * .9, ph: rnd() * 6.28, rs: (rnd() - .5) * 60 }); }
+const stars = []; for (let i = 0; i < 90; i++) stars.push(sv('circle', { cx: rnd() * 1920, cy: rnd() * 760, r: .8 + rnd() * 2, fill: '#fff' }));
+function drawDeco(t, s, u, D, night) {
+  // атом (оң жақ жоғарғы бұрыш) — жайлап айналады
+  const ax = s.id === '02' || s.id === '04' || s.id === '07' ? 210 : 1720, ay = s.id === '05' || s.id === '08' ? 900 : 150;
+  atom.setAttribute('transform', `translate(${ax + Math.sin(t * .4) * 20},${ay + Math.cos(t * .3) * 14}) rotate(${t * 8}) scale(${.9 + .05 * Math.sin(t)})`);
+  atom.style.opacity = night ? 0 : .9;
+  els.forEach((e, i) => { const a = t * (1.6 + i * .3) + i * 2.1, r = (i * 60) * Math.PI / 180, x = 230 * Math.cos(a), y = 78 * Math.sin(a);
+    e.setAttribute('cx', x * Math.cos(r) - y * Math.sin(r)); e.setAttribute('cy', x * Math.sin(r) + y * Math.cos(r)); });
+  // синусоида — сызылып шығады, жүгіреді
+  const pts = [], pts2 = [], k = out((u - .2) / 1.6);
+  for (let x = 0; x <= 1920 * k; x += 16) { pts.push(`${x},${1010 + 26 * Math.sin(x / 90 - t * 2.4)}`); pts2.push(`${x},${1040 + 18 * Math.sin(x / 70 - t * 1.7 + 1)}`); }
+  wave.setAttribute('d', pts.length > 1 ? 'M' + pts.join('L') : ''); wave2.setAttribute('d', pts2.length > 1 ? 'M' + pts2.join('L') : '');
+  wave.style.opacity = wave2.style.opacity = night ? 0 : 1;
+  // фигуралар — параллакс (камерамен бірге)
+  SH.forEach((o, i) => { const x = (o.x - t * 22 * o.z + 4000) % 2040 - 60, y = o.y + Math.sin(t * .7 + o.ph) * 26 * o.z;
+    o.g.setAttribute('transform', `translate(${x},${y}) rotate(${t * o.rs}) scale(${o.z})`); o.g.style.opacity = night ? 0 : .35 + .5 * o.z; });
+  stars.forEach((e, i) => { e.style.opacity = night * (.35 + .65 * Math.abs(Math.sin(t * 1.3 + i))); });
 }
-function words(text, u) {
-  const pill = $('pill'); const key = text; if (pill.dataset.k !== key) { pill.dataset.k = key; pill.innerHTML = text.split(' ').map((w) => `<span class="w">${w}</span>`).join(' '); }
-  const ws = pill.querySelectorAll('.w'); ws.forEach((w, i) => { const k = spring((u - .25 - i * .07) / .7); w.style.transform = `translateY(${(1 - Math.min(1, k)) * 38}px)`; w.style.opacity = cl((u - .25 - i * .07) / .25); });
-  return pill;
+function setBg(id, t) {
+  const P = PAL[id]; $('bg').style.background = `linear-gradient(135deg,${P[0]} 0%,${P[1]} 100%)`;
+  [['g1', P[2], 300, 250], ['g2', P[3], 1600, 300], ['g3', P[4], 1100, 900]].forEach(([gid, c, x, y], i) => { const e = $(gid); e.style.background = `radial-gradient(circle,${c} 0%,transparent 66%)`;
+    const px = x + Math.sin(t * .25 + i) * 200, py = y + Math.cos(t * .2 + i * 2) * 140, k = 1 + .2 * Math.sin(t * .33 + i);
+    e.style.transform = `translate(${px - 550}px,${py - 550}px) scale(${k})`; });
+  $('st').style.setProperty('--hl', P[5]);
+}
+/* ── тақырып: сөздер маскадан шығады; басында ортада үлкен, сосын төменге кішірейеді ── */
+function title(id, text, u, D, intro) {
+  const tx = $('tx');
+  if (tx.dataset.k !== id) { tx.dataset.k = id;
+    let acc = false; tx.innerHTML = text.split(' ').map((w) => { if (w === '·') return '<i class="sep"></i>'; if (w === '—') { acc = true; return '<span class="w"><span>—</span></span>'; } return `<span class="w${acc ? ' acc' : ''}"><span>${w}</span></span>`; }).join(''); }
+  const ws = tx.querySelectorAll('.w>span, .sep');
+  ws.forEach((w, i) => { const k = out5((u - .05 - i * .06) / .55); w.style.transform = w.classList.contains('sep') ? `scale(${k})` : `translateY(${(1 - k) * 110}%) rotate(${(1 - k) * 6}deg)`; });
+  // орны: ортада (1,6 есе) → төменде (1)
+  const m = intro ? seg(u, INTRO - .2, INTRO + .3) : 1;
+  const y = lerp(540, 985, m), sc = lerp(1.55, 1, m);
+  const o = 1 - seg(u, D - .3, D);
+  const T = $('title'); T.style.transform = `translateY(${y - 45}px) scale(${sc})`; T.style.opacity = o;
+}
+/* ── сахна ауысуы: үш түсті сақина бұрыштан жайылады ── */
+function wipe(t) {
+  const W = [$('w0'), $('w1'), $('w2')];
+  let b = -1, j = -1; for (let i = 1; i < TL.length; i++) if (Math.abs(t - TL[i].start) < .5) { b = TL[i].start; j = i; }
+  if (j < 0) { W.forEach((w) => (w.style.display = 'none')); return; }
+  const p = (t - b + .4) / .85, cx = j % 2 ? 1920 : 0, cy = j % 2 ? 1080 : 0, R = 2250, P = PAL[TL[j].id], Q = PAL[TL[j - 1].id];
+  const cols = [P[5] === '#ffffff' ? Q[1] : P[5], '#ffffff', P[0]];
+  W.forEach((w, k) => { const g = ease((p - k * .09) / .42) * R, s = ease((p - .44 - k * .06) / .4) * R;
+    w.style.display = g > 1 && s < R ? 'block' : 'none'; w.style.background = cols[k];
+    const m = `radial-gradient(circle at ${cx}px ${cy}px,transparent ${s}px,#000 ${s + 1}px,#000 ${g}px,transparent ${g + 1}px)`; w.style.webkitMaskImage = w.style.maskImage = m; });
 }
 
 window.renderFrame = async (t) => {
   const i = sceneAt(t), s = TL[i], u = t - s.start, D = s.D;
-  // фон: 01 — түн, сосын күн
-  const dk = s.id === '01' ? 1 - seg(u, D - .6, D + .01) : 0; $('bgD').style.opacity = dk; blobs(t, dk > .5); $('grid').style.opacity = 1 - dk;
-  $('st').classList.toggle('dark', dk > .5);
-  // камера
-  const C = CAM[s.id] || CAM['05'], k = ease(u / D); let [ry, rx, sc, tx, ty] = C[0].map((v, j) => lerp(v, C[1][j], k));
-  // ауысу: алдыңғы сахнаның соңғы пішінінен «морф»
-  const tr = i > 0 ? seg(u, 0, TR) : 1;
-  if (i > 0 && tr < 1) { const P = CAM[TL[i - 1].id] || CAM['05']; [ry, rx, sc, tx, ty] = P[1].map((v, j) => lerp(v, [ry, rx, sc, tx, ty][j], tr)); }
-  const bob = Math.sin(t * .9) * 4;
-  // 09: соңғы кадрда монитор логотипке дейін кішірейіп, жоғалады
-  let endk = 0; if (s.id === '09') endk = seg(u, ENDS, ENDS + 1.0);
-  const mon = $('mon'); mon.style.transform = `translate(${tx}px,${ty + bob - endk * 330}px) scale(${sc * (1 - endk * .93)}) rotateY(${ry + endk * 0}deg) rotateX(${rx}deg)`;
-  mon.style.opacity = 1 - seg(u, ENDS + .7, ENDS + 1.0) * (s.id === '09' ? 1 : 0);
-  $('glare').style.background = `linear-gradient(${115 + ry * 1.5}deg,rgba(255,255,255,${.16 - dk * .08}) 0%,rgba(255,255,255,0) ${30 + ry}%)`;
-  // экран: жаңа сахна шеңбер болып ашылады, ескісі бұлдырап кетеді
-  const pA = img($('iA'), frameOf(s, s.id === '09' ? Math.min(u, s.n / 30 - .04) : u));
-  const iB = $('iB'); let pB = null;
-  if (i > 0 && tr < 1) { const prev = TL[i - 1]; pB = img(iB, frameOf(prev, prev.n / 30 - .04)); iB.style.display = '';
-    iB.style.opacity = 1; iB.style.filter = `blur(${tr * 14}px) brightness(${1 - tr * .3})`; iB.style.transform = `scale(${1 + tr * .12})`;
-    $('iA').style.clipPath = `circle(${out(tr) * 120}% at 50% 55%)`; iB.style.zIndex = 0; $('iA').style.zIndex = 1; }
-  else { iB.style.display = 'none'; $('iA').style.clipPath = 'none'; }
+  const night = s.id === '01' ? 1 - seg(u, D - .5, D) : 0;
+  setBg(s.id, t); $('st').classList.toggle('dark', night > .5);
+  $('dots').style.opacity = night ? .2 : 1; $('dots').style.transform = `translate(${(t * 12) % 48}px,${(t * 6) % 48}px)`;
+  drawDeco(t, s, u, D, night);
+  const F = $('formula'); F.textContent = FORM[s.id] || ''; const fo = seg(u, .2, 1.2) * (1 - seg(u, D - .4, D));
+  F.style.opacity = fo; F.style.left = (s.id === '03' || s.id === '06' ? 80 : 1000) + 'px'; F.style.top = '560px'; F.style.transform = `translateX(${-u * 14}px)`;
+  // камера + кіру (серіппе)
+  const C = CAM[s.id], k = ease(u / D); let [ry, rx, sc, tx, ty] = C[0].map((v, j) => lerp(v, C[1][j], k));
+  const intro = i > 0, a = intro ? spring((u - INTRO - .05) / .9) : spring((u + .4) / 1.2);
+  const inK = cl(a, 0, 1.04); const enter = 1 - Math.min(1, inK);
+  const bob = Math.sin(t * .9) * 5;
+  let endk = s.id === '09' ? seg(u, ENDS, ENDS + 1.0) : 0;
+  const mon = $('mon');
+  mon.style.transform = `translate(${tx}px,${ty + bob + (1 - inK) * 700 - endk * 330}px) scale(${sc * (1 - endk * .93) * (.85 + .15 * inK)}) rotateY(${ry - enter * 18}deg) rotateX(${rx + (1 - inK) * 30}deg) rotateZ(${(1 - inK) * -6}deg)`;
+  mon.style.opacity = (intro ? cl((u - INTRO - .05) / .15) : cl(t / .5)) * (1 - seg(u, ENDS + .7, ENDS + 1.0) * (s.id === '09' ? 1 : 0));
+  $('glare').style.background = `linear-gradient(${110 + ry * 2}deg,rgba(255,255,255,0) ${20 + (u * 9) % 60}%,rgba(255,255,255,.14) ${26 + (u * 9) % 60}%,rgba(255,255,255,0) ${34 + (u * 9) % 60}%)`;
+  const pA = img($('iA'), frameOf(s, s.id === '09' ? Math.min(u, s.n / 30 - .04) : u)); $('iB').style.display = 'none';
   // телефон (07)
   const ph = $('ph'); let pP = null;
-  if (s.id === '07') { const a = spring((u - .3) / 1.1), o = 1 - seg(u, D - .5, D); ph.style.display = ''; ph.style.left = '1500px'; ph.style.top = '250px';
-    ph.style.opacity = cl((u - .3) / .2) * o; ph.style.transform = `translateX(${(1 - a) * 520}px) rotate(${(1 - a) * 18 + Math.sin(t) * 1.2}deg) rotateY(-8deg)`;
+  if (s.id === '07') { const a2 = spring((u - INTRO - .1) / 1.1), o = 1 - seg(u, D - .5, D); ph.style.display = ''; ph.style.left = '1500px'; ph.style.top = '220px';
+    ph.style.opacity = cl((u - INTRO - .1) / .2) * o; ph.style.transform = `translateX(${(1 - a2) * 520}px) rotate(${(1 - a2) * 18 + Math.sin(t) * 1.4}deg) rotateY(-8deg)`;
     pP = img($('iP'), 'work/fr/ph/' + pad(Math.min(s.phn, Math.max(1, Math.floor(u * 30) + 1))) + '.jpg'); } else ph.style.display = 'none';
   // fx
   fxl.querySelectorAll('[data-k]').forEach((e) => (e.dataset.on = ''));
-  fxl.className = s.id; if (FX[s.id]) FX[s.id](u, D);
+  if (FX[s.id]) FX[s.id](u, D);
   fxl.querySelectorAll('[data-k]').forEach((e) => { if (!e.dataset.on) e.remove(); });
-  // субтитр
-  const sub = SUBS[s.id] || ''; const pill = words(sub, u); const so = (s.id === '09' ? 1 - seg(u, ENDS - .3, ENDS) : 1) * (1 - seg(u, D - .35, D)) * cl((u - .2) / .25);
-  $('sub').style.opacity = so; pill.style.transform = `scale(${.9 + .1 * spring(u / .6)})`;
+  // тақырып
+  title(s.id, SUBS[s.id] || '', u, s.id === '09' ? Math.min(D, ENDS) : D, intro);
+  if (s.id === '09') $('title').style.opacity = 1 - seg(u, ENDS - .3, ENDS);
   // соңғы кадр
   if (s.id === '09') { const e0 = u - ENDS - .6; END.style.display = e0 > -0.1 ? 'flex' : 'none';
-    [...END.children].forEach((c, j) => { const k = spring((e0 - j * .22) / .9); c.style.opacity = cl((e0 - j * .22) / .3); c.style.transform = `translateY(${(1 - Math.min(1, k)) * 60}px) scale(${.85 + .15 * Math.min(1.05, k)})`; });
+    [...END.children].forEach((c, j) => { const k = spring((e0 - j * .18) / .9); c.style.opacity = cl((e0 - j * .18) / .3); c.style.transform = `translateY(${(1 - Math.min(1, k)) * 80}px) scale(${.8 + .2 * Math.min(1.05, k)})`; });
     const url = 'sabaqtas-kz.vercel.app', n = Math.floor(cl((e0 - .9) / 1.2) * url.length); END.querySelector('.url').textContent = url.slice(0, n) + (n < url.length && e0 > .9 ? '|' : '');
-    END.querySelector('.btn').style.boxShadow = `0 30px 60px -24px rgba(10,108,255,.75),0 0 0 ${8 + 8 * Math.sin(e0 * 5) ** 2}px rgba(10,108,255,${e0 > 1 ? .15 : 0})`;
+    END.querySelector('.btn').style.boxShadow = `0 30px 70px -24px rgba(0,0,40,.6),0 0 0 ${10 + 10 * Math.sin(e0 * 4) ** 2}px rgba(255,255,255,${e0 > 1 ? .22 : 0})`;
   } else END.style.display = 'none';
-  await Promise.all([pA, pB, pP]);
+  wipe(t);
+  await Promise.all([pA, pP]);
 };
 window.ready = true;
 </script></body></html>
