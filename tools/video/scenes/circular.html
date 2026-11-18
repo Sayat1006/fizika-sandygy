@@ -1,0 +1,38 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><style>html,body{margin:0;background:#eef2f7;overflow:hidden}canvas{display:block}</style>
+<script type="importmap">{"imports":{"three":"./lib/three.module.js"}}</script></head>
+<body>
+<script type="module">
+// «Шеңбер бойымен бірқалыпты қозғалыс. Центрге тартқыш үдеу» (9-сынып): жіпке байланған шар үстелде R = 0,5 м шеңбер
+// бойымен айналады: жылдамдық υ шеңберге жанама, үдеу a = υ²/R центрге бағытталған. Жіп үзілсе — шар жанама бойымен
+// түзу ұшып кетеді. Сосын υ екі есе артады: a = υ²/R төрт есе артады (0,5 → 2 м/с²).
+import { THREE, V, stage, orbit, arrow, label, readout, seg, win, lerp, mat, mesh, num, ready } from './kit.js';
+const st = stage({ table: [4.0, 2.4] }), { scene, camera } = st;
+const R = 0.5, Y = 0.035, C = V(-0.2, Y, 0);
+mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.12, 16), mat.metal, { parent: scene, pos: [C.x, 0.06, 0] });
+const ring = new THREE.Line(new THREE.BufferGeometry().setFromPoints(Array.from({ length: 97 }, (_, i) => V(C.x + R * Math.cos(i / 96 * Math.PI * 2), 0.003, -R * Math.sin(i / 96 * Math.PI * 2)))), new THREE.LineDashedMaterial({ color: '#8a919c', dashSize: 0.03, gapSize: 0.02 })); ring.computeLineDistances(); scene.add(ring);
+const ball = mesh(new THREE.SphereGeometry(0.035, 24, 16), new THREE.MeshStandardMaterial({ color: '#e5683a', roughness: 0.4 }), { parent: scene });
+const str = mesh(new THREE.CylinderGeometry(0.003, 0.003, 1, 6), mat.dark, { parent: scene, shadow: false });
+const av = arrow(scene, '#17a05d', { r: 0.012 }), aa = arrow(scene, '#e5483a', { r: 0.012 }), lv = label(scene, 'υ', '', '#17a05d', { size: 0.24 }), la = label(scene, 'a', '', '#e5483a', { size: 0.24 });
+const rv = readout(scene, { color: '#17a05d', w: 0.66 }), ra = readout(scene, { color: '#e5483a', w: 0.72 });
+const T1 = 0.6, TCUT = 7.2, T2 = 10.2;
+const v1 = 0.5, v2 = 1.0; // м/с (1 бірлік = 1 м), уақыт баяулатылмаған
+
+window.renderFrame = (t) => {
+  let p, v, a, cut = false, vv;
+  if (t < T2) { const u = Math.max(0, Math.min(t, TCUT) - T1), ph = v1 / R * u; vv = v1;
+    p = V(C.x + R * Math.cos(ph), Y, -R * Math.sin(ph)); v = V(-Math.sin(ph), 0, -Math.cos(ph)); a = C.clone().sub(p).normalize();
+    if (t > TCUT) { cut = true; p.addScaledVector(v, v1 * (t - TCUT)); } }
+  else { const ph = v2 / R * (t - T2); vv = v2; p = V(C.x + R * Math.cos(ph), Y, -R * Math.sin(ph)); v = V(-Math.sin(ph), 0, -Math.cos(ph)); a = C.clone().sub(p).normalize(); }
+  ball.position.copy(p); ball.visible = !(t > TCUT + 2.3 && t < T2);
+  str.visible = !cut; const d = p.clone().sub(C); str.scale.y = d.length(); str.position.copy(C).addScaledVector(d, 0.5).setY(Y); str.quaternion.setFromUnitVectors(V(0, 1, 0), d.normalize());
+  const o = win(t, 1.2, 1.6, 17.3, 17.9) * (t > TCUT + 1.2 && t < T2 + 0.3 ? 0 : 1), acc = vv * vv / R;
+  av.set(p.clone().add(V(0, 0.03, 0)), v, 0.18 * vv / v1 * 0.9, o); aa.set(p.clone().add(V(0, 0.03, 0)), a, cut ? 0 : 0.1 * acc, o);
+  lv.show(p.clone().addScaledVector(v, 0.2 * vv / v1).add(V(0, 0.1, 0)), o); la.show(p.clone().addScaledVector(a, 0.06 * acc + 0.06).add(V(0, 0.1, 0)), cut ? 0 : o);
+  rv.set('υ = ' + num(vv) + ' м/с', o); rv.position.set(0.62, 0.2, -0.5); ra.set('a = ' + num(acc) + ' м/с²', o); ra.position.set(0.62, 0.2, -0.25);
+  orbit(camera, t, { ang: 0.0, swing: 0.1, rad: 1.4, y: 1.8, look: [0.12, 0, 0.0], cx: 0.12 });
+  return st.render();
+};
+ready();
+</script>
+</body></html>

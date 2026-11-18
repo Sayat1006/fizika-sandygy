@@ -1,0 +1,64 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><style>html,body{margin:0;background:#eef2f7;overflow:hidden}canvas{display:block}</style>
+<script type="importmap">{"imports":{"three":"./lib/three.module.js"}}</script></head>
+<body>
+<script type="module">
+// «Ньютонның үшінші заңы» (9-сынып): 1) бір-біріне ілінген екі динамометр — қалай тартса да көрсетулері бірдей (F₁ = −F₂);
+// 2) массалары m және 2m арбалар арасындағы сығылған серіппе босатылады: күштер тең және қарама-қарсы, сондықтан
+// жеңіл арба екі есе үлкен жылдамдық алады (m₁υ₁ = m₂υ₂), тең уақытта екі есе алыс жүреді.
+import { THREE, V, stage, orbit, dynamometer, arrow, label, readout, spring, seg, win, lerp, mat, mesh, num, ready } from './kit.js';
+const st = stage({ table: [4.4, 2.2] }), { scene, camera } = st;
+// 1) екі динамометр
+const SC = 0.55, Y1 = 0.5, Z1 = -0.45;
+const post = mesh(new THREE.BoxGeometry(0.1, 0.6, 0.2), mat.dark, { parent: scene, pos: [-1.9, 0.3, Z1] });
+const dL = dynamometer(scene, { max: 5, K: 0.05 }), dR = dynamometer(scene, { max: 5, K: 0.05 }); dL.scale.setScalar(SC); dR.scale.setScalar(SC);
+const hand = mesh(new THREE.BoxGeometry(0.12, 0.12, 0.12), new THREE.MeshStandardMaterial({ color: '#e0b48c', roughness: 0.7 }), { parent: scene });
+const rL = readout(scene, { color: '#e5483a', w: 0.46 }), rR = readout(scene, { color: '#1f6fd0', w: 0.46 });
+const aL = arrow(scene, '#e5483a', { r: 0.014 }), aR = arrow(scene, '#1f6fd0', { r: 0.014 }), lL = label(scene, 'F', '1', '#e5483a', { size: 0.26 }), lR = label(scene, 'F', '2', '#1f6fd0', { size: 0.26 });
+// 2) арбалар
+const Z2 = 0.35;
+mesh(new THREE.BoxGeometry(3.6, 0.02, 0.24), new THREE.MeshStandardMaterial({ color: '#e9edf2', roughness: 0.6 }), { parent: scene, pos: [0, 0.01, Z2] });
+const cart = (col, heavy) => { const g = new THREE.Group(); scene.add(g); mesh(new THREE.BoxGeometry(0.26, 0.07, 0.17), new THREE.MeshStandardMaterial({ color: col, roughness: 0.5 }), { parent: g, pos: [0, 0.07, 0] });
+  for (const sx of [-1, 1]) for (const sz of [-1, 1]) mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.02, 14), mat.dark, { parent: g, pos: [sx * 0.09, 0.035, sz * 0.075], rot: [Math.PI / 2, 0, 0] });
+  if (heavy) mesh(new THREE.BoxGeometry(0.22, 0.08, 0.14), new THREE.MeshStandardMaterial({ color: '#8a919c', metalness: 0.4, roughness: 0.4 }), { parent: g, pos: [0, 0.145, 0] }); return g; };
+const cA = cart('#1f6fd0', false), cB = cart('#e5683a', true);
+const sp = spring(scene, { turns: 9, r: 0.03, tube: 0.006 }); sp.rotation.z = -Math.PI / 2;
+const thread = mesh(new THREE.CylinderGeometry(0.003, 0.003, 1, 6), mat.dark, { parent: scene, shadow: false });
+const fa = arrow(scene, '#e5483a', { r: 0.014 }), fb = arrow(scene, '#e5483a', { r: 0.014 }), la = label(scene, 'F', '', '#e5483a', { size: 0.24 }), lb = label(scene, '−F', '', '#e5483a', { size: 0.24 });
+const va = arrow(scene, '#17a05d', { r: 0.012 }), vb = arrow(scene, '#17a05d', { r: 0.012 }), lva = label(scene, '2υ', '', '#17a05d', { size: 0.24 }), lvb = label(scene, 'υ', '', '#17a05d', { size: 0.24 });
+const ma = label(scene, 'm', '', '#1f6fd0', { size: 0.24 }), mb = label(scene, '2m', '', '#d0531f', { size: 0.24 });
+
+function place(d, F, hook, side) { d.rotation.z = side > 0 ? -Math.PI / 2 : Math.PI / 2; const hy = d.set(F) * SC; d.position.copy(hook).sub(V(0, hy, 0).applyAxisAngle(V(0, 0, 1), d.rotation.z)); }
+
+window.renderFrame = (t) => {
+  // 1) күш 0 → 3 Н → 1,5 Н → 4 Н
+  const F = t < 1.2 ? 0 : t < 3.4 ? 3 * seg(t, 1.2, 2.6) : t < 5.0 ? lerp(3, 1.5, seg(t, 3.4, 4.2)) : lerp(1.5, 4, seg(t, 5.0, 6.0));
+  const hookX = -1.0 + 0.05 * F; place(dL, F, V(hookX, Y1, Z1), -1); place(dR, F, V(hookX + 0.02, Y1, Z1), 1);
+  dL.position.x = Math.min(dL.position.x, -1.0); // сол динамометр тірекке бекітілген: серіппесі созылады
+  hand.position.copy(dR.position).add(V(0.36, 0, 0));
+  const o1 = win(t, 0.6, 1.0, 17.3, 17.9);
+  rL.set(num(F, 1) + ' Н', o1); rL.position.set(dL.position.x - 0.05, Y1 + 0.22, Z1); rR.set(num(F, 1) + ' Н', o1); rR.position.set(dR.position.x + 0.05, Y1 + 0.22, Z1);
+  aL.set(V(hookX - 0.02, Y1 + 0.1, Z1 + 0.06), V(1, 0, 0), 0.06 * F + 0.001, o1 * (F > 0.1 ? 1 : 0)); aR.set(V(hookX + 0.02, Y1 + 0.1, Z1 + 0.06), V(-1, 0, 0), 0.06 * F + 0.001, o1 * (F > 0.1 ? 1 : 0));
+  lL.show(V(hookX + 0.12, Y1 + 0.2, Z1 + 0.06), o1 * (F > 0.1 ? 1 : 0)); lR.show(V(hookX - 0.12, Y1 + 0.2, Z1 + 0.06), o1 * (F > 0.1 ? 1 : 0));
+  // 2) серіппе 10 с-та босатылады
+  const TR = 10.0, u = Math.max(0, t - TR), v0 = 0.12, uB = Math.min(u, 4.2); // арбалар жылдамдығы (баяулатылған)
+  const sep = 0.0 + Math.min(1, u / 0.25) * 0.0;
+  const xA = -0.18 - (u < 0.25 ? 0.12 * (u / 0.25) ** 2 : 0.12 + 2 * v0 * (u - 0.25)), xB = 0.18 + (u < 0.25 ? 0.06 * (u / 0.25) ** 2 : 0.06 + v0 * (u - 0.25));
+  cA.position.set(Math.max(-1.75, xA), 0, Z2); cB.position.set(Math.min(1.75, xB), 0, Z2);
+  const sl = Math.max(0.06, Math.min(0.24, (cB.position.x - 0.13) - (cA.position.x + 0.13)));
+  sp.setLength(sl); sp.position.set(cA.position.x + 0.13, 0.08, Z2); sp.visible = u < 0.35 || true;
+  thread.visible = t < TR; thread.scale.y = 0.36; thread.position.set(0, 0.11, Z2 + 0.06); thread.rotation.z = Math.PI / 2;
+  const fo = win(t, 8.4, 8.8, TR + 0.4, TR + 0.8) * (t < TR + 0.8 ? 1 : 0);
+  fa.set(V(cA.position.x + 0.05, 0.22, Z2), V(-1, 0, 0), 0.3, fo); fb.set(V(cB.position.x - 0.05, 0.22, Z2), V(1, 0, 0), 0.3, fo);
+  la.show(V(cB.position.x + 0.2, 0.32, Z2), fo); lb.show(V(cA.position.x - 0.2, 0.32, Z2), fo);
+  const vo = win(t, TR + 0.5, TR + 0.9, 17.3, 17.9);
+  va.set(V(cA.position.x - 0.15, 0.2, Z2), V(-1, 0, 0), 0.36, vo); vb.set(V(cB.position.x + 0.15, 0.2, Z2), V(1, 0, 0), 0.18, vo);
+  lva.show(V(cA.position.x - 0.35, 0.3, Z2), vo); lvb.show(V(cB.position.x + 0.3, 0.3, Z2), vo);
+  const mo = win(t, 7.6, 8.0, 17.3, 17.9); ma.show(cA.position.clone().add(V(0, 0.28, 0.12)), mo); mb.show(cB.position.clone().add(V(0, 0.32, 0.12)), mo);
+  const kc = seg(t, 6.8, 8.0);
+  orbit(camera, t, { ang: 0.0, swing: 0.1, rad: lerp(2.2, 3.3, kc), y: lerp(1.2, 1.3, kc), look: [lerp(-1.1, -0.4, kc), lerp(Y1, 0.1, kc), lerp(Z1, Z2, kc)], cx: lerp(-1.1, -0.4, kc), cz: lerp(Z1, Z2, kc) });
+  return st.render();
+};
+ready();
+</script>
+</body></html>
