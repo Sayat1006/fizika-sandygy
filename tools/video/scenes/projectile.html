@@ -1,0 +1,41 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><style>html,body{margin:0;background:#eef2f7;overflow:hidden}canvas{display:block}</style>
+<script type="importmap">{"imports":{"three":"./lib/three.module.js"}}</script></head>
+<body>
+<script type="module">
+// «Көкжиекке бұрыш жасай лақтырылған дененің қозғалысы» (10-сынып): бірдей υ₀ жылдамдықпен 15°, 30°, 45°, 60°, 75° бұрышпен
+// лақтырылған шарлар. x = υ₀cosα·t, y = υ₀sinα·t − gt²/2. Ұшу қашықтығы L = υ₀²sin2α / g — 45°-та ең үлкен,
+// 30° пен 60°-та (15° пен 75°-та) бірдей. Уақыт баяулатылған; соңында 45°-тағы жылдамдық құраушылары.
+import { THREE, V, stage, orbit, arrow, label, readout, seg, win, lerp, mat, mesh, ready } from './kit.js';
+const st = stage({ table: [4.8, 2.2] }), { scene, camera } = st;
+const X0 = -1.35, Y0 = 0.06, V0 = 1.64, G = 1.0; // L(45°) = υ₀²/g ≈ 2,7
+const bc = document.createElement('canvas'); bc.width = 2048; bc.height = 640; const bg = bc.getContext('2d'); bg.fillStyle = '#ffffff'; bg.fillRect(0, 0, 2048, 640); bg.strokeStyle = '#d5dde8'; bg.lineWidth = 2;
+for (let x = 0; x <= 2048; x += 64) { bg.beginPath(); bg.moveTo(x, 0); bg.lineTo(x, 640); bg.stroke(); } for (let y = 0; y <= 640; y += 64) { bg.beginPath(); bg.moveTo(0, y); bg.lineTo(2048, y); bg.stroke(); }
+const tx = new THREE.CanvasTexture(bc); tx.colorSpace = THREE.SRGBColorSpace;
+mesh(new THREE.PlaneGeometry(4.2, 1.31), new THREE.MeshBasicMaterial({ map: tx }), { parent: scene, pos: [0.05, 0.66, -0.15], shadow: false });
+mesh(new THREE.CylinderGeometry(0.06, 0.08, 0.06, 20), mat.dark, { parent: scene, pos: [X0, 0.03, 0] });
+const AL = [15, 30, 45, 60, 75], COL = ['#8b5cf6', '#1f6fd0', '#17a05d', '#e5683a', '#e5322d'];
+const SH = AL.map((a, i) => { const r = a * Math.PI / 180, T = 2 * V0 * Math.sin(r) / G, pts = []; for (let k = 0; k <= 80; k++) { const s = T * k / 80; pts.push(V(X0 + V0 * Math.cos(r) * s, Y0 + V0 * Math.sin(r) * s - G * s * s / 2, 0)); }
+  const l = new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineBasicMaterial({ color: COL[i] })); scene.add(l);
+  const b = mesh(new THREE.SphereGeometry(0.035, 16, 12), new THREE.MeshStandardMaterial({ color: COL[i], roughness: 0.4 }), { parent: scene });
+  const lab = readout(scene, { color: COL[i], w: 0.34 }); return { r, T, pts, l, b, lab, a, t0: 0.8 + i * 1.6 }; });
+const SPD = 0.75; // баяулату
+const av = arrow(scene, '#17a05d', { r: 0.012 }), ax = arrow(scene, '#1f6fd0', { r: 0.01 }), ay = arrow(scene, '#e5483a', { r: 0.01 });
+const lv0 = label(scene, 'υ₀', '', '#17a05d', { size: 0.24 }), lL = label(scene, 'L', '', '#1b2230', { size: 0.26 });
+const brM = new THREE.MeshBasicMaterial({ color: '#1b2230', transparent: true, depthTest: false }), br = mesh(new THREE.BoxGeometry(1, 0.008, 0.008), brM, { parent: scene, shadow: false }); br.renderOrder = 9;
+
+window.renderFrame = (t) => {
+  SH.forEach((s) => { const u = Math.max(0, (t - s.t0) * SPD), k = Math.min(1, u / s.T), n = Math.max(1, Math.floor(80 * k) + 1);
+    s.l.geometry.setDrawRange(0, n); s.l.visible = t > s.t0; const p = s.pts[Math.min(80, Math.round(80 * k))]; s.b.position.copy(p); s.b.visible = t > s.t0 - 0.2;
+    s.lab.set(s.a + '°', t > s.t0 ? Math.min(1, (t - s.t0) * 3) * (1 - seg(t, 17.3, 17.9)) : 0); s.lab.position.copy(s.pts[24]).add(V(-0.12, 0.12, 0.05)); });
+  // 45° — жылдамдық құраушылары
+  const r = Math.PI / 4, o = win(t, 12.0, 12.5, 17.3, 17.9);
+  av.set(V(X0, Y0, 0.05), V(Math.cos(r), Math.sin(r), 0), 0.55, o); ax.set(V(X0, Y0, 0.05), V(1, 0, 0), 0.39, o); ay.set(V(X0, Y0, 0.05), V(0, 1, 0), 0.39, o);
+  lv0.show(V(X0 + 0.3, Y0 + 0.5, 0.05), o);
+  const Lmax = V0 * V0 / G; br.scale.x = Lmax; br.position.set(X0 + Lmax / 2, 0.03, 0.12); brM.opacity = o; br.visible = o > 0.01; lL.show(V(X0 + Lmax / 2, 0.14, 0.12), o);
+  orbit(camera, t, { ang: 0.0, swing: 0.06, rad: 3.3, y: 0.85, look: [0.0, 0.62, 0], cx: 0.0 });
+  return st.render();
+};
+ready();
+</script>
+</body></html>

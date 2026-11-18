@@ -1,0 +1,48 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><style>html,body{margin:0;background:#eef2f7;overflow:hidden}canvas{display:block}</style>
+<script type="importmap">{"imports":{"three":"./lib/three.module.js"}}</script></head>
+<body>
+<script type="module">
+// «Гидродинамика. Бернулли теңдеуі» (10-сынып): көлденең құбырдың тар бөлігі бар. Үздіксіздік теңдеуі S₁υ₁ = S₂υ₂ —
+// тар жерде су жылдамырақ ағады (S₁/S₂ = 4 → υ₂ = 4υ₁); Бернулли теңдеуі p + ρυ²/2 = const — тар жерде қысым кіші,
+// сондықтан тік манометрлік түтікшелердегі су бағанасы төмен. Бөлшектер ағын жылдамдығымен қозғалады.
+import { THREE, V, stage, orbit, arrow, label, seg, win, lerp, mat, mesh, ready } from './kit.js';
+const st = stage({ table: [4.4, 2.0] }), { scene, camera } = st;
+const Y = 0.32, R1 = 0.12, R2 = 0.06, XL = -1.6, XR = 1.6;
+const rad = (x) => { const a = Math.abs(x); return a < 0.25 ? R2 : a < 0.55 ? lerp(R2, R1, (a - 0.25) / 0.3) : R1; };
+const pts = []; for (let i = 0; i <= 120; i++) { const x = XL + (XR - XL) * i / 120; pts.push(new THREE.Vector2(rad(x), x)); }
+const pg = new THREE.LatheGeometry(pts, 40); pg.rotateZ(-Math.PI / 2);
+const pipe = mesh(pg, new THREE.MeshPhysicalMaterial({ color: '#dfefff', transparent: true, opacity: 0.25, roughness: 0.05, depthWrite: false, side: THREE.DoubleSide }), { parent: scene, pos: [0, Y, 0], shadow: false }); pipe.renderOrder = 5;
+const wg = new THREE.LatheGeometry(pts.map((p) => new THREE.Vector2(p.x - 0.006, p.y)), 40); wg.rotateZ(-Math.PI / 2);
+mesh(wg, new THREE.MeshPhysicalMaterial({ color: '#4aa3ef', transparent: true, opacity: 0.32, depthWrite: false }), { parent: scene, pos: [0, Y, 0], shadow: false }).renderOrder = 3;
+for (const x of [XL + 0.2, XR - 0.2]) mesh(new THREE.BoxGeometry(0.06, Y - R1, 0.06), mat.dark, { parent: scene, pos: [x, (Y - R1) / 2, 0] });
+// манометрлік түтікшелер: x = −1, 0, +1
+const MX = [-1.0, 0, 1.0], H0 = 0.75, DH = 0.42; // кең жерде h = H0, тар жерде h = H0 − DH (ρ(υ₂² − υ₁²)/2 ⇒ Δh)
+const cols = MX.map((x) => { const r = 0.022, top = Y + rad(x); const g = mesh(new THREE.CylinderGeometry(r, r, 1.0, 20, 1, true), mat.glass(), { parent: scene, pos: [x, top + 0.5, 0], shadow: false }); g.renderOrder = 5;
+  const w = mesh(new THREE.CylinderGeometry(r - 0.004, r - 0.004, 1, 20), new THREE.MeshPhysicalMaterial({ color: '#2f8fe0', transparent: true, opacity: 0.6, depthWrite: false }), { parent: scene, shadow: false }); w.renderOrder = 3; return { x, top, w }; });
+// ағын бөлшектері
+let sd = 9; const rnd = () => ((sd = (sd * 16807) % 2147483647) / 2147483647);
+const NP = 160, PR = Array.from({ length: NP }, () => ({ s: rnd(), rr: Math.sqrt(rnd()) * 0.85, a: rnd() * 6.28 }));
+const pm = new THREE.InstancedMesh(new THREE.SphereGeometry(0.008, 8, 6), new THREE.MeshBasicMaterial({ color: '#0b3d91' }), NP); pm.renderOrder = 4; scene.add(pm); const dm = new THREE.Object3D();
+// бөлшек орны: «жүрген уақыт» → x, тар жерде жылдамдық υ ∝ 1/r²
+const U1 = 0.22; const xs = [XL]; for (let i = 1; i <= 2000; i++) { const x = xs[i - 1]; xs.push(x + U1 * (R1 / rad(x)) ** 2 / 200); }
+const xAt = (tau) => { const i = Math.floor(tau * 200) % 2000; return xs[i]; };
+const a1 = arrow(scene, '#17a05d', { r: 0.012 }), a2 = arrow(scene, '#17a05d', { r: 0.012 }), l1 = label(scene, 'υ', '1', '#17a05d', { size: 0.24 }), l2 = label(scene, 'υ', '2', '#17a05d', { size: 0.24 });
+const p1 = label(scene, 'p', '1', '#1f6fd0', { size: 0.24 }), p2 = label(scene, 'p', '2', '#1f6fd0', { size: 0.24 });
+
+window.renderFrame = (t) => {
+  const on = seg(t, 0.8, 2.0);
+  PR.forEach((p, i) => { const tau = (p.s * 10 + t * on) % 10, x = xAt(tau), r = rad(x) * p.rr; dm.position.set(x, Y + r * Math.cos(p.a), r * Math.sin(p.a)); dm.updateMatrix(); pm.setMatrixAt(i, dm.matrix); });
+  pm.instanceMatrix.needsUpdate = true;
+  const hk = seg(t, 1.2, 4.0);
+  cols.forEach((c) => { const h = lerp(0.0, Math.abs(c.x) < 0.1 ? H0 - DH : H0, 1) * 1; const hh = lerp(H0 * 0.5, h, hk); const y0 = Y; c.w.scale.y = c.top - y0 + hh; c.w.position.set(c.x, (y0 + c.top + hh) / 2, 0); });
+  const o = win(t, 4.6, 5.0, 17.3, 17.9);
+  a1.set(V(-1.3, Y + 0.2, 0.15), V(1, 0, 0), 0.12, o); a2.set(V(-0.12, Y + 0.12, 0.15), V(1, 0, 0), 0.48, o);
+  l1.show(V(-1.24, Y + 0.3, 0.15), o); l2.show(V(0.1, Y + 0.22, 0.15), o);
+  const o2 = win(t, 6.0, 6.4, 17.3, 17.9); p1.show(V(-1.0 - 0.14, cols[0].top + H0 - 0.05, 0.05), o2); p2.show(V(-0.14, cols[1].top + H0 - DH - 0.05, 0.05), o2);
+  orbit(camera, t, { ang: 0.0, swing: 0.12, rad: 2.9, y: 0.9, look: [0, 0.65, 0], cx: 0 });
+  return st.render();
+};
+ready();
+</script>
+</body></html>

@@ -1,0 +1,47 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><style>html,body{margin:0;background:#eef2f7;overflow:hidden}canvas{display:block}</style>
+<script type="importmap">{"imports":{"three":"./lib/three.module.js"}}</script></head>
+<body>
+<script type="module">
+// «Импульс моменті және оның сақталу заңы» (10-сынып): айналмалы орындықта гантель ұстаған адам. Сыртқы күш моменті жоқ:
+// L = Iω = const. Қолын жайғанда инерция моменті I үлкен — баяу айналады; қолын бауырына жиғанда I азаяды — жылдамырақ
+// айналады. I = I₀ + 2m r² (I₀ = 1,2 кг·м², m = 2 кг, r: 0,8 м → 0,2 м). Бағандар: I және ω (көбейтіндісі тұрақты).
+import { THREE, V, stage, orbit, hudBars, readout, seg, win, lerp, mat, mesh, num, ready } from './kit.js';
+const st = stage({ table: false }), { scene, camera, hud } = st;
+mesh(new THREE.PlaneGeometry(30, 30), new THREE.MeshStandardMaterial({ color: '#e4e9f0', roughness: 1 }), { parent: scene, pos: [0, 0, 0], rot: [-Math.PI / 2, 0, 0], shadow: false }).receiveShadow = true;
+mesh(new THREE.CylinderGeometry(0.3, 0.36, 0.06, 32), mat.dark, { parent: scene, pos: [0, 0.03, 0] });
+mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.4, 16), mat.metal, { parent: scene, pos: [0, 0.26, 0] });
+const rot = new THREE.Group(); rot.position.y = 0.46; scene.add(rot);
+mesh(new THREE.CylinderGeometry(0.26, 0.26, 0.06, 32), new THREE.MeshStandardMaterial({ color: '#e5683a', roughness: 0.5 }), { parent: rot });
+mesh(new THREE.BoxGeometry(0.06, 0.04, 0.26), new THREE.MeshStandardMaterial({ color: '#ffffff' }), { parent: rot, pos: [0.2, 0.035, 0] }); // айналуды көрсету белгісі
+const skin = new THREE.MeshStandardMaterial({ color: '#e0b48c', roughness: 0.7 }), cloth = new THREE.MeshStandardMaterial({ color: '#2f6fe0', roughness: 0.6 }), pants = new THREE.MeshStandardMaterial({ color: '#3a3f4a', roughness: 0.7 });
+mesh(new THREE.BoxGeometry(0.34, 0.14, 0.4), pants, { parent: rot, pos: [0, 0.1, 0.08] });
+for (const s of [-1, 1]) mesh(new THREE.CylinderGeometry(0.06, 0.05, 0.45, 12), pants, { parent: rot, pos: [s * 0.1, -0.12, 0.3] });
+mesh(new THREE.CylinderGeometry(0.17, 0.15, 0.55, 20), cloth, { parent: rot, pos: [0, 0.45, 0] });
+mesh(new THREE.SphereGeometry(0.12, 24, 16), skin, { parent: rot, pos: [0, 0.85, 0] });
+const arms = [-1, 1].map((s) => { const sh = new THREE.Group(); sh.position.set(s * 0.19, 0.66, 0); rot.add(sh);
+  const up = mesh(new THREE.CylinderGeometry(0.045, 0.04, 1, 12), cloth, { parent: sh }); const fo = mesh(new THREE.CylinderGeometry(0.04, 0.035, 1, 12), skin, { parent: sh });
+  const db = new THREE.Group(); sh.add(db); mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.16, 8), mat.metal, { parent: db, rot: [Math.PI / 2, 0, 0] }); for (const z of [-0.08, 0.08]) mesh(new THREE.CylinderGeometry(0.055, 0.055, 0.05, 16), mat.dark, { parent: db, pos: [0, 0, z], rot: [Math.PI / 2, 0, 0] });
+  return { sh, up, fo, db, s }; });
+const seg3 = (m, a, b) => { const d = b.clone().sub(a); m.scale.y = d.length(); m.position.copy(a).addScaledVector(d, 0.5); m.quaternion.setFromUnitVectors(V(0, 1, 0), d.normalize()); };
+const bars = hudBars(hud, { x: 990, y: 380, w: 240, h: 280 });
+const rW = readout(scene, { color: '#e5483a', w: 0.7 });
+const I0 = 1.2, M = 2, L = (I0 + 2 * M * 0.8 * 0.8) * 2.0; // ω₀ = 2 рад/с (жайылған қолмен)
+const rOf = (t) => (t < 5 ? 0.8 : t < 7 ? lerp(0.8, 0.2, seg(t, 5, 7)) : t < 12 ? 0.2 : lerp(0.2, 0.8, seg(t, 12, 14)));
+const Iof = (t) => I0 + 2 * M * rOf(t) ** 2;
+
+window.renderFrame = (t) => {
+  let ang = 0; for (let x = 0; x < t; x += 1 / 120) ang += (L / Iof(x)) * seg(x, 0.2, 1.0) / 120; // қосымша: басында бір рет итеріледі
+  rot.rotation.y = ang;
+  const r = rOf(t), w = L / Iof(t);
+  arms.forEach((a) => { const hand = V(a.s * (r - 0.19 + 0.0), -0.02 * (1 - (r - 0.2) / 0.6) - 0.05, 0.12 * (1 - (r - 0.2) / 0.6) + 0.02); const elbow = V(a.s * (0.05 + (r - 0.19) * 0.5), -0.18 * (1 - (r - 0.2) / 0.6) - 0.02, 0.0);
+    seg3(a.up, V(0, 0, 0), elbow); seg3(a.fo, elbow, hand); a.db.position.copy(hand); a.db.rotation.y = Math.PI / 2; });
+  const I = Iof(t), Imax = Iof(0), wmax = L / Iof(6);
+  bars.draw([{ v: I / Imax * 0.9, color: '#1f6fd0', label: 'I', sub: '' }, { v: w / wmax * 0.9 * seg(t, 0.2, 1.0), color: '#e5483a', label: 'ω', sub: '' }, { v: 0.9 * seg(t, 0.2, 1.0), color: '#17a05d', label: 'L', sub: '' }], seg(t, 0.4, 0.9));
+  rW.set(num(w * seg(t, 0.2, 1.0), 1) + ' рад/с', win(t, 1.0, 1.4, 17.3, 17.9)); rW.position.set(0, 1.55, 0);
+  orbit(camera, t, { ang: 0.0, swing: 0.15, rad: 3.4, y: 1.7, look: [0.25, 0.85, 0], cx: 0.25 });
+  return st.render();
+};
+ready();
+</script>
+</body></html>
