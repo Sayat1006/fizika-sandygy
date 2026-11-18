@@ -1,0 +1,51 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><style>html,body{margin:0;background:#eef2f7;overflow:hidden}canvas{display:block}</style>
+<script type="importmap">{"imports":{"three":"./lib/three.module.js"}}</script></head>
+<body>
+<script type="module">
+// «Булану, қайнау» (8-сынып): суды қыздырады — алдымен бетінен булану (ақ бу аз), түбінде ұсақ көпіршіктер пайда болады;
+// 100 °C-та (қалыпты атмосфералық қысымда) су қайнайды: көпіршіктер көтеріліп, үлкейеді, бу көп бөлінеді,
+// ал температура тұрақты қалады. t(τ) графигі.
+import { THREE, V, stage, orbit, readout, beaker, thermometer, hotplate, hudPlot, seg, win, lerp, mat, mesh, ready } from './kit.js';
+const st = stage({ table: [3.6, 2.2] }), { scene, camera, hud } = st;
+const X = -0.35, hp = hotplate(scene, { x: X, w: 0.6 });
+const LV = 0.36, bk = beaker(scene, { r: 0.26, h: 0.55, x: X, y: hp.top, color: '#4aa3ef', op: 0.42 }); bk.setLevel(LV);
+const th = thermometer(scene, { min: 0, max: 110, len: 0.75, every: 10, x: X + 0.12, y: hp.top + 0.05, z: -0.12 }); th.rotation.z = -0.14;
+const ro = readout(scene, { color: '#e5483a', w: 0.58 });
+const plot = hudPlot(hud, { x: 900, y: 370, w: 340, h: 290, ax: ['τ', ''], ay: ['t', ''] });
+let sd = 21; const rnd = () => ((sd = (sd * 16807) % 2147483647) / 2147483647);
+const NB = 90, bub = new THREE.InstancedMesh(new THREE.SphereGeometry(1, 14, 10), new THREE.MeshPhysicalMaterial({ color: '#ffffff', transparent: true, opacity: 0.55, roughness: 0.05, depthWrite: false }), NB); bub.renderOrder = 3; scene.add(bub);
+const BB = Array.from({ length: NB }, () => ({ a: rnd() * 6.28, r: Math.sqrt(rnd()) * 0.2, ph: rnd(), sp: 0.7 + rnd() * 0.6, s: 0.005 + rnd() * 0.006 }));
+// бу: жартылай мөлдір сфералар
+const stM = new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0.35, depthWrite: false });
+const NS = 40, steam = new THREE.InstancedMesh(new THREE.SphereGeometry(1, 12, 8), stM, NS); steam.renderOrder = 6; scene.add(steam);
+const SS = Array.from({ length: NS }, () => ({ a: rnd() * 6.28, r: rnd() * 0.15, ph: rnd(), s: 0.03 + rnd() * 0.04 }));
+const TB = 9.5; // қайнау басталады
+const Tof = (t) => t < 1.2 ? 20 : t < TB ? 20 + 80 * (1 - Math.pow(1 - (t - 1.2) / (TB - 1.2), 1.35)) : 100;
+const dm = new THREE.Object3D();
+
+window.renderFrame = (t) => {
+  hp.set(seg(t, 0.4, 1.2)); const T = Tof(t); th.set(T);
+  ro.set(Math.round(T) + ' °C', win(t, 0.6, 1.1, 17.3, 17.9)); ro.position.set(X, 1.15, 0.1);
+  const pre = seg(T, 55, 95), boil = seg(t, TB - 0.3, TB + 0.8), y0 = hp.top + 0.012, top = hp.top + LV;
+  BB.forEach((b, i) => {
+    let p = V(), s = 0;
+    if (boil > 0 || i < 40) {
+      if (boil > 0.05) { const u = (b.ph + t * b.sp * 0.8) % 1; s = b.s * (1 + 1.2 * u) * boil; p.set(X + Math.cos(b.a) * b.r, y0 + u * (LV - 0.01), Math.sin(b.a) * b.r); }
+      else { s = b.s * 0.6 * pre * (0.8 + 0.2 * Math.sin(t * 9 + i)); p.set(X + Math.cos(b.a) * b.r, y0 + s, Math.sin(b.a) * b.r); }
+    }
+    dm.position.copy(p); dm.scale.setScalar(Math.max(0.0001, s)); dm.updateMatrix(); bub.setMatrixAt(i, dm.matrix); });
+  bub.instanceMatrix.needsUpdate = true;
+  const vap = seg(T, 40, 95) * 0.35 + boil * 0.65;
+  SS.forEach((q, i) => { const u = (q.ph + t * 0.35) % 1, k = i / NS < vap ? 1 : 0;
+    dm.position.set(X + Math.cos(q.a) * q.r * (1 + u), top + 0.05 + u * 0.7, Math.sin(q.a) * q.r * (1 + u)); dm.scale.setScalar(Math.max(0.0001, q.s * (1 + 2 * u) * k)); dm.updateMatrix(); steam.setMatrixAt(i, dm.matrix); });
+  steam.instanceMatrix.needsUpdate = true; stM.opacity = 0.28;
+  bk.setLevel(LV + 0.006 * Math.sin(t * 13) * boil);
+  const pts = []; for (let k = 0; k <= 60; k++) { const tt = 1.2 + (16.8 - 1.2) * k / 60; if (tt > t) break; pts.push([0.04 + 0.9 * k / 60, Tof(tt) / 110]); }
+  plot.draw([{ pts, color: '#e5483a', label: '' }], seg(t, 0.6, 1.2));
+  orbit(camera, t, { ang: -0.15, swing: 0.2, rad: 2.7, y: 1.35, look: [-0.05, 0.55, 0] });
+  return st.render();
+};
+ready();
+</script>
+</body></html>

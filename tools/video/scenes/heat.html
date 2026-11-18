@@ -1,0 +1,88 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><style>html,body{margin:0;background:#eef2f7;overflow:hidden}canvas{display:block}</style>
+<script type="importmap">{"imports":{"three":"./lib/three.module.js"}}</script></head>
+<body>
+<script type="module">
+// «Жылуөткізгіштік, конвекция, сәуле шығару» (8-сынып): 1) металл өзекті бір шетінен қыздырады — жылу өзек бойымен
+// тарайды (θ = erfc(x / 2√(at))), балауызбен жапсырылған шегелер кезекпен түседі; 2) стақандағы су астынан қызады —
+// жылы су көтеріліп, суығы түседі (конвекция ағындары); 3) қызған спираль сәуле шығарады — қара пластина қызады.
+import { THREE, V, stage, orbit, readout, beaker, thermometer, hotplate, seg, win, lerp, mat, mesh, num, ready } from './kit.js';
+const st = stage({ table: [5.2, 2.2] }), { scene, camera } = st;
+const erfc = (x) => { const t = 1 / (1 + 0.3275911 * x); return t * (0.254829592 + t * (-0.284496736 + t * (1.421413741 + t * (-1.453152027 + t * 1.061405429)))) * Math.exp(-x * x); };
+
+// 1) жылуөткізгіштік
+const AX = -1.75, RL = 1.2, RY = 0.62;
+mesh(new THREE.BoxGeometry(0.3, 0.04, 0.3), mat.dark, { parent: scene, pos: [AX + RL + 0.05, 0.02, 0] });
+mesh(new THREE.CylinderGeometry(0.02, 0.02, RY, 10), mat.metal, { parent: scene, pos: [AX + RL + 0.05, RY / 2, 0] });
+const rodG = new THREE.CylinderGeometry(0.025, 0.025, RL, 16, 60); rodG.rotateZ(Math.PI / 2); rodG.translate(RL / 2, 0, 0);
+const cols = new Float32Array(rodG.attributes.position.count * 3); rodG.setAttribute('color', new THREE.BufferAttribute(cols, 3));
+const rod = mesh(rodG, new THREE.MeshStandardMaterial({ vertexColors: true, metalness: 0.5, roughness: 0.35 }), { parent: scene, pos: [AX, RY, 0] });
+const PINS = [0.25, 0.45, 0.65, 0.85, 1.05].map((x) => { const g = new THREE.Group(); scene.add(g);
+  mesh(new THREE.CylinderGeometry(0.006, 0.006, 0.14, 8), mat.metal, { parent: g, pos: [0, -0.07, 0] }); mesh(new THREE.SphereGeometry(0.02, 12, 10), new THREE.MeshStandardMaterial({ color: '#f3e3b0', roughness: 0.7 }), { parent: g, pos: [0, -0.005, 0] });
+  return { x, g, tf: null }; });
+// шам (жалын)
+mesh(new THREE.CylinderGeometry(0.08, 0.1, 0.16, 24), mat.glass(), { parent: scene, pos: [AX + 0.04, 0.08, 0] });
+mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.12, 10), mat.metal, { parent: scene, pos: [AX + 0.04, 0.2, 0] });
+const fl1 = mesh(new THREE.ConeGeometry(0.05, 0.3, 20), new THREE.MeshBasicMaterial({ color: '#ff9a2e', transparent: true, opacity: 0.85 }), { parent: scene, pos: [AX + 0.04, 0.4, 0], shadow: false });
+const fl2 = mesh(new THREE.ConeGeometry(0.025, 0.15, 16), new THREE.MeshBasicMaterial({ color: '#3d7bff', transparent: true, opacity: 0.8 }), { parent: scene, pos: [AX + 0.04, 0.33, 0], shadow: false });
+const theta = (x, t) => (t <= 0 ? 0 : erfc(x / (2 * Math.sqrt(0.11 * t))));
+
+// 2) конвекция
+const CX = 0.15;
+const hp = hotplate(scene, { x: CX, w: 0.56 });
+const bk = beaker(scene, { r: 0.24, h: 0.55, x: CX, y: hp.top }); bk.setLevel(0.44);
+const NP = 70, saw = new THREE.InstancedMesh(new THREE.BoxGeometry(0.012, 0.012, 0.012), new THREE.MeshStandardMaterial({ color: '#b07a3c' }), NP); scene.add(saw);
+let sd = 9; const rnd = () => ((sd = (sd * 16807) % 2147483647) / 2147483647);
+const SP = Array.from({ length: NP }, () => [rnd(), rnd() * Math.PI * 2, 0.75 + rnd() * 0.5]);
+const dm = new THREE.Object3D();
+const cArrM = new THREE.MeshBasicMaterial({ color: '#e5483a', transparent: true, depthTest: false }), cArrB = new THREE.MeshBasicMaterial({ color: '#1f6fd0', transparent: true, depthTest: false });
+// конвекция бағыттары: ортада жоғары (қызыл), шетінде төмен (көк) — тор-ілмек сызықтар
+const loop = (side) => { const pts = []; for (let i = 0; i <= 40; i++) { const a = i / 40 * Math.PI * 2; pts.push(V(CX + side * (0.11 + 0.08 * Math.cos(a)), hp.top + 0.22 + 0.15 * Math.sin(a), 0.12)); } return pts; };
+const loops = [-1, 1].map((sd2) => { const l = new THREE.Line(new THREE.BufferGeometry().setFromPoints(loop(sd2)), new THREE.LineDashedMaterial({ color: '#e5683a', dashSize: 0.03, gapSize: 0.02, transparent: true, depthTest: false })); l.computeLineDistances(); l.renderOrder = 9; scene.add(l); return l; });
+const th2 = thermometer(scene, { min: 0, max: 100, len: 0.6, x: CX + 0.12, y: hp.top + 0.05, z: -0.12 }); th2.rotation.z = -0.15;
+const r2 = readout(scene, { color: '#e5483a', w: 0.5 });
+
+// 3) сәуле шығару
+const RX = 1.6;
+mesh(new THREE.BoxGeometry(0.3, 0.06, 0.3), mat.dark, { parent: scene, pos: [RX - 0.35, 0.03, 0] });
+const coilM = new THREE.MeshStandardMaterial({ color: '#5a3a30', emissive: '#ff4a1a', emissiveIntensity: 0, roughness: 0.5 });
+const coil = mesh(new THREE.TorusKnotGeometry(0.06, 0.012, 120, 8, 1, 12), coilM, { parent: scene, pos: [RX - 0.35, 0.42, 0], rot: [Math.PI / 2, 0, 0] }); coil.scale.set(1, 1, 3.6);
+mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.2, 8), mat.metal, { parent: scene, pos: [RX - 0.35, 0.13, 0] });
+const plate = mesh(new THREE.BoxGeometry(0.02, 0.4, 0.34), new THREE.MeshStandardMaterial({ color: '#15171c', roughness: 0.9 }), { parent: scene, pos: [RX + 0.35, 0.42, 0] });
+mesh(new THREE.BoxGeometry(0.2, 0.04, 0.2), mat.dark, { parent: scene, pos: [RX + 0.38, 0.02, 0] }); mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.2, 8), mat.metal, { parent: scene, pos: [RX + 0.38, 0.12, 0] });
+const th3 = thermometer(scene, { min: 0, max: 60, len: 0.5, every: 10, x: RX + 0.47, y: 0.18, z: 0 }); th3.rotation.y = -0.5;
+const r3 = readout(scene, { color: '#e5483a', w: 0.5 });
+const waves = Array.from({ length: 5 }, (_, i) => { const l = new THREE.Line(new THREE.BufferGeometry().setFromPoints(Array.from({ length: 60 }, () => V())), new THREE.LineBasicMaterial({ color: '#ff5a2e', transparent: true, depthTest: false })); l.renderOrder = 9; scene.add(l); return l; });
+
+window.renderFrame = (t) => {
+  // 1)
+  const ft = Math.max(0, t - 0.6) * 1.0, on1 = seg(t, 0.2, 0.6);
+  fl1.scale.set(1, (0.9 + 0.12 * Math.sin(t * 31) + 0.06 * Math.sin(t * 17)) * on1 + 0.001, 1); fl2.scale.set(1, on1 + 0.001, 1); fl1.visible = fl2.visible = on1 > 0.01;
+  const pos = rodG.attributes.position; const cc = new THREE.Color(), cold = new THREE.Color('#9aa4b2'), hot = new THREE.Color('#ff3b1a'), ylw = new THREE.Color('#ffc24a');
+  for (let i = 0; i < pos.count; i++) { const th = theta(Math.max(0, pos.getX(i) - 0.04), ft); cc.copy(cold).lerp(hot, Math.min(1, th * 1.4)); if (th > 0.8) cc.lerp(ylw, (th - 0.8) * 3); cols[i * 3] = cc.r; cols[i * 3 + 1] = cc.g; cols[i * 3 + 2] = cc.b; }
+  rodG.attributes.color.needsUpdate = true;
+  for (const p of PINS) { const tf = 0.6 + (p.x / (2 * 0.7329)) ** 2 / 0.11; // θ = 0,3 болатын сәт
+    const fall = Math.max(0, t - tf), y = Math.max(0.03 + 0.14, RY - 0.03 - 2.2 * fall * fall);
+    p.g.position.set(AX + p.x, y, 0); p.g.rotation.z = fall > 0 ? Math.min(Math.PI / 2, fall * 4) * (y <= 0.171 ? 1 : 0.3) : 0; }
+  // 2) конвекция
+  const k2 = seg(t, 5.6, 7.0); hp.set(k2); const Tw = 20 + 55 * seg(t, 6.5, 12.5); th2.set(Tw);
+  r2.set(Math.round(Tw) + ' °C', win(t, 6.6, 7.0, 17.3, 17.9)); r2.position.set(CX, hp.top + 0.78, 0.1);
+  const flow = Math.max(0, t - 6.4) * 0.22 * k2;
+  SP.forEach(([ph, ang, rad], i) => { const s = (ph + flow * rad) % 1, a = s * Math.PI * 2; // ілмек: ортада жоғары, шетінде төмен
+    const r = 0.11 * rad + 0.08 * -Math.cos(a) * rad, y = hp.top + 0.22 + 0.16 * Math.sin(a) * rad;
+    dm.position.set(CX + Math.cos(ang) * Math.min(0.21, Math.abs(r)), y, Math.sin(ang) * Math.min(0.21, Math.abs(r))); dm.rotation.set(a, ang, 0); dm.updateMatrix(); saw.setMatrixAt(i, dm.matrix); });
+  saw.instanceMatrix.needsUpdate = true;
+  const lo = win(t, 8.0, 8.6, 11.8, 12.4); loops.forEach((l) => { l.material.opacity = lo; l.material.dashOffset = -t * 0.08; l.visible = lo > 0.01; });
+  // 3) сәуле шығару
+  const k3 = seg(t, 11.8, 12.8); coilM.emissiveIntensity = 1.4 * k3; const Tp = 20 + 18 * seg(t, 12.8, 17.2); th3.set(Tp);
+  r3.set(num(Tp, 0) + ' °C', win(t, 12.3, 12.7, 17.3, 17.9)); r3.position.set(RX + 0.48, 0.92, 0.1);
+  waves.forEach((l, i) => { const p = l.geometry.attributes.position; const z = (i - 2) * 0.06, y0 = 0.42 + (i - 2) * 0.05;
+    for (let j = 0; j < 60; j++) { const x = RX - 0.25 + j / 59 * 0.55; p.setXYZ(j, x, y0 + 0.02 * Math.sin(x * 70 - t * 14 + i), z); } p.needsUpdate = true; l.material.opacity = 0.9 * k3 * (1 - seg(t, 17.3, 17.9)); l.visible = k3 > 0.01; });
+  // камера: 1 → 2 → 3
+  const a = seg(t, 5.2, 6.6), b = seg(t, 11.2, 12.6), lx = lerp(lerp(AX + 0.6, CX, a), RX, b);
+  orbit(camera, t, { ang: -0.12, swing: 0.15, rad: 2.6, y: 1.25, look: [lx, 0.42, 0], cx: lx });
+  return st.render();
+};
+ready();
+</script>
+</body></html>

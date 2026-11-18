@@ -1,0 +1,76 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><style>html,body{margin:0;background:#eef2f7;overflow:hidden}canvas{display:block}</style>
+<script type="importmap">{"imports":{"three":"./lib/three.module.js"}}</script></head>
+<body>
+<script type="module">
+// «Жылулық қозғалыс, броундық қозғалыс, диффузия» (8-сынып): 1) үлкейтілген модель — ұсақ молекулалар үздіксіз
+// соқтығысып, ауыр бөлшекті (броундық бөлшек) ретсіз қозғалтады, оның ізі сызылады (соқтығыстар сандық есептеледі);
+// 2) суық (20 °C) және ыстық (70 °C) суға бояу тамызылады — ыстық суда диффузия тезірек (D ∝ T, қатынасы шартты).
+import { THREE, V, DUR, stage, orbit, readout, beaker, thermometer, seg, win, lerp, mat, mesh, ready } from './kit.js';
+const st = stage({ table: [4.6, 2.2] }), { scene, camera } = st;
+let sd = 5; const rnd = () => ((sd = (sd * 16807) % 2147483647) / 2147483647);
+const gauss = () => { const u = Math.max(1e-6, rnd()), v = rnd(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); };
+
+// 1) модель: шыны ұяшық
+const BX = -1.15, B = 0.36, BY = B + 0.02;
+{ const g = mesh(new THREE.BoxGeometry(2 * B, 2 * B, 2 * B), mat.glass(), { parent: scene, pos: [BX, BY, 0], shadow: false }); g.renderOrder = 5;
+  const e = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(2 * B, 2 * B, 2 * B)), new THREE.LineBasicMaterial({ color: '#8fa6c4' })); e.position.set(BX, BY, 0); scene.add(e); }
+const N = 110, rm = 0.02, RG = 0.07, MG = 10;
+const sim = (() => { const p = new Float32Array(N * 3), v = new Float32Array(N * 3); for (let i = 0; i < N * 3; i++) { p[i] = (rnd() - 0.5) * 2 * (B - rm); v[i] = gauss() * 1.2; }
+  const G = { p: V(0, 0, 0), v: V(0, 0, 0) }; const fr = [], dt = 1 / 600, lim = B - rm, gl = B - RG;
+  for (let s = 0, t = 0; t <= DUR + 0.1; s++, t += dt) {
+    if (s % 20 === 0) fr.push({ m: p.slice(), g: G.p.clone() });
+    for (let i = 0; i < N; i++) {
+      for (let c = 0; c < 3; c++) { const k = i * 3 + c; p[k] += v[k] * dt; if (p[k] > lim) { p[k] = lim; v[k] = -Math.abs(v[k]); } if (p[k] < -lim) { p[k] = -lim; v[k] = Math.abs(v[k]); } }
+      const dx = p[i * 3] - G.p.x, dy = p[i * 3 + 1] - G.p.y, dz = p[i * 3 + 2] - G.p.z, d = Math.hypot(dx, dy, dz);
+      if (d < RG + rm) { const n = V(dx / d, dy / d, dz / d), rv = (v[i * 3] - G.v.x) * n.x + (v[i * 3 + 1] - G.v.y) * n.y + (v[i * 3 + 2] - G.v.z) * n.z;
+        if (rv < 0) { const j = -2 * rv / (1 + 1 / MG); v[i * 3] += j * n.x; v[i * 3 + 1] += j * n.y; v[i * 3 + 2] += j * n.z; G.v.addScaledVector(n, -j / MG); }
+        p[i * 3] = G.p.x + n.x * (RG + rm); p[i * 3 + 1] = G.p.y + n.y * (RG + rm); p[i * 3 + 2] = G.p.z + n.z * (RG + rm); }
+    }
+    G.p.addScaledVector(G.v, dt); for (const c of ['x', 'y', 'z']) { if (G.p[c] > gl) { G.p[c] = gl; G.v[c] = -Math.abs(G.v[c]); } if (G.p[c] < -gl) { G.p[c] = -gl; G.v[c] = Math.abs(G.v[c]); } }
+  } return fr; })();
+const mol = new THREE.InstancedMesh(new THREE.SphereGeometry(rm, 12, 8), new THREE.MeshStandardMaterial({ color: '#4f8dff', roughness: 0.35 }), N); scene.add(mol);
+const grain = mesh(new THREE.SphereGeometry(RG, 32, 20), new THREE.MeshStandardMaterial({ color: '#f0b429', roughness: 0.5 }), { parent: scene });
+const TRN = 150, trail = new THREE.InstancedMesh(new THREE.SphereGeometry(0.009, 8, 6), new THREE.MeshBasicMaterial({ color: '#e5483a' }), TRN); scene.add(trail);
+const dm = new THREE.Object3D();
+
+// 2) диффузия: екі стақан
+const CUPS = [{ x: 0.55, T: 20, D: 0.0004, col: '#2f8fe0' }, { x: 1.45, T: 70, D: 0.004, col: '#2f8fe0' }];
+const LV = 0.42, T0 = 9.6, ND = 260;
+for (const c of CUPS) {
+  c.b = beaker(scene, { r: 0.26, h: 0.55, x: c.x }); c.b.setLevel(LV);
+  c.th = thermometer(scene, { min: 0, max: 100, len: 0.62, x: c.x + 0.15, y: 0.06, z: -0.12 }); c.th.rotation.z = -0.12; c.th.set(c.T);
+  c.ro = readout(scene, { color: c.T > 50 ? '#e5483a' : '#1f6fd0', w: 0.5 });
+  c.dots = new THREE.InstancedMesh(new THREE.SphereGeometry(0.011, 8, 6), new THREE.MeshBasicMaterial({ color: '#8b2fc9', transparent: true, opacity: 0.85 }), ND); c.dots.renderOrder = 3; scene.add(c.dots);
+  c.g = Array.from({ length: ND }, () => [gauss(), gauss(), gauss(), rnd()]);
+}
+// тамшы
+const drops = CUPS.map(() => mesh(new THREE.SphereGeometry(0.025, 16, 12), new THREE.MeshStandardMaterial({ color: '#8b2fc9' }), { parent: scene, shadow: false }));
+
+window.renderFrame = (t) => {
+  const f = sim[Math.min(sim.length - 1, Math.round(t * 30))];
+  for (let i = 0; i < N; i++) { dm.position.set(BX + f.m[i * 3], BY + f.m[i * 3 + 1], f.m[i * 3 + 2]); dm.updateMatrix(); mol.setMatrixAt(i, dm.matrix); }
+  mol.instanceMatrix.needsUpdate = true; grain.position.set(BX + f.g.x, BY + f.g.y, f.g.z);
+  const fi = Math.round(t * 30);
+  for (let k = 0; k < TRN; k++) { const q = sim[Math.max(0, Math.min(fi, 30 + Math.floor(k * (fi - 30) / (TRN - 1))))].g; dm.position.set(BX + q.x, BY + q.y, q.z); dm.scale.setScalar(t > 1.2 ? 1 : 0.001); dm.updateMatrix(); trail.setMatrixAt(k, dm.matrix); }
+  dm.scale.setScalar(1); trail.instanceMatrix.needsUpdate = true;
+  // диффузия
+  const dropK = seg(t, T0 - 0.8, T0); drops.forEach((d, i) => { d.visible = t > T0 - 0.9 && t < T0 + 0.05; d.position.set(CUPS[i].x, lerp(0.85, LV, dropK), 0); });
+  for (const [ci, c] of CUPS.entries()) {
+    const u = Math.max(0, t - T0), sg = Math.sqrt(2 * c.D * u);
+    c.g.forEach(([a, b, d, w], i) => { const y0 = LV - 0.05 - 0.15 * Math.min(1, u / 2) * w;
+      let x = a * sg * 1.2, y = y0 + b * sg - u * 0.004 * w, z = d * sg * 1.2; const rr = Math.hypot(x, z), R = 0.23; if (rr > R) { const q = Math.max(0.02, 2 * R - rr) / rr; x *= q; z *= q; }
+      if (y < 0.02) y = 0.04 - y; y = Math.min(LV - 0.01, y); dm.position.set(c.x + x, y, z); dm.scale.setScalar(t > T0 ? 1 : 0.001); dm.updateMatrix(); c.dots.setMatrixAt(i, dm.matrix); });
+    dm.scale.setScalar(1); c.dots.instanceMatrix.needsUpdate = true;
+    c.ro.set(c.T + ' °C', win(t, 8.4, 8.9, 17.3, 17.9)); c.ro.position.set(c.x, 0.88, 0.1);
+  }
+  // екі тамшы бірдей уақытта
+  // камера: модель → стақандар
+  const k = seg(t, 7.8, 9.4);
+  const lx = lerp(BX, 1.0, k);
+  orbit(camera, t, { ang: lerp(-0.25, 0.05, k), swing: 0.18, rad: lerp(2.3, 2.9, k), y: lerp(1.1, 1.05, k), look: [lx, lerp(BY, 0.32, k), 0], cx: lx });
+  return st.render();
+};
+ready();
+</script>
+</body></html>

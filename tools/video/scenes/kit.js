@@ -337,4 +337,47 @@ export function hudBars(hud, { x = 980, y = 380, w = 260, h = 300 } = {}) {
   return s;
 }
 
+/** Химиялық стақан: beaker(scene,{r,h,x,z}).setLevel(y, color?) — сұйық биіктігі (м-бірлік) */
+export function beaker(parent, { r = 0.22, h = 0.5, x = 0, z = 0, y = 0, color = '#2f8fe0', op = 0.45 } = {}) {
+  const g = new THREE.Group(); g.position.set(x, y, z); parent.add(g);
+  const glass = new THREE.Mesh(new THREE.CylinderGeometry(r, r * 0.97, h, 48, 1, true), mat.glass()); glass.position.y = h / 2; glass.renderOrder = 4; g.add(glass);
+  const bot = new THREE.Mesh(new THREE.CircleGeometry(r * 0.97, 48), mat.glass()); bot.rotation.x = -Math.PI / 2; bot.position.y = 0.004; g.add(bot);
+  mesh(new THREE.TorusGeometry(r, 0.006, 8, 48), new THREE.MeshStandardMaterial({ color: '#cfe0f0' }), { parent: g, pos: [0, h, 0], rot: [Math.PI / 2, 0, 0], shadow: false });
+  const lm = new THREE.MeshPhysicalMaterial({ color, transparent: true, opacity: op, roughness: 0.1, depthWrite: false });
+  const liq = new THREE.Mesh(new THREE.CylinderGeometry(r - 0.008, r * 0.97 - 0.008, 1, 40), lm); liq.renderOrder = 2; g.add(liq);
+  const tm = new THREE.MeshPhysicalMaterial({ color, transparent: true, opacity: Math.min(1, op + 0.15), roughness: 0.05, depthWrite: false, side: THREE.DoubleSide });
+  const top = new THREE.Mesh(new THREE.CircleGeometry(r - 0.008, 40), tm); top.rotation.x = -Math.PI / 2; top.renderOrder = 2; g.add(top);
+  g.liq = liq; g.lm = lm; g.tm = tm; g.r = r; g.h = h;
+  g.setLevel = (lv, col) => { liq.scale.y = Math.max(0.001, lv); liq.position.y = lv / 2 + 0.004; top.position.y = lv + 0.005; liq.visible = top.visible = lv > 0.003; if (col) { lm.color.set(col); tm.color.set(col); } };
+  g.setLevel(h * 0.7);
+  return g;
+}
+/** Термометр: thermometer(parent,{min,max,len}).set(T) — қызыл бағана; шкала 10° сайын */
+export function thermometer(parent, { min = -20, max = 110, len = 0.8, every = 10, x = 0, y = 0, z = 0 } = {}) {
+  const g = new THREE.Group(); g.position.set(x, y, z); parent.add(g);
+  const tube = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, len, 16, 1, true), mat.glass()); tube.position.y = len / 2; tube.renderOrder = 6; g.add(tube);
+  mesh(new THREE.SphereGeometry(0.028, 20, 14), new THREE.MeshStandardMaterial({ color: '#e5322d', roughness: 0.3 }), { parent: g, shadow: false });
+  const col = mesh(new THREE.CylinderGeometry(0.008, 0.008, 1, 10), new THREE.MeshStandardMaterial({ color: '#e5322d', roughness: 0.3, emissive: '#7a0d0a', emissiveIntensity: 0.3 }), { parent: g, shadow: false });
+  const c = document.createElement('canvas'); c.width = 64; c.height = 512; const x2 = c.getContext('2d'); x2.fillStyle = 'rgba(255,255,255,0.92)'; x2.fillRect(0, 0, 64, 512);
+  x2.strokeStyle = x2.fillStyle = '#1b2230'; x2.font = 'bold 18px Arial'; x2.textAlign = 'right';
+  const lo = 0.06, hi = len - 0.03, yOfT = (T) => lo + (T - min) / (max - min) * (hi - lo);
+  for (let T = Math.ceil(min / 5) * 5; T <= max; T += 5) { const yy = 512 - yOfT(T) / len * 512; const big = T % every === 0; x2.lineWidth = big ? 3 : 1.5; x2.beginPath(); x2.moveTo(64, yy); x2.lineTo(big ? 40 : 50, yy); x2.stroke(); if (big && T % (every * 2) === 0) x2.fillText(String(T), 38, yy + 6); }
+  const tx = new THREE.CanvasTexture(c); tx.colorSpace = THREE.SRGBColorSpace;
+  const sc = new THREE.Mesh(new THREE.PlaneGeometry(0.06, len), new THREE.MeshBasicMaterial({ map: tx })); sc.position.set(-0.05, len / 2, 0); g.add(sc);
+  g.set = (T) => { const yy = yOfT(Math.max(min, Math.min(max, T))); col.scale.y = yy; col.position.y = yy / 2; };
+  g.set(20); return g;
+}
+/** Электр плитасы: hotplate(scene,{x,z}).set(k) — 0..1 қызу (спираль қызарады) */
+export function hotplate(parent, { x = 0, z = 0, w = 0.5 } = {}) {
+  const g = new THREE.Group(); g.position.set(x, 0, z); parent.add(g);
+  mesh(new THREE.BoxGeometry(w, 0.1, w), new THREE.MeshStandardMaterial({ color: '#e9edf2', roughness: 0.5 }), { parent: g, pos: [0, 0.05, 0] });
+  const hm = new THREE.MeshStandardMaterial({ color: '#3a3f4a', roughness: 0.5, emissive: '#ff3b1a', emissiveIntensity: 0 });
+  mesh(new THREE.CylinderGeometry(w * 0.38, w * 0.38, 0.02, 40), hm, { parent: g, pos: [0, 0.11, 0] });
+  const ring = mesh(new THREE.TorusGeometry(w * 0.26, 0.012, 8, 40), new THREE.MeshStandardMaterial({ color: '#552', emissive: '#ff5a1f', emissiveIntensity: 0 }), { parent: g, pos: [0, 0.122, 0], rot: [Math.PI / 2, 0, 0], shadow: false });
+  mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.02, 16), mat.dark, { parent: g, pos: [w * 0.38, 0.05, w / 2 + 0.01], rot: [Math.PI / 2, 0, 0] });
+  g.top = 0.12;
+  g.set = (k) => { hm.emissiveIntensity = 0.5 * k; ring.material.emissiveIntensity = 1.6 * k; };
+  return g;
+}
+
 export const ready = () => { window.ready = true; };
