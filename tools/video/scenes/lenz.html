@@ -1,0 +1,45 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><style>html,body{margin:0;background:#eef2f7;overflow:hidden}canvas{display:block}</style>
+<script type="importmap">{"imports":{"three":"./lib/three.module.js"}}</script></head>
+<body>
+<script type="module">
+// «Ленц ережесі» (10-сынып): жеңіл иінтіректің ұштарында екі алюминий сақина — бірі тұтас, бірі тілікті. Магнитті тұтас
+// сақинаға енгізгенде онда индукциялық ток пайда болады, оның магнит өрісі магниттің өрісінің өзгерісіне қарсы әрекет
+// етеді — сақина магниттен тебіледі; магнитті шығарғанда — соңынан ереді. Тілікті сақинада тұйық ток жоқ — қозғалмайды.
+import { THREE, V, stage, orbit, arrow, label, seg, win, lerp, mat, mesh, ready } from './kit.js';
+const st = stage({ table: [3.4, 2.2] }), { scene, camera } = st;
+const PY = 0.55;
+mesh(new THREE.CylinderGeometry(0.12, 0.14, 0.04, 24), mat.dark, { parent: scene, pos: [0, 0.02, 0] });
+mesh(new THREE.CylinderGeometry(0.012, 0.012, PY - 0.04, 8), mat.metal, { parent: scene, pos: [0, (PY + 0.02) / 2, 0] });
+mesh(new THREE.ConeGeometry(0.02, 0.04, 12), mat.metal, { parent: scene, pos: [0, PY + 0.02, 0] });
+const beamG = new THREE.Group(); beamG.position.set(0, PY + 0.04, 0); scene.add(beamG);
+mesh(new THREE.BoxGeometry(1.2, 0.012, 0.02), mat.metal, { parent: beamG });
+const ringM = new THREE.MeshStandardMaterial({ color: '#c9ccd2', metalness: 0.85, roughness: 0.25 });
+const rA = mesh(new THREE.TorusGeometry(0.1, 0.014, 12, 40), ringM, { parent: beamG, pos: [0.6, 0, 0] });
+const rB = mesh(new THREE.TorusGeometry(0.1, 0.014, 12, 40, Math.PI * 2 - 0.35), ringM, { parent: beamG, pos: [-0.6, 0, 0] });
+const magnet = new THREE.Group(); scene.add(magnet);
+mesh(new THREE.BoxGeometry(0.22, 0.08, 0.08), new THREE.MeshStandardMaterial({ color: '#e5322d', roughness: 0.45 }), { parent: magnet, pos: [0.11, 0, 0] });
+mesh(new THREE.BoxGeometry(0.22, 0.08, 0.08), new THREE.MeshStandardMaterial({ color: '#2f6fe0', roughness: 0.45 }), { parent: magnet, pos: [-0.11, 0, 0] });
+const lN = label(magnet, 'N', '', '#ffffff', { size: 0.14, parent: magnet }); lN.show(V(0.15, 0.07, 0.05), 1);
+const cur = Array.from({ length: 4 }, () => arrow(scene, '#f0a020', { r: 0.008 })), aF = arrow(scene, '#17a05d', { r: 0.014 }), lI = label(scene, 'I', '', '#f0a020', { size: 0.2 });
+// магнит қозғалысы (иінтірек осіне перпендикуляр бағытта, z осі бойымен, сақинаның осінен)
+// 1) тұтас сақина (x = 0.6): 1,5–3 енгізу, 5–6,5 шығару; 2) тілікті (x = −0.6): 9,5–11 енгізу, 13–14,5 шығару
+const mz = (t) => (t < 8 ? (t < 4.2 ? lerp(1.0, 0.18, seg(t, 1.5, 3.0)) : lerp(0.18, 1.0, seg(t, 5.0, 6.5))) : (t < 12.2 ? lerp(1.0, 0.18, seg(t, 9.5, 11.0)) : lerp(0.18, 1.0, seg(t, 13.0, 14.5))));
+// иінтіректің бұрылуы: dФ/dt-ге пропорционал «итеру» (өшетін тербеліс)
+let sd = 0; const N = 2160, ang = new Float32Array(N + 1); { let a = 0, w = 0; for (let i = 0; i <= N; i++) { const t = i / 120; ang[i] = a; if (t < 8) { const dz = (mz(t + 0.005) - mz(t - 0.005)) / 0.01; const ringZ = Math.sin(a) * 0.6; const near = Math.exp(-(((mz(t) - ringZ) / 0.35) ** 2)); const F = dz * near * 9; w += (F - 1.2 * w - 4 * a) / 120; a += w / 120; } else { w += (-1.2 * w - 4 * a) / 120; a += w / 120; } } }
+
+window.renderFrame = (t) => {
+  const z = mz(t), a = ang[Math.min(N, Math.round(t * 120))];
+  beamG.rotation.y = -a;
+  const ringX = t < 8 ? 0.6 : -0.6, rp = V(ringX, 0, 0).applyAxisAngle(V(0, 1, 0), -a).add(beamG.position);
+  magnet.position.set(ringX, beamG.position.y, z + 0.04); magnet.rotation.y = Math.PI / 2;
+  const dz = (mz(t + 0.02) - mz(t - 0.02)) / 0.04, active = t < 8 && Math.abs(dz) > 0.05;
+  cur.forEach((c, i) => { const q = i / 4 * Math.PI * 2, p = V(rp.x + 0.1 * Math.cos(q), rp.y + 0.1 * Math.sin(q), rp.z), d = V(-Math.sin(q), Math.cos(q), 0).multiplyScalar(Math.sign(dz) || 1); c.set(p, d, 0.08, active ? 1 : 0); });
+  lI.show(V(rp.x + 0.16, rp.y + 0.14, rp.z), active ? 1 : 0);
+  aF.set(V(rp.x, rp.y + 0.18, rp.z), V(0, 0, Math.sign(dz) || 1), 0.16, active ? 1 : 0);
+  orbit(camera, t, { ang: lerp(0.9, -0.9, seg(t, 7.2, 9.0)), swing: 0.08, rad: 1.9, y: 1.1, look: [lerp(0.35, -0.35, seg(t, 7.2, 9.0)), PY, 0.2] });
+  return st.render();
+};
+ready();
+</script>
+</body></html>

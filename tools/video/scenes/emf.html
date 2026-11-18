@@ -1,0 +1,46 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><style>html,body{margin:0;background:#eef2f7;overflow:hidden}canvas{display:block}</style>
+<script type="importmap">{"imports":{"three":"./lib/three.module.js"}}</script></head>
+<body>
+<script type="module">
+// «Ток көзінің ЭҚК-і мен ішкі кедергісі. Толық тізбек үшін Ом заңы» (10-сынып): ЭҚК ε = 6 В, ішкі кедергісі r = 1 Ом
+// ток көзіне реостат (R = 11 → 5 → 2 → 1 Ом), амперметр және қысқыштарға вольтметр жалғанған. I = ε/(R + r) = 0,5; 1; 2; 3 А,
+// қысқыштағы кернеу U = ε − Ir = 5,5; 5; 4; 3 В. U(I) графигі — түзу: U = ε болғанда I = 0, көлбеуі r.
+import { THREE, V, stage, orbit, readout, meter, wire, battery, hudPlot, seg, win, lerp, mat, mesh, num, ready } from './kit.js';
+const st = stage({ table: [3.8, 2.4] }), { scene, camera, hud } = st;
+const lo = 0.012;
+const src = battery(scene, { x: -0.95, z: 0.35, w: 0.46 });
+const am = meter(scene, { max: 4, sym: 'A', step: 1, x: -0.15, z: -0.3, size: 0.46 }), vm = meter(scene, { max: 6, sym: 'V', step: 1, x: -0.95, z: -0.3, size: 0.46, color: '#e5483a' });
+// реостат
+const RX = 0.75, RZ = 0.3;
+mesh(new THREE.BoxGeometry(0.7, 0.04, 0.16), mat.woodDark, { parent: scene, pos: [RX, 0.02, RZ] });
+const coilC = new THREE.Curve(); coilC.getPoint = (u) => V(RX - 0.28 + 0.56 * u, 0.12 + 0.05 * Math.cos(u * Math.PI * 2 * 40), RZ + 0.05 * Math.sin(u * Math.PI * 2 * 40));
+mesh(new THREE.TubeGeometry(coilC, 900, 0.004, 5), new THREE.MeshStandardMaterial({ color: '#b07a3c', metalness: 0.6, roughness: 0.35 }), { parent: scene });
+for (const s of [-1, 1]) mesh(new THREE.BoxGeometry(0.03, 0.2, 0.12), mat.dark, { parent: scene, pos: [RX + s * 0.31, 0.1, RZ] });
+mesh(new THREE.CylinderGeometry(0.006, 0.006, 0.62, 8), mat.metal, { parent: scene, pos: [RX, 0.2, RZ], rot: [0, 0, Math.PI / 2] });
+const slider = mesh(new THREE.BoxGeometry(0.05, 0.06, 0.14), mat.dark, { parent: scene });
+const pP = src.term(1), pM = src.term(-1);
+wire(scene, [pP, V(pP.x, lo, pP.z), V(pP.x, lo, 0.05), V(am.term(-1).x, lo, 0.05), am.term(-1)]);
+wire(scene, [am.term(1), V(am.term(1).x, lo, 0.05), V(RX - 0.31, lo, 0.05), V(RX - 0.31, lo, RZ), V(RX - 0.31, 0.12, RZ)]);
+wire(scene, [V(RX, 0.2, RZ + 0.0), V(RX + 0.36, 0.2, RZ), V(RX + 0.36, lo, RZ), V(RX + 0.36, lo, 0.75), V(pM.x, lo, 0.75), V(pM.x, lo, pM.z), pM]);
+wire(scene, [V(pP.x + 0.02, lo, pP.z - 0.08), V(vm.term(1).x, lo, -0.1), vm.term(1)], { color: '#3b6fd0' }); wire(scene, [V(pM.x - 0.02, lo, pM.z - 0.08), V(vm.term(-1).x, lo, -0.1), vm.term(-1)], { color: '#3b6fd0' });
+const plot = hudPlot(hud, { x: 930, y: 380, w: 320, h: 270, ax: ['I', ''], ay: ['U', ''] });
+const rR = readout(scene, { color: '#8a6d3b', w: 0.56 }), rE = readout(scene, { color: '#1b2230', w: 0.5 }), rr = readout(scene, { color: '#1b2230', w: 0.56 });
+const EPS = 6, r = 1, RS = [[1.2, 11], [5.0, 5], [8.6, 2], [12.2, 1]];
+const Rof = (t) => { let R = 11; for (let i = 0; i < RS.length; i++) if (t >= RS[i][0]) R = i ? lerp(RS[i - 1][1], RS[i][1], seg(t, RS[i][0], RS[i][0] + 0.8)) : 11; return R; };
+
+window.renderFrame = (t) => {
+  const on = seg(t, 0.6, 1.0), R = Rof(t), I = on * EPS / (R + r), U = EPS - I * r;
+  am.set(I); vm.set(on ? U : 0);
+  slider.position.set(RX - 0.28 + 0.56 * Math.min(1, R / 11), 0.2, RZ);
+  rR.set('R = ' + num(R, 0) + ' Ом', win(t, 1.2, 1.6, 17.3, 17.9)); rR.position.set(RX, 0.12, RZ + 0.42);
+  rE.set('ε = 6 В', win(t, 0.6, 1.0, 17.3, 17.9)); rE.position.set(-1.05, 0.5, 0.7); rr.set('r = 1 Ом', win(t, 0.6, 1.0, 17.3, 17.9)); rr.position.set(-0.45, 0.5, 0.7);
+  const pts = RS.filter(([a]) => t > a + 0.9).map(([, Rv]) => { const i = EPS / (Rv + r); return [i / 4.2, (EPS - i * r) / 6.6]; });
+  const line = t > 13.4 ? [[0, EPS / 6.6], [0.95, (EPS - 0.95 * 4.2 * r) / 6.6]] : [];
+  plot.draw([{ pts: line, color: '#d5dbe3', label: '' }, { pts, color: '#e5483a', label: '' }], seg(t, 0.5, 1.0));
+  orbit(camera, t, { ang: 0.0, swing: 0.1, rad: 2.75, y: 1.25, look: [0.1, 0.15, 0.1], cx: -0.2 });
+  return st.render();
+};
+ready();
+</script>
+</body></html>
