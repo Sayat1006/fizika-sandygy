@@ -1,0 +1,53 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><style>html,body{margin:0;background:#eef2f7;overflow:hidden}canvas{display:block}</style>
+<script type="importmap">{"imports":{"three":"./lib/three.module.js"}}</script></head>
+<body>
+<script type="module">
+// «Көз — оптикалық жүйе. Көру кемшіліктері және оларды түзету» (8-сынып): алыстағы нәрседен келетін параллель сәулелер
+// көз бұршағында сынады. Қалыпты көз — фокус торлы қабықта. Алыстан көрмеу (миопия, көз алмасы ұзын) — фокус торлы
+// қабықтың алдында; шашыратқыш линза түзетеді. Жақыннан көрмеу (гиперметропия, қысқа) — фокус артында; жинағыш линза.
+// Сәулелер жұқа линза ережесімен есептеледі; көзілдіріктің фокус аралығы фокусты дәл торлы қабыққа түсіретіндей таңдалған.
+import { THREE, V, stage, orbit, beam, readout, seg, win, lerp, mat, mesh, ready } from './kit.js';
+const st = stage({ table: [3.6, 2.0] }), { scene, camera } = st;
+const Y = 0.55, XL = -0.33, FE = 0.73, XG = -0.75;
+// көз
+const eye = new THREE.Group(); scene.add(eye);
+const ball = mesh(new THREE.SphereGeometry(0.4, 48, 32), new THREE.MeshPhysicalMaterial({ color: '#ffffff', transparent: true, opacity: 0.22, roughness: 0.2, depthWrite: false, side: THREE.DoubleSide }), { parent: eye, shadow: false }); ball.renderOrder = 3;
+const ret = mesh(new THREE.SphereGeometry(0.392, 48, 32, -Math.PI / 2, Math.PI, 0, Math.PI), new THREE.MeshStandardMaterial({ color: '#c0392b', roughness: 0.7, side: THREE.BackSide }), { parent: eye, shadow: false });
+ret.rotation.y = Math.PI / 2; // артқы жартысы (+x)
+const lensE = mesh(new THREE.SphereGeometry(1, 32, 20), new THREE.MeshPhysicalMaterial({ color: '#bfe3ff', transparent: true, opacity: 0.6, roughness: 0.1, depthWrite: false }), { parent: scene, shadow: false }); lensE.scale.set(0.05, 0.13, 0.13); lensE.position.set(XL, Y, 0); lensE.renderOrder = 4;
+const iris = mesh(new THREE.TorusGeometry(0.15, 0.03, 10, 40), new THREE.MeshStandardMaterial({ color: '#5a7fb0' }), { parent: scene, pos: [XL - 0.03, Y, 0], rot: [0, Math.PI / 2, 0], shadow: false });
+mesh(new THREE.CylinderGeometry(0.02, 0.03, Y - 0.15, 10), mat.dark, { parent: scene, pos: [0, (Y - 0.15) / 2, 0] });
+// көзілдірік линзасы
+const gl = new THREE.Group(); gl.position.set(XG, Y, 0); scene.add(gl);
+const gM = new THREE.MeshPhysicalMaterial({ color: '#d6f0ff', transparent: true, opacity: 0.5, roughness: 0.05, depthWrite: false });
+const conv = mesh(new THREE.SphereGeometry(1, 32, 20), gM, { parent: gl, shadow: false }); conv.scale.set(0.035, 0.2, 0.2);
+const conc = new THREE.Group(); gl.add(conc); mesh(new THREE.CylinderGeometry(0.2, 0.2, 0.012, 40), gM, { parent: conc, rot: [0, 0, Math.PI / 2], shadow: false }); mesh(new THREE.TorusGeometry(0.19, 0.022, 10, 40), gM, { parent: conc, rot: [0, Math.PI / 2, 0], shadow: false });
+mesh(new THREE.TorusGeometry(0.205, 0.008, 8, 40), mat.dark, { parent: gl, rot: [0, Math.PI / 2, 0] });
+const HS = [-0.11, -0.055, 0, 0.055, 0.11], B = HS.map(() => beam(scene, '#ff2a2a', { r: 0.004 }));
+const fdot = mesh(new THREE.SphereGeometry(0.016, 14, 10), new THREE.MeshBasicMaterial({ color: '#17d07a', depthTest: false }), { parent: scene, shadow: false }); fdot.renderOrder = 10;
+const rD = readout(scene, { color: '#1f6fd0', w: 0.46 });
+// кезеңдер: [торлы қабық x, көзілдірік f]
+const XR = (t) => (t < 5 ? 0.4 : t < 11 ? lerp(0.4, 0.55, seg(t, 5, 6)) : lerp(0.55, 0.28, seg(t, 11, 12)));
+const FG = (t) => (t >= 8 && t < 11 ? -3.86 : t >= 14 ? 4.13 : null);
+
+window.renderFrame = (t) => {
+  const xr = XR(t), sx = (xr + 0.4) / 0.8; eye.position.set((xr - 0.4) / 2, Y, 0); eye.scale.set(sx, 1, 1);
+  const fg = FG(t), gOn = fg !== null ? seg(t, t < 11 ? 8 : 14, (t < 11 ? 8 : 14) + 0.6) : 0;
+  gl.visible = gOn > 0.01; gl.position.y = Y + (1 - gOn) * 0.4; conv.visible = fg > 0; conc.visible = fg < 0;
+  const ro = win(t, 0.5, 0.9, 17.3, 17.9), kk = seg(t, 0.8, 2.2);
+  let fx = null;
+  HS.forEach((h, i) => { let y = Y + h, s = 0; const p0 = V(-1.45, y, 0); const pts = [p0];
+    if (fg !== null && gOn > 0.99) { pts.push(V(XG, y, 0)); s = -h / fg; }
+    const yl = y + s * (XL - (fg !== null && gOn > 0.99 ? XG : -1.45)) * (fg !== null && gOn > 0.99 ? 1 : 0); const pl = V(XL, yl, 0); pts.push(pl);
+    const s2 = s - (yl - Y) / FE; const pr = V(xr - 0.02, yl + s2 * (xr - 0.02 - XL), 0); pts.push(pr);
+    if (h !== 0 && fx === null) fx = XL + (yl - Y) / -s2;
+    B[i].set(pts, ro, kk); });
+  fdot.position.set(fx ?? xr, Y, 0.0); fdot.visible = t > 2.4 && fx !== null && fx < xr + 0.25; fdot.material.opacity = 1;
+  rD.set(fg !== null && fg < 0 ? 'D < 0' : 'D > 0', fg !== null ? gOn * ro : 0); rD.position.set(XG, Y + 0.36, 0.05);
+  orbit(camera, t, { ang: 0.0, swing: 0.1, rad: 2.3, y: 0.85, look: [-0.35, Y, 0], cx: -0.35 });
+  return st.render();
+};
+ready();
+</script>
+</body></html>

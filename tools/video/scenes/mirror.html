@@ -1,0 +1,59 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><style>html,body{margin:0;background:#eef2f7;overflow:hidden}canvas{display:block}</style>
+<script type="importmap">{"imports":{"three":"./lib/three.module.js"}}</script></head>
+<body>
+<script type="module">
+// «Жарықтың шағылуы. Жазық және сфералық айналар» (8-сынып): 1) оптикалық шайбадағы жазық айна — лазер сәулесінің
+// түсу бұрышы α өзгерген сайын шағылу бұрышы β оған тең (α = β); 2) ойыс сфералық айна — оптикалық оське параллель
+// сәулелер шағылғаннан кейін фокуста (F ≈ R/2) жиналады (шағылу шеңбер бетінен есептеледі).
+import { THREE, V, stage, orbit, readout, label, beam, seg, win, lerp, mat, mesh, ready } from './kit.js';
+const st = stage({ table: [4.6, 2.4] }), { scene, camera } = st;
+const Y = 0.035;
+// 1) шайба
+const DX = -1.0, DR = 0.55;
+const c = document.createElement('canvas'); c.width = c.height = 1024; const g = c.getContext('2d');
+g.fillStyle = '#ffffff'; g.beginPath(); g.arc(512, 512, 506, 0, Math.PI * 2); g.fill(); g.strokeStyle = '#1b2230'; g.lineWidth = 4; g.stroke();
+g.fillStyle = '#1b2230'; g.font = 'bold 34px Arial'; g.textAlign = 'center';
+for (let d = 0; d < 360; d += 5) { const a = d * Math.PI / 180, big = d % 10 === 0, r0 = big ? 450 : 475; g.lineWidth = big ? 4 : 2; g.beginPath(); g.moveTo(512 + Math.sin(a) * r0, 512 - Math.cos(a) * r0); g.lineTo(512 + Math.sin(a) * 504, 512 - Math.cos(a) * 504); g.stroke();
+  const n = d <= 90 ? d : d <= 180 ? 180 - d : d <= 270 ? d - 180 : 360 - d; if (big && d % 30 === 0) g.fillText(String(n), 512 + Math.sin(a) * 410, 512 - Math.cos(a) * 410 + 12); }
+g.setLineDash([16, 12]); g.lineWidth = 3; g.beginPath(); g.moveTo(512, 40); g.lineTo(512, 984); g.stroke();
+const tx = new THREE.CanvasTexture(c); tx.colorSpace = THREE.SRGBColorSpace; tx.anisotropy = 8;
+mesh(new THREE.CylinderGeometry(DR, DR, 0.02, 64), new THREE.MeshStandardMaterial({ color: '#e9edf2' }), { parent: scene, pos: [DX, 0.01, 0] });
+mesh(new THREE.CircleGeometry(DR - 0.005, 64), new THREE.MeshBasicMaterial({ map: tx }), { parent: scene, pos: [DX, 0.021, 0], rot: [-Math.PI / 2, 0, 0], shadow: false });
+// айна: x осі бойымен, шағылдыратын беті +z жақта
+mesh(new THREE.BoxGeometry(0.6, 0.12, 0.02), new THREE.MeshStandardMaterial({ color: '#bcd6ee', metalness: 0.3, roughness: 0.15 }), { parent: scene, pos: [DX, 0.08, -0.012] });
+mesh(new THREE.BoxGeometry(0.62, 0.1, 0.02), mat.dark, { parent: scene, pos: [DX, 0.06, -0.03] });
+const laser = new THREE.Group(); scene.add(laser); mesh(new THREE.BoxGeometry(0.06, 0.05, 0.2), mat.dark, { parent: laser, pos: [0, 0, 0] }); mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.02, 12), mat.metal, { parent: laser, pos: [0, 0, -0.11], rot: [Math.PI / 2, 0, 0] });
+const b1 = beam(scene, '#ff2a2a'), rA = readout(scene, { color: '#e5483a', w: 0.48 }), rB = readout(scene, { color: '#1f6fd0', w: 0.48 });
+const lA = label(scene, 'α', '', '#e5483a', { size: 0.24 }), lB = label(scene, 'β', '', '#1f6fd0', { size: 0.24 });
+// 2) ойыс айна (шеңбер доғасы, центрі C, радиусы R) — сәулелер солдан оңға
+const MX = 1.55, R = 1.1, CX = MX - R; // айна төбесі MX, центрі CX
+const arc = []; for (let i = -14; i <= 14; i++) { const a = i / 14 * 0.5; arc.push(V(CX + R * Math.cos(a), 0.0, R * Math.sin(a))); }
+const mirG = new THREE.Group(); scene.add(mirG);
+for (let i = 0; i < arc.length - 1; i++) { const a = arc[i], b = arc[i + 1], d = b.clone().sub(a), m = mesh(new THREE.BoxGeometry(0.02, 0.14, d.length() + 0.002), new THREE.MeshStandardMaterial({ color: '#bcd6ee', metalness: 0.3, roughness: 0.15 }), { parent: mirG }); m.position.copy(a).addScaledVector(d, 0.5).setY(0.08); m.rotation.y = Math.atan2(d.x, d.z); }
+const axis = new THREE.Line(new THREE.BufferGeometry().setFromPoints([V(CX - 1.1, Y, 0), V(MX + 0.05, Y, 0)]), new THREE.LineDashedMaterial({ color: '#8a919c', dashSize: 0.04, gapSize: 0.03, transparent: true })); axis.computeLineDistances(); scene.add(axis);
+const FZ = CX + R / 2, Fdot = mesh(new THREE.SphereGeometry(0.018, 14, 10), new THREE.MeshBasicMaterial({ color: '#17a05d' }), { parent: scene, pos: [FZ + 0.0, Y, 0], shadow: false });
+// параксиалдық F нақты шағылу бойынша: шет сәулелер сәл алдырақ қиылысады (сфералық аберрация)
+const lF = label(scene, 'F', '', '#17a05d', { size: 0.26 });
+const H = [-0.3, -0.18, -0.06, 0.06, 0.18, 0.3], B2 = H.map(() => beam(scene, '#ff2a2a', { r: 0.005 }));
+const reflect = (z0) => { const x = CX + Math.sqrt(R * R - z0 * z0), p = V(x, Y, z0), n = V(CX, Y, 0).sub(p).normalize(), d = V(1, 0, 0), r = d.clone().sub(n.clone().multiplyScalar(2 * d.dot(n))); return [V(CX - 1.0, Y, z0), p, p.clone().addScaledVector(r, 1.15)]; };
+
+window.renderFrame = (t) => {
+  // α: 1,0–8,4 с — 30° → 55° → 20°
+  const al = (t < 3.6 ? 30 : t < 6.0 ? lerp(30, 55, seg(t, 3.6, 4.6)) : lerp(55, 20, seg(t, 6.0, 7.0))) * Math.PI / 180;
+  const o1 = win(t, 0.6, 1.0, 8.2, 8.8), src = V(DX - Math.sin(al) * 0.45, Y, Math.cos(al) * 0.45), hit = V(DX, Y, 0), out = V(DX + Math.sin(al) * 0.5, Y, Math.cos(al) * 0.5);
+  laser.position.copy(src).add(V(-Math.sin(al) * 0.1, 0.0, Math.cos(al) * 0.1)); laser.rotation.y = -al;
+  b1.set([src, hit, out], o1, seg(t, 1.0, 1.8));
+  const ad = Math.round(al * 180 / Math.PI);
+  rA.set('α = ' + ad + '°', o1 * seg(t, 1.8, 2.2)); rA.position.set(DX - 0.42, 0.32, 0.55); rB.set('β = ' + ad + '°', o1 * seg(t, 2.2, 2.6)); rB.position.set(DX + 0.42, 0.32, 0.55);
+  lA.show(V(DX - Math.sin(al / 2) * 0.22, 0.06, Math.cos(al / 2) * 0.22), o1 * seg(t, 1.8, 2.2)); lB.show(V(DX + Math.sin(al / 2) * 0.22, 0.06, Math.cos(al / 2) * 0.22), o1 * seg(t, 2.2, 2.6));
+  // 2) параллель сәулелер 10,4 с-тан
+  B2.forEach((b, i) => b.set(reflect(H[i]), win(t, 10.0, 10.4, 17.3, 17.9), seg(t, 10.4 + i * 0.25, 12.6 + i * 0.25)));
+  const fo = win(t, 14.0, 14.5, 17.3, 17.9); Fdot.visible = fo > 0.01; lF.show(V(FZ, 0.16, 0.06), fo); axis.material.opacity = win(t, 9.2, 9.8, 17.3, 17.9);
+  const kc = seg(t, 8.4, 9.8), lx = lerp(DX, 0.95, kc);
+  orbit(camera, t, { ang: lerp(0.0, -0.05, kc), swing: 0.08, rad: lerp(1.25, 1.6, kc), y: lerp(1.75, 2.1, kc), look: [lx, 0, lerp(0.15, 0.0, kc)], cx: lx, cz: lerp(0.0, 0.0, kc) });
+  return st.render();
+};
+ready();
+</script>
+</body></html>
