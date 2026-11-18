@@ -27,7 +27,11 @@ export async function unseenNotices(uid: string): Promise<Notice[]> {
   const now = new Date().toISOString();
   return (a.data as Notice[]).filter((n) => !seen.has(n.id) && n.starts_at <= now && (!n.ends_at || n.ends_at > now));
 }
-export const markNoticeSeen = (id: string) => sb.from('announcement_reads').upsert({ announcement_id: id }, { onConflict: 'announcement_id,user_id', ignoreDuplicates: true });
+/** Supabase сұрауы «жалқау» — await болмаса жіберілмейді */
+export async function markNoticeSeen(id: string) {
+  const { error } = await sb.from('announcement_reads').upsert({ announcement_id: id }, { onConflict: 'announcement_id,user_id', ignoreDuplicates: true });
+  if (error) console.warn('announcement_reads', error.message);
+}
 
 /** Хат (мұғалім ↔ әкімші) */
 export interface Msg { id: string; user_id: string; from_admin: boolean; body: string; created_at: string; read_at: string | null }
@@ -39,7 +43,7 @@ export async function loadThread(uid: string): Promise<Msg[]> {
 export async function sendMsg(uid: string, body: string, fromAdmin = false) {
   return sb.from('messages').insert({ user_id: uid, body: body.trim(), from_admin: fromAdmin });
 }
-export const markRead = (forUser?: string) => sb.rpc('mark_messages_read', forUser ? { p_user: forUser } : {});
+export async function markRead(forUser?: string) { await sb.rpc('mark_messages_read', forUser ? { p_user: forUser } : {}); }
 
 /** Мұғалім үшін: әкімшінің оқылмаған хаттарының саны (мәзірдегі белгі) */
 export function useUnread(uid: string | undefined) {

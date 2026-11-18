@@ -95,7 +95,7 @@ async function onPayStart(chat: number, hex: string) {
     const { data: taken } = await db.from('profiles').select('id').eq('tg_chat_id', chat).maybeSingle();
     if (!taken) await db.from('profiles').update({ tg_chat_id: chat }).eq('id', r.user_id);
   }
-  return send(chat, `🧾 <b>Өтінім №${code(r.id)}</b>\n${planTxt(r)}\n\n1. Сомасын Kaspi Gold-қа аударыңыз: <b>${KASPI}</b>\n2. Kaspi чегін (PDF немесе скриншот) <b>осы чатқа</b> жіберіңіз.\n\nТөлем расталған соң жазылым өзі ашылады, осы жерге хабар келеді.`);
+  return send(chat, `🧾 <b>Өтінім №${code(r.id)}</b>\n${planTxt(r)}\n\n1. Сомасын Kaspi, Halyk немесе Forte арқылы мына нөмірге аударыңыз: <b>${KASPI}</b> (Саят А.)\n2. Төлем чегін (PDF немесе скриншот) <b>осы чатқа</b> жіберіңіз.\n\nТөлем расталған соң жазылым өзі ашылады, осы жерге хабар келеді.`);
 }
 
 async function onReceipt(m: any) {
