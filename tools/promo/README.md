@@ -15,3 +15,17 @@
 дыбысқа қарай өзгереді, экран жазбасының жылдамдығы соған сай реттеледі (`plan.json`). Субтитр мәтіні — `subs.json`.
 `assets/still.html` бастапқы кадрға `y4_kmzh_crop.png` (кабинеттегі ҚМЖ скриншотының қиындысы) керек.
 Ескерту: `live.js` демо-сабақ ашады; соңында «Сабақты аяқтау» басылмаса, сессияны кабинеттен жабыңыз.
+
+## Motion нұсқасы (анимациялы дизайн)
+
+Композиция браузерде кадр-кадрымен салынады (`comp.html`, `window.renderFrame(t)`): ағатын фон, 3D монитор, сахна ауысуы,
+кинетикалық субтитр, санала шығатын сандар, иконкалар, телефон, соңғы кадр.
+
+    MOTION=1 python3 build.py h               # экран жазбалары сахналар бойынша + work/timeline_h.json
+    for s in 01 02 03 04 05 06 07 08 09; do mkdir -p work/fr/$s; ffmpeg -i work/h${s}_scr.mp4 -q:v 3 work/fr/$s/%05d.jpg; done
+    mkdir -p work/fr/ph && ffmpeg -i work/h07_ph.mp4 -q:v 3 work/fr/ph/%05d.jpg
+    python3 -m http.server 8790 &             # tools/promo ішінде
+    node mrender.js h                         # → work/mfr/*.jpg (4 параллель бет)
+    python3 mencode.py h                      # → out/promo_h_motion.mp4
+
+Анимация уақыттары `comp.html` ішіндегі `FX` нысанында, дыбыстағы кідірістерге қарай қойылған.

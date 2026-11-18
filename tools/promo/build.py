@@ -25,6 +25,7 @@ def seq(segs, D, W, H, tag):
         o = f'work/{tag}_{i}.mp4'; seg_video(s, n * f, W, H, o); parts.append(o)
     lst = f'work/{tag}.txt'; open(lst, 'w').write(''.join(f"file '{os.path.basename(p)}'\n" for p in parts))
     out = f'work/{tag}.mp4'; run(['ffmpeg', '-y', '-loglevel', 'error', '-f', 'concat', '-safe', '0', '-i', lst, '-c', 'copy', out]); return out
+MOTION = os.environ.get('MOTION') == '1'; TL = []
 scenes = []
 for sc in P:
     sid = sc['id']; au = f'audio/{sid}.mp3'; D = max(dur(au) + 0.5, sc.get('min', 0)) if os.path.exists(au) else sc['dur']
@@ -33,6 +34,9 @@ for sc in P:
         nat = [(s['b'] - s['a']) * s.get('w', 1.0) for s in segs]; f = D / sum(nat); full = (segs[-1], nat[-1] * f); segs = segs[:-1]; Dm = D - full[1]
     else: Dm = D
     scr = seq(segs, Dm, S['w'], S['h'], f'{fmt}{sid}_scr')
+    if MOTION:
+        pv = seq(sc['phone'], Dm, L['phone']['w'] * 2, L['phone']['h'] * 2, f'{fmt}{sid}_ph') if sc.get('phone') else None
+        TL.append({'id': sid, 'D': round(D, 3), 'Dm': round(Dm, 3), 'scr': scr, 'phone': pv, 'audio': f'audio/{sid}.mp3' if os.path.exists(f'audio/{sid}.mp3') else None}); print(sid, f'{D:.1f}s', flush=True); continue
     inputs = ['-loop', '1', '-framerate', str(FPS), '-t', f'{Dm:.3f}', '-i', f'assets/{fmt}_frame.png', '-i', scr,
               '-loop', '1', '-framerate', str(FPS), '-t', f'{Dm:.3f}', '-i', f'assets/{fmt}_sub_{sid}.png']
     fc = f"[0][1]overlay={S['x']}:{S['y']}[m];[2]format=rgba,fade=in:st=0.3:d=0.4:alpha=1,fade=out:st={max(0.5, Dm - 0.5):.2f}:d=0.4:alpha=1[sb];[m][sb]overlay=0:0[o]"
@@ -46,6 +50,7 @@ for sc in P:
     if full:
         fo = f'work/{fmt}{sid}_full.mp4'; seg_video(full[0], full[1], L['W'], L['H'], fo); parts.append(fo)
     scenes += parts; print(sid, f'{D:.1f}s', flush=True)
+if MOTION: json.dump(TL, open(f'work/timeline_{fmt}.json', 'w'), indent=1); sys.exit(0)
 open('work/all.txt', 'w').write(''.join(f"file '{os.path.basename(p)}'\n" for p in scenes))
 run(['ffmpeg', '-y', '-loglevel', 'error', '-f', 'concat', '-safe', '0', '-i', 'work/all.txt', '-c', 'copy', 'work/video_only.mp4'])
 # дыбыс: әр сахнаның басында
