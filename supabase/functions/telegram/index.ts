@@ -5,6 +5,7 @@
 // 4) {type:'weekly'}: дүйсенбі сайын осы аптаның сабақтары (pg_cron-нан).
 // 5) GET ?setup=1: webhook-ты осы функцияға бағыттау.
 // 7) {type:'trial_end'}: тегін сынақтың соңғы күні мұғалімге еске салу (pg_cron, күн сайын).
+// 8) {type:'msg', id}: кабинеттегі хат алмасу — мұғалімнің хаты әкімшілерге, әкімшінің жауабы мұғалімге.
 // 6) /start p<өтінім>: мұғалім Kaspi чегін ботқа жібереді → әкімшіге «Растау / Бас тарту» батырмаларымен келеді.
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 
@@ -221,6 +222,23 @@ async function onTrialEnd() {
   return { sent };
 }
 
+async function onMsg(id: string) {
+  const { data: m } = await db.from('messages').select('*').eq('id', id).maybeSingle();
+  // тек жаңа хат (қайта шақырып спам жасауға болмайды)
+  if (!m || Date.now() - Date.parse(m.created_at) > 120000) return { skipped: true };
+  const body = esc(String(m.body).slice(0, 1500));
+  if (!m.from_admin) {
+    const { data: u } = await db.from('profiles').select('full_name,phone,school').eq('id', m.user_id).maybeSingle();
+    const admins = await adminChats();
+    for (const a of admins) await send(a, `💬 <b>Жаңа хат</b>\n${esc(u?.full_name)}${u?.phone ? ' · ' + esc(u.phone) : ''}\n\n${body}`, { text: 'Жауап беру', url: SITE + '/admin' });
+    return { sent: admins.length };
+  }
+  const { data: u } = await db.from('profiles').select('tg_chat_id').eq('id', m.user_id).maybeSingle();
+  if (!u?.tg_chat_id) return { sent: 0 };
+  await send(u.tg_chat_id, `💬 <b>Әкімшіден жауап</b>\n\n${body}`, { text: 'Хатты ашу', url: SITE + '/app' });
+  return { sent: 1 };
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS });
   if (!Deno.env.get('TELEGRAM_BOT_TOKEN')) {
@@ -247,6 +265,7 @@ Deno.serve(async (req) => {
     if (b?.type === 'decided' && typeof b.id === 'string') return json(await onDecided(b.id));
     if (b?.type === 'weekly') return json(await onWeekly());
     if (b?.type === 'trial_end') return json(await onTrialEnd());
+    if (b?.type === 'msg' && typeof b.id === 'string') return json(await onMsg(b.id));
     return json({ error: 'unknown' }, 400);
   } catch (e) {
     console.error(e);
