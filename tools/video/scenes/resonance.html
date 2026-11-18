@@ -1,0 +1,38 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><style>html,body{margin:0;background:#eef2f7;overflow:hidden}canvas{display:block}</style>
+<script type="importmap">{"imports":{"three":"./lib/three.module.js"}}</script></head>
+<body>
+<script type="module">
+// «Еркін және еріксіз тербелістер. Резонанс» (9-сынып): Бартон маятниктері — ортақ керілген жіпке ұзындықтары әртүрлі
+// маятниктер ілінген; ауыр «жетекші» маятник (l = 0,6 м) тербелгенде, ұзындығы дәл сондай маятник ең үлкен амплитудамен
+// тербеледі (меншікті жиілігі еріксіз тербеліс жиілігіне тең — резонанс). Әр маятник өшетін еріксіз тербеліс теңдеуімен
+// сандық шешіледі; оң жақта амплитуданың ұзындыққа тәуелділігі (резонанс қисығы).
+import { THREE, V, stage, orbit, readout, hudPlot, simulate, seg, win, lerp, mat, mesh, ready } from './kit.js';
+const st = stage({ table: [3.8, 2.2] }), { scene, camera, hud } = st;
+const TOP = 1.55, X0 = -1.15, X1 = 0.75;
+for (const x of [X0 - 0.05, X1 + 0.05]) mesh(new THREE.CylinderGeometry(0.02, 0.02, TOP + 0.05, 10), mat.dark, { parent: scene, pos: [x, (TOP + 0.05) / 2, 0] });
+mesh(new THREE.CylinderGeometry(0.004, 0.004, X1 - X0 + 0.1, 6), mat.dark, { parent: scene, pos: [(X0 + X1) / 2, TOP, 0], rot: [0, 0, Math.PI / 2], shadow: false });
+const LD = 0.6, LS = [0.3, 0.45, 0.6, 0.78, 0.95], G = 9.8, WD = Math.sqrt(G / LD);
+const P = [{ L: LD, x: X0 + 0.12, col: '#e5322d', r: 0.07, driver: true }, ...LS.map((L, i) => ({ L, x: X0 + 0.42 + i * 0.3, col: L === LD ? '#17a05d' : '#1f6fd0', r: 0.04 }))];
+for (const p of P) { p.str = mesh(new THREE.CylinderGeometry(0.003, 0.003, 1, 6), mat.dark, { parent: scene, shadow: false }); p.bob = mesh(new THREE.SphereGeometry(p.r, 20, 14), new THREE.MeshStandardMaterial({ color: p.col, roughness: 0.4, metalness: p.driver ? 0.3 : 0 }), { parent: scene }); }
+// жетекші θ_D(t) = A sin(ωt) (баяу өсіп), қалғандары: θ'' = −(g/L)θ − γθ' + κ·θ_D
+const S = simulate({ a: 0, b: 0, c: 0, d: 0, e: 0, va: 0, vb: 0, vc: 0, vd: 0, ve: 0 }, (s, t, dt) => {
+  const th = 0.25 * seg(t, 0.6, 2.0) * Math.sin(WD * t), keys = ['a', 'b', 'c', 'd', 'e'];
+  keys.forEach((k, i) => { const w2 = G / LS[i], acc = -w2 * s[k] - 0.22 * s['v' + k] + 1.5 * th; s['v' + k] += acc * dt; s[k] += s['v' + k] * dt; }); });
+const plot = hudPlot(hud, { x: 930, y: 380, w: 320, h: 260, ax: ['l', ''], ay: ['A', ''] });
+const rL = readout(scene, { color: '#17a05d', w: 0.56 });
+
+window.renderFrame = (t) => {
+  const s = S(t), thD = 0.25 * seg(t, 0.6, 2.0) * Math.sin(WD * t), ths = [thD, s.a, s.b, s.c, s.d, s.e];
+  P.forEach((p, i) => { const th = ths[i], b = V(p.x + p.L * Math.sin(th), TOP - p.L * Math.cos(th), 0.0); p.bob.position.copy(b); p.str.scale.y = p.L; p.str.position.set((p.x + b.x) / 2, (TOP + b.y) / 2, 0); p.str.rotation.z = th; });
+  // резонанс қисығы: амплитуда (соңғы 3 с бойынша максимум) ~ теориялық A(ω₀) қисығы
+  const curve = []; for (let k = 0; k <= 40; k++) { const L = 0.2 + k / 40 * 0.9, w0 = Math.sqrt(G / L), A = 1.5 * 0.25 / Math.sqrt((w0 * w0 - WD * WD) ** 2 + (0.22 * WD) ** 2); curve.push([k / 40 * 0.95, Math.min(0.95, A / 0.42 * 0.9)]); }
+  const kc = seg(t, 9.0, 11.0), n = Math.floor(curve.length * kc);
+  plot.draw([{ pts: curve.slice(0, Math.max(0, n)), color: '#17a05d', label: '' }], seg(t, 8.6, 9.2) * (1 - seg(t, 17.3, 17.9)));
+  rL.set('l = 0,6 м', win(t, 3.0, 3.5, 17.3, 17.9)); rL.position.set(P[3].x, 0.55, 0.1);
+  orbit(camera, t, { ang: 0.0, swing: 0.12, rad: 3.2, y: 1.15, look: [-0.05, 1.0, 0], cx: -0.05 });
+  return st.render();
+};
+ready();
+</script>
+</body></html>

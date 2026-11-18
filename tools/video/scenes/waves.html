@@ -1,0 +1,42 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><style>html,body{margin:0;background:#eef2f7;overflow:hidden}canvas{display:block}</style>
+<script type="importmap">{"imports":{"three":"./lib/three.module.js"}}</script></head>
+<body>
+<script type="module">
+// «Толқындық қозғалыс» (9-сынып): жоғарыда — көлденең толқын (бөлшектер толқын таралу бағытына перпендикуляр тербеледі),
+// төменде — бойлық толқын (бөлшектер таралу бағыты бойымен тербеліп, қоюлану мен сирегу жасайды). Бір бөлшек (қызыл)
+// тек өз орнында тербеледі — толқынмен бірге жылжымайды. λ — толқын ұзындығы, υ = λ/T.
+import { THREE, V, stage, orbit, label, arrow, seg, win, lerp, mat, mesh, ready } from './kit.js';
+const st = stage({ table: [4.6, 2.2], bg: '#eef2f7' }), { scene, camera } = st;
+const N = 48, X0 = -1.7, DX = 0.072, LAM = 1.15, T = 1.6, K = 2 * Math.PI / LAM, W = 2 * Math.PI / T, A = 0.1;
+const Y1 = 1.05, Y2 = 0.45;
+const row = (y) => Array.from({ length: N }, (_, i) => mesh(new THREE.SphereGeometry(0.022, 14, 10), new THREE.MeshStandardMaterial({ color: i === 20 ? '#e5322d' : '#1f6fd0', roughness: 0.4 }), { parent: scene, pos: [X0 + i * DX, y, 0] }));
+const r1 = row(Y1), r2 = row(Y2);
+const links = Array.from({ length: N - 1 }, () => mesh(new THREE.CylinderGeometry(0.004, 0.004, 1, 6), mat.dark, { parent: scene, shadow: false }));
+const coils = Array.from({ length: N }, () => mesh(new THREE.TorusGeometry(0.06, 0.006, 6, 24), new THREE.MeshStandardMaterial({ color: '#c08a3e', metalness: 0.6, roughness: 0.35 }), { parent: scene, rot: [0, Math.PI / 2, 0] }));
+const hand1 = mesh(new THREE.BoxGeometry(0.08, 0.14, 0.1), new THREE.MeshStandardMaterial({ color: '#e0b48c' }), { parent: scene }), hand2 = mesh(new THREE.BoxGeometry(0.1, 0.12, 0.12), new THREE.MeshStandardMaterial({ color: '#e0b48c' }), { parent: scene });
+const lamM = new THREE.MeshBasicMaterial({ color: '#17a05d', transparent: true, depthTest: false }), lamBar = mesh(new THREE.BoxGeometry(LAM, 0.008, 0.008), lamM, { parent: scene, shadow: false }); lamBar.renderOrder = 9;
+const lLam = label(scene, 'λ', '', '#17a05d', { size: 0.3 }), lLam2 = label(scene, 'λ', '', '#17a05d', { size: 0.3 });
+const lamBar2 = mesh(new THREE.BoxGeometry(LAM, 0.008, 0.008), lamM, { parent: scene, shadow: false }); lamBar2.renderOrder = 9;
+const av = arrow(scene, '#e5683a', { r: 0.014 }), lv = label(scene, 'υ', '', '#e5683a', { size: 0.28 });
+const phase = (x, t) => { const u = t - 0.6 - (x - X0) * T / LAM; return u > 0 ? Math.sin(W * u) * Math.min(1, u / 0.4) : 0; };
+
+window.renderFrame = (t) => {
+  r1.forEach((b, i) => { const x = X0 + i * DX; b.position.set(x, Y1 + A * phase(x, t), 0); });
+  for (let i = 0; i < N - 1; i++) { const a = r1[i].position, b = r1[i + 1].position, d = b.clone().sub(a); links[i].scale.y = d.length(); links[i].position.copy(a).addScaledVector(d, 0.5); links[i].quaternion.setFromUnitVectors(V(0, 1, 0), d.normalize()); }
+  r2.forEach((b, i) => { const x = X0 + i * DX; const xx = x + 0.035 * phase(x, t); b.position.set(xx, Y2, 0); coils[i].position.set(xx, Y2, 0); });
+  hand1.position.set(X0 - 0.08, Y1 + A * phase(X0, t), 0); hand2.position.set(X0 - 0.1 + 0.035 * phase(X0, t), Y2, 0);
+  // λ: екі қатарда, толқын жеткен соң
+  const lo = win(t, 6.0, 6.6, 17.3, 17.9), crest = (() => { // көлденең толқынның бір өркеші
+    const u = t - 0.6; const xs = X0 + (u - T / 4) * LAM / T; let x = xs; while (x > X0 + 3.2) x -= LAM; return x; })();
+  lamBar.position.set(crest - LAM / 2, Y1 + A + 0.06, 0); lamBar.scale.x = 1; lamM.opacity = lo; lamBar.visible = lamBar2.visible = lo > 0.01;
+  lLam.show(V(crest - LAM / 2, Y1 + A + 0.15, 0), lo);
+  const comp = (() => { const u = t - 0.6; let x = X0 + (u - T / 4) * LAM / T; while (x > X0 + 3.2) x -= LAM; return x; })();
+  lamBar2.position.set(comp - LAM / 2, Y2 + 0.13, 0); lLam2.show(V(comp - LAM / 2, Y2 + 0.22, 0), lo);
+  const ao = win(t, 2.0, 2.5, 17.3, 17.9); av.set(V(0.9, Y1 + 0.32, 0), V(1, 0, 0), 0.4, ao); lv.show(V(1.15, Y1 + 0.42, 0), ao);
+  orbit(camera, t, { ang: 0.0, swing: 0.1, rad: 3.4, y: 0.95, look: [0.0, 0.78, 0], cx: 0.0 });
+  return st.render();
+};
+ready();
+</script>
+</body></html>
