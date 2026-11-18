@@ -41,7 +41,7 @@ def pick_code(task, codes):
     return codes[0] if codes else ''
 
 
-def make_variant(item, bank, var, codes, nq, nt):
+def make_variant(item, bank, var, codes, nq, nt, prev=None):
     """нұсқа: (тест, тапсырмалар)"""
     v, L = item['v'], item['lessons']
     # тест: сабақтардан кезекпен; 1-нұсқа жұп, 2-нұсқа тақ сұрақтар
@@ -62,12 +62,22 @@ def make_variant(item, bank, var, codes, nq, nt):
         for d in range(len(lst)):
             g = lst[(k // len(secs) + var + d) % len(lst)]
             if g.__name__ not in used:
-                used.add(g.__name__); gens.append(g); break
+                used.add(g.__name__); gens.append((s, g)); break
         k += 1
     rnd = random.Random(f"{v}:{item['host']['n']}:{item['type']}:{item['no']}:{var}")
     tasks = []
-    for g in gens:
-        t = g(rnd); t['code'] = pick_code(t, codes); t['gen'] = g.__name__; tasks.append(t)
+    same = {(t['gen'], tuple(p['ans'] for p in t['parts'])) for t in (prev or [])}
+    key = lambda g_, t_: (g_.__name__, tuple(p['ans'] for p in t_['parts']))
+    for s, g in gens:
+        t = g(rnd)
+        for k2 in range(8):  # 2-нұсқада дәл сол сандар қайталанбасын
+            if key(g, t) not in same: break
+            t = g(random.Random(f"{v}:{item['host']['n']}:{item['no']}:{var}:{k2}"))
+        if key(g, t) in same:  # сандары жоқ тапсырма — бөлімнің басқа тапсырмасын аламыз
+            alt = [a for a in bank[s] if a.__name__ not in used and a.__name__ not in {x[0] for x in same}]
+            if alt:
+                g = alt[0]; used.add(g.__name__); t = g(rnd)
+        t['code'] = pick_code(t, codes); t['gen'] = g.__name__; tasks.append(t)
     # оңайдан қиынға
     tasks.sort(key=lambda t: LEVELS.index(t['level']))
     return mcq, tasks
@@ -175,7 +185,8 @@ def main(args):
             it['v'] = v
             codes = list(OrderedDict.fromkeys(c for x in it['lessons'] for c in kmzh_codes(v, x['n'], man, cache)))
             tjb = it['type'] == 'ТЖБ'
-            V = [make_variant(it, bank, var, codes, 6 if tjb else 4, 4 if tjb else 3) for var in (0, 1)]
+            V0 = make_variant(it, bank, 0, codes, 6 if tjb else 4, 4 if tjb else 3)
+            V = [V0, make_variant(it, bank, 1, codes, 6 if tjb else 4, 4 if tjb else 3, V0[1])]
             for _, tasks in V:
                 for tk in tasks:
                     if tk['fig']: tk['fig'] = fig_png(tk['fig'], tmp, figs)
