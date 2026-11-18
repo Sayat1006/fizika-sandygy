@@ -1,0 +1,96 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><style>html,body{margin:0;background:#070b18;overflow:hidden}canvas{display:block}</style>
+<script type="importmap">{"imports":{"three":"./lib/three.module.js"}}</script></head>
+<body>
+<script type="module">
+// «Күн жүйесі. Тәулік, ай, жыл» (7-сынып): Жер өз осінен айналады — тәулік (күн мен түн ауысады);
+// Ай Жерді айналады — фазалары өзгереді (≈ 29,5 тәулік); Жер Күнді айналады — жыл (≈ 365 тәулік), осі 23,4° көлбеу
+// және бағыты өзгермейді. Өлшемдер мен уақыт масштабы шартты (көрнекілік үшін).
+import { THREE, V, DUR, stage, orbit, readout, seg, lerp, mesh, ready } from './kit.js';
+const st = stage({ table: false, bg: '#070b18', fog: [400, 500] }), { scene, camera, hud, renderer } = st;
+camera.far = 300; camera.updateProjectionMatrix(); renderer.shadowMap.enabled = false;
+scene.traverse((o) => { if (o.isLight) o.intensity = o.isHemisphereLight ? 0.06 : 0; });
+const sunL = new THREE.PointLight('#fff6e0', 4, 0, 0); scene.add(sunL);
+
+// жұлдыздар
+let seed = 7; const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+{ const p = []; for (let i = 0; i < 1400; i++) { const u = rnd() * 2 - 1, f = rnd() * Math.PI * 2, r = 120; p.push(r * Math.sqrt(1 - u * u) * Math.cos(f), r * u, r * Math.sqrt(1 - u * u) * Math.sin(f)); }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(p, 3));
+  scene.add(new THREE.Points(g, new THREE.PointsMaterial({ color: '#cfd8ff', size: 1.6, sizeAttenuation: false }))); }
+// Күн
+const sun = mesh(new THREE.SphereGeometry(1.3, 48, 32), new THREE.MeshBasicMaterial({ color: '#ffd45a' }), { parent: scene, shadow: false });
+const glowC = document.createElement('canvas'); glowC.width = glowC.height = 256; { const x = glowC.getContext('2d'), gr = x.createRadialGradient(128, 128, 20, 128, 128, 128); gr.addColorStop(0, 'rgba(255,214,90,0.9)'); gr.addColorStop(0.4, 'rgba(255,170,40,0.35)'); gr.addColorStop(1, 'rgba(255,140,0,0)'); x.fillStyle = gr; x.fillRect(0, 0, 256, 256); }
+const glow = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(glowC), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending })); glow.scale.setScalar(6); scene.add(glow);
+// Жер текстурасы (процедуралық құрлықтар)
+const ec = document.createElement('canvas'); ec.width = 1024; ec.height = 512;
+{ const x = ec.getContext('2d'); x.fillStyle = '#1d5fb8'; x.fillRect(0, 0, 1024, 512);
+  const blobs = [[160, 170, 110], [230, 330, 80], [520, 160, 120], [560, 300, 90], [760, 190, 140], [830, 360, 70], [400, 380, 50]];
+  for (const [bx, by, br] of blobs) for (let i = 0; i < 26; i++) { const a = rnd() * Math.PI * 2, d = rnd() * br, r = br * (0.25 + rnd() * 0.35); x.fillStyle = rnd() < 0.7 ? '#3f8f3a' : '#b49a5a'; x.beginPath(); x.ellipse(bx + Math.cos(a) * d, by + Math.sin(a) * d * 0.7, r, r * 0.7, rnd() * 3, 0, Math.PI * 2); x.fill(); }
+  x.fillStyle = '#f2f6fb'; x.fillRect(0, 0, 1024, 34); x.fillRect(0, 478, 1024, 34); }
+const eTex = new THREE.CanvasTexture(ec); eTex.colorSpace = THREE.SRGBColorSpace;
+const mc = document.createElement('canvas'); mc.width = 512; mc.height = 256;
+{ const x = mc.getContext('2d'); x.fillStyle = '#b9b9b4'; x.fillRect(0, 0, 512, 256); for (let i = 0; i < 70; i++) { x.fillStyle = rnd() < 0.5 ? '#9c9c97' : '#a8a8a2'; x.beginPath(); x.arc(rnd() * 512, rnd() * 256, 4 + rnd() * 22, 0, Math.PI * 2); x.fill(); } }
+const mTex = new THREE.CanvasTexture(mc); mTex.colorSpace = THREE.SRGBColorSpace;
+
+const R = 9, RE = 0.5, RM = 1.7, TILT = 23.4 * Math.PI / 180;
+const earthG = new THREE.Group(); scene.add(earthG);          // орбитадағы орны
+const tilt = new THREE.Group(); tilt.rotation.z = -TILT; earthG.add(tilt); // ос көлбеулігі (бағыты тұрақты)
+const spin = new THREE.Group(); tilt.add(spin);
+mesh(new THREE.SphereGeometry(RE, 64, 48), new THREE.MeshStandardMaterial({ map: eTex, roughness: 0.85 }), { parent: spin, shadow: false });
+const axis = mesh(new THREE.CylinderGeometry(0.012, 0.012, RE * 3.0, 8), new THREE.MeshBasicMaterial({ color: '#e8eefc' }), { parent: tilt, shadow: false });
+// бақылаушы (түйреуіш) 45° ендікте
+const pin = new THREE.Group(); spin.add(pin); pin.rotation.z = Math.PI / 4;
+mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.16, 8), new THREE.MeshBasicMaterial({ color: '#ff4b3a' }), { parent: pin, pos: [0, RE + 0.07, 0], shadow: false });
+mesh(new THREE.SphereGeometry(0.035, 12, 10), new THREE.MeshBasicMaterial({ color: '#ff4b3a' }), { parent: pin, pos: [0, RE + 0.16, 0], shadow: false });
+pin.rotation.order = 'YZX';
+const moon = mesh(new THREE.SphereGeometry(0.15, 40, 30), new THREE.MeshStandardMaterial({ map: mTex, roughness: 1 }), { parent: scene, shadow: false });
+// орбита сызықтары
+const ring = (r, col, op) => { const pts = []; for (let i = 0; i <= 160; i++) { const a = i / 160 * Math.PI * 2; pts.push(V(r * Math.cos(a), 0, -r * Math.sin(a))); } const m = new THREE.LineBasicMaterial({ color: col, transparent: true, opacity: op }); const l = new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), m); scene.add(l); return l; };
+const eOrbit = ring(R, '#7f93c8', 0), mOrbit = ring(RM, '#9aa3b8', 0);
+
+// HUD: Айдың Жерден көрінетін фазасы
+const pc = document.createElement('canvas'); pc.width = pc.height = 256; const px = pc.getContext('2d');
+const pTex = new THREE.CanvasTexture(pc); pTex.colorSpace = THREE.SRGBColorSpace;
+const phase = new THREE.Mesh(new THREE.PlaneGeometry(150, 150), new THREE.MeshBasicMaterial({ map: pTex, transparent: true, toneMapped: false })); phase.position.set(1150, 600, 0); hud.add(phase);
+function drawPhase(k, s, op) {
+  phase.visible = op > 0.01; phase.material.opacity = op; if (!phase.visible) return;
+  const c = 128, r = 96; px.clearRect(0, 0, 256, 256);
+  px.fillStyle = 'rgba(20,28,52,0.85)'; px.beginPath(); px.arc(c, c, 124, 0, Math.PI * 2); px.fill();
+  px.fillStyle = '#2a2f3c'; px.beginPath(); px.arc(c, c, r, 0, Math.PI * 2); px.fill();
+  px.save(); px.translate(c, c); px.scale(s, 1); const x = r * (1 - 2 * k);
+  px.fillStyle = '#ecebe2'; px.beginPath(); px.arc(0, 0, r, -Math.PI / 2, Math.PI / 2, false);
+  px.ellipse(0, 0, Math.max(0.5, Math.abs(x)), r, 0, Math.PI / 2, x > 0 ? -Math.PI / 2 : 3 * Math.PI / 2, x > 0); px.fill(); px.restore();
+  pTex.needsUpdate = true;
+}
+const rd = readout(scene, { color: '#f0b429', w: 1 });
+
+const YEAR = DUR, MONTH = YEAR / 12.37, DAY = 2.6; // шартты уақыт
+window.renderFrame = (t) => {
+  const th = 0.35 + 2 * Math.PI * t / YEAR, E = V(R * Math.cos(th), 0, -R * Math.sin(th));
+  earthG.position.copy(E); spin.rotation.y = 2 * Math.PI * t / DAY;
+  const mt = 2 * Math.PI * t / MONTH + 2.2, M = E.clone().add(V(RM * Math.cos(mt), 0, -RM * Math.sin(mt)));
+  moon.position.copy(M); mOrbit.position.copy(E);
+  // фаза
+  const toS = E.clone().negate().normalize(), toM = M.clone().sub(E).normalize();
+  const k = (1 - toS.dot(toM)) / 2, s = toS.clone().cross(toM).y > 0 ? 1 : -1;
+  const kB = seg(t, 5.2, 6.6), kC = seg(t, 11.4, 13.6);
+  drawPhase(k, s, kB * (1 - seg(t, 11.0, 11.6)));
+  mOrbit.material.opacity = 0.5 * kB * (1 - kC * 0.6); eOrbit.material.opacity = 0.55 * kC;
+  axis.material.opacity = 1;
+  // камера: Жерге жақын → Жер мен Ай → бүкіл орбита
+  const sunAng = Math.atan2(-E.x, -E.z);
+  const ang = lerp(lerp(sunAng + 1.25, sunAng + 0.9, kB), 0.6, kC);
+  const cx = lerp(E.x, 0, kC), cz = lerp(E.z, 0, kC), rad = lerp(lerp(3.3, 5.4, kB), 22, kC), y = lerp(lerp(0.45, 1.6, kB), 13, kC);
+  const look = E.clone().lerp(V(0, 0, 0), kC);
+  orbit(camera, t, { ang, swing: 0, rad, y, look: [look.x, look.y, look.z], cx, cz });
+  // мәндер
+  const f = rad / 3;
+  const txt = t < 5.6 ? '24 сағ' : t < 12.2 ? '29,5 тәул.' : '365 тәул.';
+  const op = Math.max(seg(t, 1.0, 1.6) * (1 - seg(t, 4.8, 5.4)), seg(t, 7.0, 7.6) * (1 - seg(t, 11.0, 11.6)), seg(t, 14.0, 14.6) * (1 - seg(t, 17.3, 17.9)));
+  rd.set(txt, op); rd.scale.set(0.62 * f, 0.62 * f * 0.3125, 1);
+  rd.position.copy(t < 12.2 ? E.clone().add(V(0, RE + lerp(0.22, 0.6, kB), 0)) : V(0, 2.6, 0));
+  return st.render();
+};
+ready();
+</script>
+</body></html>

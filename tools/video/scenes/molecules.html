@@ -1,0 +1,70 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><style>html,body{margin:0;background:#eef2f7;overflow:hidden}canvas{display:block}</style>
+<script type="importmap">{"imports":{"three":"./lib/three.module.js"}}</script></head>
+<body>
+<script type="module">
+// «Қатты денелердің, сұйықтардың және газдардың молекулалық құрылымы» (7-сынып): үш ыдыс (модель).
+// Қатты дене — бөлшектер тор түйіндерінде тербеледі; сұйық — тығыз орналасқан, бір-бірінің үстімен жылжиды, ыдыстың
+// түбін алады; газ — бөлшектер алыс, жылдам қозғалып, бүкіл көлемді толтырады. Сұйық пен газ сандық есептеледі.
+import { THREE, V, DUR, stage, orbit, seg, win, lerp, mat, mesh, ready } from './kit.js';
+const st = stage({ table: [4.8, 2.2] }), { scene, camera } = st;
+
+const B = 0.42, XS = [-1.3, 0, 1.3], CY = B + 0.02, r = 0.045; // ыдыстың жарты өлшемі, центрлері
+let seed = 11; const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+for (const x of XS) {
+  const g = mesh(new THREE.BoxGeometry(2 * B + 0.02, 2 * B + 0.02, 2 * B + 0.02), mat.glass(), { parent: scene, pos: [x, CY, 0], shadow: false }); g.renderOrder = 5;
+  const e = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(2 * B + 0.02, 2 * B + 0.02, 2 * B + 0.02)), new THREE.LineBasicMaterial({ color: '#8fa6c4' })); e.position.set(x, CY, 0); scene.add(e);
+}
+const geo = new THREE.SphereGeometry(r, 18, 12);
+const inst = (n, col) => { const m = new THREE.InstancedMesh(geo, new THREE.MeshStandardMaterial({ color: col, roughness: 0.35 }), n); m.castShadow = true; scene.add(m); return m; };
+const dummy = new THREE.Object3D();
+
+// 1) қатты дене: 5×5×5 тор
+const SOL = []; const a0 = 0.13;
+for (let i = 0; i < 5; i++) for (let j = 0; j < 5; j++) for (let k = 0; k < 5; k++) SOL.push([(i - 2) * a0, -B + r + 0.01 + j * a0, (k - 2) * a0, rnd() * 6.28, rnd() * 6.28, rnd() * 6.28]);
+const solid = inst(SOL.length, '#5b8def');
+// 2) сұйық, 3) газ: алдын ала есептелген кадрлар (30 к/с)
+function sim(n, { g, kick, damp, attract, init }) {
+  const p = new Float32Array(n * 3), v = new Float32Array(n * 3); init(p, v);
+  const frames = [], dt = 1 / 600, lim = B - r;
+  for (let s = 0, t = 0; t <= DUR + 0.1; s++, t += dt) {
+    if (s % 20 === 0) frames.push(p.slice());
+    for (let i = 0; i < n; i++) { v[i * 3 + 1] -= g * dt; for (let c = 0; c < 3; c++) { v[i * 3 + c] += (rnd() - 0.5) * kick; v[i * 3 + c] *= damp; } }
+    for (let i = 0; i < n; i++) for (let j = i + 1; j < n; j++) {
+      const dx = p[i * 3] - p[j * 3], dy = p[i * 3 + 1] - p[j * 3 + 1], dz = p[i * 3 + 2] - p[j * 3 + 2], d2 = dx * dx + dy * dy + dz * dz;
+      if (d2 > 0.04) continue; const d = Math.sqrt(d2) + 1e-6; let f = 0;
+      if (d < 2 * r + 0.012) f = 900 * (2 * r + 0.012 - d); else if (attract && d < 0.17) f = -attract * (d - 2 * r - 0.012);
+      const fx = f * dx / d * dt, fy = f * dy / d * dt, fz = f * dz / d * dt;
+      v[i * 3] += fx; v[i * 3 + 1] += fy; v[i * 3 + 2] += fz; v[j * 3] -= fx; v[j * 3 + 1] -= fy; v[j * 3 + 2] -= fz;
+    }
+    for (let i = 0; i < n * 3; i++) { p[i] += v[i] * dt; if (p[i] > lim) { p[i] = lim; v[i] = -Math.abs(v[i]); } if (p[i] < -lim) { p[i] = -lim; v[i] = Math.abs(v[i]); } }
+  }
+  return frames;
+}
+const NL = 150, NG = 34;
+const LIQ = sim(NL, { g: 8, kick: 0.16, damp: 0.997, attract: 60, init: (p) => { for (let i = 0; i < NL; i++) { p[i * 3] = (i % 6 - 2.5) * 0.11; p[i * 3 + 1] = -B + r + Math.floor(i / 36) * 0.1 + 0.05; p[i * 3 + 2] = (Math.floor(i / 6) % 6 - 2.5) * 0.11; } } });
+const GAS = sim(NG, { g: 0, kick: 0, damp: 1, attract: 0, init: (p, v) => { for (let i = 0; i < NG; i++) for (let c = 0; c < 3; c++) { p[i * 3 + c] = (rnd() - 0.5) * 0.7; v[i * 3 + c] = (rnd() - 0.5) * 2.4; } } });
+const liquid = inst(NL, '#17a05d'), gas = inst(NG, '#e5683a');
+// бөлшектердің жолы (газ — бір бөлшектің ізі)
+const TR = 40, trM = new THREE.LineBasicMaterial({ color: '#e5483a', transparent: true, opacity: 0.8 }), trG = new THREE.BufferGeometry(); trG.setAttribute('position', new THREE.BufferAttribute(new Float32Array(TR * 3), 3));
+const trail = new THREE.Line(trG, trM); scene.add(trail);
+
+window.renderFrame = (t) => {
+  SOL.forEach(([x, y, z, a, b, c], i) => { const A = 0.012; dummy.position.set(XS[0] + x + A * Math.sin(t * 19 + a), CY + y + A * Math.sin(t * 23 + b), z + A * Math.sin(t * 21 + c)); dummy.updateMatrix(); solid.setMatrixAt(i, dummy.matrix); });
+  solid.instanceMatrix.needsUpdate = true;
+  const fi = Math.min(LIQ.length - 1, Math.round(t * 30)), L = LIQ[fi], G = GAS[fi];
+  for (let i = 0; i < NL; i++) { dummy.position.set(XS[1] + L[i * 3], CY + L[i * 3 + 1], L[i * 3 + 2]); dummy.updateMatrix(); liquid.setMatrixAt(i, dummy.matrix); }
+  for (let i = 0; i < NG; i++) { dummy.position.set(XS[2] + G[i * 3], CY + G[i * 3 + 1], G[i * 3 + 2]); dummy.updateMatrix(); gas.setMatrixAt(i, dummy.matrix); }
+  liquid.instanceMatrix.needsUpdate = gas.instanceMatrix.needsUpdate = true;
+  const pa = trG.attributes.position.array;
+  for (let k = 0; k < TR; k++) { const f = GAS[Math.max(0, fi - (TR - 1 - k))]; pa[k * 3] = XS[2] + f[0]; pa[k * 3 + 1] = CY + f[1]; pa[k * 3 + 2] = f[2]; }
+  trG.attributes.position.needsUpdate = true; trM.opacity = 0.8 * win(t, 13.0, 13.6, 17.2, 17.8);
+  // камера: жалпы көрініс → әр ыдысқа жақындау → жалпы
+  const z1 = win(t, 2.5, 4.0, 5.6, 6.6), z2 = win(t, 6.6, 8.0, 9.8, 10.8), z3 = win(t, 10.8, 12.2, 15.4, 16.6);
+  const lx = XS[0] * z1 + XS[1] * z2 + XS[2] * z3, zz = Math.max(z1, z2, z3);
+  orbit(camera, t, { ang: -0.15, swing: 0.25, rad: lerp(5.0, 2.8, zz), y: lerp(2.2, 1.35, zz), look: [lx, lerp(0.35, 0.42, zz), 0], cx: lx });
+  return st.render();
+};
+ready();
+</script>
+</body></html>
