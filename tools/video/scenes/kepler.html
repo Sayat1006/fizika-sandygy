@@ -1,0 +1,46 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><style>html,body{margin:0;background:#070b18;overflow:hidden}canvas{display:block}</style>
+<script type="importmap">{"imports":{"three":"./lib/three.module.js"}}</script></head>
+<body>
+<script type="module">
+// «Күн жүйесіндегі ғаламшарлардың қозғалыс заңдары» (9-сынып): Кеплер заңдары. 1) ғаламшар эллипс бойымен қозғалады,
+// Күн — фокустардың бірінде; 2) тең уақыт аралықтарында радиус-вектор тең аудандар сызады (Күнге жақын — жылдамырақ);
+// 3) T² / a³ барлық ғаламшарлар үшін бірдей — алыстағы ғаламшардың периоды ұзақ. Қозғалыс Кеплер теңдеуінен
+// (M = E − e·sinE) есептеледі; эксцентриситет көрнекілік үшін үлкейтілген (e = 0,6).
+import { THREE, V, DUR, stage, orbit, seg, win, lerp, mat, mesh, ready } from './kit.js';
+const st = stage({ table: false, bg: '#070b18', fog: [400, 500] }), { scene, camera, renderer } = st;
+renderer.shadowMap.enabled = false; scene.traverse((o) => { if (o.isLight) o.intensity = o.isHemisphereLight ? 0.15 : 0; });
+scene.add(new THREE.PointLight('#fff6e0', 3, 0, 0));
+let sd = 3; const rnd = () => ((sd = (sd * 16807) % 2147483647) / 2147483647);
+{ const p = []; for (let i = 0; i < 1000; i++) { const u = rnd() * 2 - 1, f = rnd() * Math.PI * 2, r = 120; p.push(r * Math.sqrt(1 - u * u) * Math.cos(f), r * u, r * Math.sqrt(1 - u * u) * Math.sin(f)); }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(p, 3)); scene.add(new THREE.Points(g, new THREE.PointsMaterial({ color: '#cfd8ff', size: 1.5, sizeAttenuation: false }))); }
+mesh(new THREE.SphereGeometry(0.22, 32, 24), new THREE.MeshBasicMaterial({ color: '#ffd45a' }), { parent: scene, shadow: false });
+const A = 1.6, E = 0.6, B = A * Math.sqrt(1 - E * E), C = A * E, P1 = 9.0; // үлкен жарты осі, период (с)
+const pos = (t, a, e, P, ph = 0) => { const M = 2 * Math.PI * (t / P) + ph; let Ea = M; for (let i = 0; i < 30; i++) Ea = M + e * Math.sin(Ea); const b = a * Math.sqrt(1 - e * e); return V(a * (Math.cos(Ea) - e), 0, -b * Math.sin(Ea)); };
+const ell = (a, e, col, op) => { const b = a * Math.sqrt(1 - e * e), pts = []; for (let i = 0; i <= 160; i++) { const s = i / 160 * Math.PI * 2; pts.push(V(a * (Math.cos(s) - e), 0, -b * Math.sin(s))); } const l = new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineBasicMaterial({ color: col, transparent: true, opacity: op })); scene.add(l); return l; };
+ell(A, E, '#8fa6d6', 0.7);
+const pl = mesh(new THREE.SphereGeometry(0.07, 24, 16), new THREE.MeshStandardMaterial({ color: '#4f8dff', roughness: 0.6 }), { parent: scene, shadow: false });
+const F2 = mesh(new THREE.SphereGeometry(0.02, 10, 8), new THREE.MeshBasicMaterial({ color: '#8fa6d6' }), { parent: scene, pos: [-2 * C, 0, 0], shadow: false });
+// тең аудандар: 1 с аралықтағы сектор (Күнде төбесі бар)
+const sector = (col) => { const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(3 * 3 * 40), 3)); const m = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: 0.45, side: THREE.DoubleSide, depthWrite: false })); scene.add(m); return m; };
+const S1 = sector('#17d07a'), S2 = sector('#f0a020');
+function setSector(m, ta, tb) { const p = m.geometry.attributes.position; for (let i = 0; i < 40; i++) { const a = pos(ta + (tb - ta) * i / 40, A, E, P1, Math.PI), b = pos(ta + (tb - ta) * (i + 1) / 40, A, E, P1, Math.PI); p.setXYZ(i * 3, 0, 0, 0); p.setXYZ(i * 3 + 1, a.x, 0, a.z); p.setXYZ(i * 3 + 2, b.x, 0, b.z); } p.needsUpdate = true; }
+// 3-заң: екінші (алыс) ғаламшар: a₂ = 2,6 → T₂ = T₁(2,6/1,6)^1,5
+const A2 = 2.6, P2 = P1 * Math.pow(A2 / A, 1.5); const orb2 = ell(A2, 0.05, '#c79a6b', 0);
+const pl2 = mesh(new THREE.SphereGeometry(0.09, 24, 16), new THREE.MeshStandardMaterial({ color: '#d9935a', roughness: 0.6 }), { parent: scene, shadow: false });
+const DT = 0.9; // сектордың уақыты
+
+window.renderFrame = (t) => {
+  pl.position.copy(pos(t, A, E, P1, Math.PI));
+  // перигелий маңы (M = 0 → t = P1/2 ... фаза π-ге ығысқан) және афелий маңы
+  const peri = P1 / 2 - DT / 2, aph = P1 - DT / 2;
+  const s1 = t > peri + DT ? 1 : 0, s2 = t > aph + DT ? 1 : 0;
+  setSector(S1, peri, Math.min(t, peri + DT)); setSector(S2, aph, Math.min(t, aph + DT));
+  S1.visible = t > peri; S2.visible = t > aph; S1.material.opacity = S2.material.opacity = 0.45 * (1 - seg(t, 12.0, 12.8));
+  const k3 = seg(t, 11.8, 13.0); orb2.material.opacity = 0.7 * k3; pl2.visible = k3 > 0.01; pl2.position.copy(pos(t, A2, 0.05, P2, 2.0));
+  orbit(camera, t, { ang: 0.0, swing: 0.15, rad: lerp(4.2, 6.2, k3), y: lerp(4.0, 5.2, k3), look: [-0.4, 0, 0] });
+  return st.render();
+};
+ready();
+</script>
+</body></html>

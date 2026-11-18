@@ -1,0 +1,48 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><style>html,body{margin:0;background:#0d1220;overflow:hidden}canvas{display:block}</style>
+<script type="importmap">{"imports":{"three":"./lib/three.module.js"}}</script></head>
+<body>
+<script type="module">
+// «Резерфорд тәжірибесі. Атомның құрамы» (9-сынып): α-бөлшектер шоғы жұқа алтын фольгаға түседі — көпшілігі тура өтеді,
+// аз бөлігі ауытқиды, өте сирегі кері шашырайды (экрандағы жарқылдар). Үлкейтілген модель: атомның массасы мен оң заряды
+// кішкентай ядрода шоғырланған; α-бөлшектің траекториясы кулондық тебілуден сандық есептеледі (гипербола) —
+// ядроға жақын өткендер ғана қатты ауытқиды.
+import { THREE, V, stage, orbit, seg, win, lerp, mat, mesh, ready } from './kit.js';
+const st = stage({ table: false, bg: '#0d1220', fog: [400, 500] }), { scene, camera, renderer } = st;
+renderer.shadowMap.enabled = false;
+scene.traverse((o) => { if (o.isLight) o.intensity *= 0.9; });
+let sd = 41; const rnd = () => ((sd = (sd * 16807) % 2147483647) / 2147483647);
+// 1) қондырғы: көз (қорғасын қорап), фольга, сақина экран
+const box = mesh(new THREE.BoxGeometry(0.3, 0.25, 0.25), new THREE.MeshStandardMaterial({ color: '#5a6170', metalness: 0.4, roughness: 0.5 }), { parent: scene, pos: [-1.3, 0, 0] });
+const foil = mesh(new THREE.BoxGeometry(0.004, 0.35, 0.35), new THREE.MeshStandardMaterial({ color: '#f2c94c', metalness: 0.9, roughness: 0.25 }), { parent: scene, pos: [0, 0, 0] });
+const scr = mesh(new THREE.CylinderGeometry(0.9, 0.9, 0.5, 64, 1, true, 1.5 * Math.PI + 0.35, Math.PI * 2 - 0.7), new THREE.MeshStandardMaterial({ color: '#2a3550', roughness: 0.8, side: THREE.DoubleSide, transparent: true, opacity: 0.5, depthWrite: false }), { parent: scene, shadow: false });
+// траекторияның шашырау бұрышы (Резерфорд): tan(θ/2) = D / (2b); D — шартты
+const D = 0.02, NB = 60, BEAMS = Array.from({ length: NB }, () => { const b = Math.max(1e-4, Math.pow(rnd(), 1.6) * 0.18) , phi = rnd() * Math.PI * 2, th = 2 * Math.atan(D / (2 * b)); return { b, phi, th, t0: 0.6 + rnd() * 7.4 }; });
+const ptM = new THREE.InstancedMesh(new THREE.SphereGeometry(0.012, 8, 6), new THREE.MeshBasicMaterial({ color: '#ff6a5a' }), NB); scene.add(ptM);
+const flM = new THREE.InstancedMesh(new THREE.SphereGeometry(0.025, 10, 8), new THREE.MeshBasicMaterial({ color: '#b6ff9e', transparent: true, opacity: 0.9 }), NB); scene.add(flM);
+const dm = new THREE.Object3D();
+// 2) үлкейтілген модель: ядролар торы және гиперболалық траекториялар (2D, z = 0, x = 6 жерінде орналасқан)
+const MX = 6.0, nuclei = []; for (let i = -1; i <= 1; i++) for (let j = -2; j <= 2; j++) nuclei.push(V(MX + i * 0.7, j * 0.45 + (i % 2 ? 0.22 : 0), 0));
+for (const p of nuclei) { mesh(new THREE.SphereGeometry(0.03, 16, 12), new THREE.MeshBasicMaterial({ color: '#ffcf4a' }), { parent: scene, pos: [p.x, p.y, p.z], shadow: false });
+  const cloud = mesh(new THREE.SphereGeometry(0.2, 24, 16), new THREE.MeshBasicMaterial({ color: '#3b6fd0', transparent: true, opacity: 0.12, depthWrite: false }), { parent: scene, pos: [p.x, p.y, p.z], shadow: false }); }
+const TR = []; const K = 0.012;
+for (let k = 0; k < 13; k++) { const y0 = -1.0 + k * (2.0 / 12) + 0.013; let p = V(MX - 1.4, y0, 0), v = V(1, 0, 0); const pts = [p.clone()];
+  for (let s = 0; s < 1400; s++) { const a = V(); for (const n of nuclei) { const r = p.clone().sub(n), d = Math.max(0.01, r.length()); a.addScaledVector(r, K / d ** 3); } v.addScaledVector(a, 0.002); p.addScaledVector(v, 0.002); if (s % 4 === 0) pts.push(p.clone()); if (Math.abs(p.x - MX) > 1.45 || Math.abs(p.y) > 1.2) break; }
+  const l = new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineBasicMaterial({ color: '#ff6a5a' })); scene.add(l); TR.push({ l, n: pts.length, t0: 10.6 + k * 0.25 }); }
+
+window.renderFrame = (t) => {
+  BEAMS.forEach((b, i) => { const u = t - b.t0; if (u < 0 || t > 9.6) { dm.scale.setScalar(0.0001); dm.updateMatrix(); ptM.setMatrixAt(i, dm.matrix); flM.setMatrixAt(i, dm.matrix); return; }
+    const sp = 1.4, xs = -1.15 + sp * u; let p;
+    if (xs < 0) p = V(xs, b.b * Math.cos(b.phi) * 0.4, b.b * Math.sin(b.phi) * 0.4);
+    else { const r = (xs) ; const dir = V(Math.cos(b.th), Math.sin(b.th) * Math.cos(b.phi) * 0.25, Math.sin(b.th) * Math.sin(b.phi)).normalize(); p = dir.multiplyScalar(Math.min(r, 0.88)); }
+    const hit = xs >= 0.88; dm.position.copy(p); dm.scale.setScalar(hit ? 0.0001 : 1); dm.updateMatrix(); ptM.setMatrixAt(i, dm.matrix);
+    const fl = hit && xs < 0.88 + 1.2 ? 1 : 0; dm.scale.setScalar(fl ? 1 : 0.0001); dm.updateMatrix(); flM.setMatrixAt(i, dm.matrix); });
+  ptM.instanceMatrix.needsUpdate = flM.instanceMatrix.needsUpdate = true;
+  TR.forEach((r) => { const k = Math.max(0, Math.min(1, (t - r.t0) / 2.2)); r.l.geometry.setDrawRange(0, Math.max(1, Math.floor(r.n * k))); r.l.visible = k > 0; });
+  const kc = seg(t, 9.2, 10.6);
+  orbit(camera, t, { ang: lerp(0.5, 0.0, kc), swing: 0.15 * (1 - kc), rad: lerp(3.0, 3.0, kc), y: lerp(1.3, 0.0, kc), look: [lerp(-0.1, MX, kc), 0, 0], cx: lerp(0, MX, kc) });
+  return st.render();
+};
+ready();
+</script>
+</body></html>

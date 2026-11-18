@@ -1,0 +1,36 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><style>html,body{margin:0;background:#eef2f7;overflow:hidden}canvas{display:block}</style>
+<script type="importmap">{"imports":{"three":"./lib/three.module.js"}}</script></head>
+<body>
+<script type="module">
+// «Радиоактивтілік. Радиоактивті ыдырау заңы» (9-сынып): 400 радиоактивті ядро; әрқайсысы кездейсоқ сәтте ыдырайды
+// (өмір сүру уақыты t = −T·log₂u, u — кездейсоқ сан), ыдырағанда α-бөлшек ұшып шығады, ядро басқа элементке айналады.
+// Жартылай ыдырау периоды T = 3 с (шартты): әр T сайын ыдырамаған ядролар саны екі есе азаяды — N = N₀·2^(−t/T). N(t) графигі.
+import { THREE, V, stage, orbit, readout, hudPlot, seg, win, lerp, mat, mesh, ready } from './kit.js';
+const st = stage({ table: [3.6, 2.2] }), { scene, camera, hud } = st;
+let sd = 17; const rnd = () => ((sd = (sd * 16807) % 2147483647) / 2147483647);
+const N0 = 400, T = 3.0, T0 = 1.5, n = 20;
+const nm = new THREE.InstancedMesh(new THREE.SphereGeometry(0.028, 14, 10), new THREE.MeshStandardMaterial({ roughness: 0.4 }), N0); scene.add(nm);
+const NU = Array.from({ length: N0 }, (_, i) => ({ p: V(-0.85 + (i % n) * 0.09 + (rnd() - 0.5) * 0.02, 0.06 + (rnd() - 0.5) * 0.01, -0.85 + Math.floor(i / n) * 0.09 + (rnd() - 0.5) * 0.02), td: T0 - T * Math.log2(Math.max(1e-6, rnd())), dir: V(rnd() - 0.5, 0.6 + rnd(), rnd() - 0.5).normalize() }));
+const alpha = new THREE.InstancedMesh(new THREE.SphereGeometry(0.014, 8, 6), new THREE.MeshBasicMaterial({ color: '#e5483a' }), N0); alpha.renderOrder = 6; scene.add(alpha);
+mesh(new THREE.BoxGeometry(1.95, 0.02, 1.95), new THREE.MeshStandardMaterial({ color: '#f4f6f9', roughness: 0.8 }), { parent: scene, pos: [0, 0.01, 0] });
+const cA = new THREE.Color('#2f9e44'), cB = new THREE.Color('#9aa4b2'), dm = new THREE.Object3D();
+const plot = hudPlot(hud, { x: 930, y: 370, w: 320, h: 280, ax: ['t', ''], ay: ['N', ''] });
+const rN = readout(scene, { color: '#2f9e44', w: 0.66 });
+
+window.renderFrame = (t) => {
+  let alive = 0;
+  NU.forEach((u, i) => { const dead = t > u.td; if (!dead) alive++;
+    dm.position.copy(u.p); dm.scale.setScalar(1); dm.updateMatrix(); nm.setMatrixAt(i, dm.matrix); nm.setColorAt(i, dead ? cB : cA);
+    const age = t - u.td; if (dead && age < 0.8) { dm.position.copy(u.p).addScaledVector(u.dir, age * 0.9); dm.scale.setScalar(1); } else dm.scale.setScalar(0.0001); dm.updateMatrix(); alpha.setMatrixAt(i, dm.matrix); });
+  nm.instanceMatrix.needsUpdate = alpha.instanceMatrix.needsUpdate = true; nm.instanceColor.needsUpdate = true;
+  // график: нақты санау (сатылы) және теориялық қисық
+  const pts = [], th = []; for (let k = 0; k <= 80; k++) { const tt = T0 + k * (16.5 - T0) / 80; th.push([k / 80 * 0.95, 0.92 * Math.pow(2, -(tt - T0) / T)]); if (tt <= t) pts.push([k / 80 * 0.95, 0.92 * NU.filter((u) => u.td > tt).length / N0]); }
+  plot.draw([{ pts: th, color: '#d5dbe3', label: '' }, { pts, color: '#2f9e44', label: '' }], seg(t, 0.6, 1.2));
+  rN.set('N = ' + alive, win(t, 0.8, 1.2, 17.3, 17.9)); rN.position.set(0, 0.45, -0.95);
+  orbit(camera, t, { ang: 0.0, swing: 0.12, rad: 2.0, y: 2.0, look: [0.25, 0.0, 0.05], cx: 0.25 });
+  return st.render();
+};
+ready();
+</script>
+</body></html>
