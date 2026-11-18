@@ -1,0 +1,47 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><style>html,body{margin:0;background:#eef2f7;overflow:hidden}canvas{display:block}</style>
+<script type="importmap">{"imports":{"three":"./lib/three.module.js"}}</script></head>
+<body>
+<script type="module">
+// «Қаныққан және қанықпаған бу. Ауаның ылғалдылығы. Шық нүктесі» (10-сынып): бөлме ауасы t = 20 °C, салыстырмалы
+// ылғалдылық φ = 60 % (бу қысымы 1,4 кПа, қаныққан будың қысымы 20 °C-та 2,34 кПа). Металл стақандағы суды мұзбен
+// суытқанда стақан қабырғасы шық нүктесіне (≈ 12 °C, мұнда 1,4 кПа қаныққан бу қысымына тең) жеткенде, бетіне тамшылар
+// (шық) отырады. Графикте: қаныққан бу қысымы p_қ(t) және ауадағы бу қысымы p — олар шық нүктесінде қиылысады.
+import { THREE, V, stage, orbit, readout, thermometer, hudPlot, seg, win, lerp, mat, mesh, ready } from './kit.js';
+const st = stage({ table: [3.2, 2.2] }), { scene, camera, hud } = st;
+const X = -0.3, R = 0.22, H = 0.5;
+const cupM = new THREE.MeshStandardMaterial({ color: '#b8c2ce', metalness: 0.25, roughness: 0.3 });
+mesh(new THREE.CylinderGeometry(R, R * 0.95, H, 48, 1, true), cupM, { parent: scene, pos: [X, H / 2, 0] });
+mesh(new THREE.CylinderGeometry(R * 0.95, R * 0.95, 0.01, 48), cupM, { parent: scene, pos: [X, 0.005, 0] });
+const water = mesh(new THREE.CircleGeometry(R - 0.01, 40), new THREE.MeshPhysicalMaterial({ color: '#4aa3ef', transparent: true, opacity: 0.7 }), { parent: scene, pos: [X, H - 0.08, 0], rot: [-Math.PI / 2, 0, 0], shadow: false });
+let sd = 31; const rnd = () => ((sd = (sd * 16807) % 2147483647) / 2147483647);
+const ices = Array.from({ length: 6 }, (_, i) => { const m = mesh(new THREE.BoxGeometry(0.08, 0.06, 0.08), new THREE.MeshPhysicalMaterial({ color: '#eaf6ff', transparent: true, opacity: 0.85, roughness: 0.1 }), { parent: scene }); m.userData = { a: rnd() * 6.28, r: rnd() * 0.1, d: i * 0.25, rot: rnd() * 3 }; return m; });
+const th = thermometer(scene, { min: 0, max: 30, len: 0.7, every: 5, x: X + 0.06, y: 0.12, z: 0.02 }); th.rotation.z = -0.1;
+// шық тамшылары (қабырғаның сыртында)
+const ND = 260, dr = new THREE.InstancedMesh(new THREE.SphereGeometry(0.006, 8, 6), new THREE.MeshPhysicalMaterial({ color: '#ffffff', transparent: true, opacity: 0.85, roughness: 0.05 }), ND); scene.add(dr);
+const DR = Array.from({ length: ND }, () => ({ a: rnd() * 6.28, y: 0.03 + rnd() * (H - 0.13), s: 0.6 + rnd() * 0.9, d: rnd() }));
+const plot = hudPlot(hud, { x: 920, y: 370, w: 330, h: 280, ax: ['t', ''], ay: ['p', ''] });
+const rT = readout(scene, { color: '#1f6fd0', w: 0.56 }), rPhi = readout(scene, { color: '#17a05d', w: 0.56 });
+const dm = new THREE.Object3D();
+const psat = (t) => 0.611 * Math.exp(17.27 * t / (t + 237.3)); // кПа (Магнус формуласы)
+const Tof = (t) => (t < 2 ? 20 : lerp(20, 8, seg(t, 2, 13)));
+const DEW = 12.0;
+
+window.renderFrame = (t) => {
+  const T = Tof(t); th.set(T);
+  ices.forEach((m, i) => { const u = m.userData, k = seg(t, 1.2 + u.d, 1.8 + u.d); m.position.set(X + Math.cos(u.a) * u.r, lerp(1.0, H - 0.08, k), Math.sin(u.a) * u.r); m.rotation.y = u.rot; m.visible = t > 1.0 + u.d; m.scale.setScalar(lerp(1, 0.7, seg(t, 6, 17))); });
+  const cond = T < DEW ? Math.min(1, (DEW - T) / 3.5) : 0;
+  DR.forEach((d, i) => { const vis = d.d < cond; const r = R + 0.004; dm.position.set(X + Math.cos(d.a) * r, d.y, Math.sin(d.a) * r); dm.scale.setScalar(vis ? d.s * Math.min(1, (cond - d.d) * 6 + 0.3) : 0.0001); dm.updateMatrix(); dr.setMatrixAt(i, dm.matrix); });
+  dr.instanceMatrix.needsUpdate = true;
+  // график: p_қ(t) қисығы (0–25 °C) және тұрақты p = 1,4 кПа; ағымдағы нүкте
+  const curve = [], line = [[0, 1.4 / 3.4 * 0.9], [0.95, 1.4 / 3.4 * 0.9]]; for (let k = 0; k <= 40; k++) { const tt = k / 40 * 26; curve.push([tt / 26 * 0.95, psat(tt) / 3.4 * 0.9]); }
+  const dot = [[T / 26 * 0.95, psat(T) / 3.4 * 0.9 - 0.004], [T / 26 * 0.95, psat(T) / 3.4 * 0.9 + 0.004]];
+  plot.draw([{ pts: line, color: '#17a05d', label: '' }, { pts: curve, color: '#1f6fd0', label: '' }, { pts: [[T / 26 * 0.95, 0], [T / 26 * 0.95, psat(T) / 3.4 * 0.9]], color: '#e5483a', label: '' }], seg(t, 0.5, 1.0));
+  rT.set(Math.round(T) + ' °C', win(t, 0.6, 1.0, 17.3, 17.9)); rT.position.set(X - 0.45, 0.6, 0.1);
+  rPhi.set('φ = 60 %', win(t, 0.6, 1.0, 17.3, 17.9)); rPhi.position.set(X - 0.45, 0.4, 0.1);
+  orbit(camera, t, { ang: 0.0, swing: 0.15, rad: 2.3, y: 0.85, look: [0.0, 0.42, 0], cx: 0.0 });
+  return st.render();
+};
+ready();
+</script>
+</body></html>

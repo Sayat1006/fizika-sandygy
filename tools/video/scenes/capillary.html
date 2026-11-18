@@ -1,0 +1,40 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><style>html,body{margin:0;background:#eef2f7;overflow:hidden}canvas{display:block}</style>
+<script type="importmap">{"imports":{"three":"./lib/three.module.js"}}</script></head>
+<body>
+<script type="module">
+// «Сұйықтың беттік керілуі. Жұғу. Қылтүтік құбылыстары» (10-сынып): 1) суға батырылған әртүрлі радиусты шыны
+// қылтүтіктерде су көтеріледі, мениск ойыс; көтерілу биіктігі h = 2σ/(ρgr) — түтік неғұрлым жіңішке болса, соғұрлым биік
+// (r: 1, 0,5, 0,25 мм → h ∝ 1/r); 2) сынап шыныны жұқпайды — түтікте төмен түседі, мениск дөңес.
+// 3) тамшы: шыныда жайылады (жұғады), майлы бетте шар тәрізді (жұқпайды).
+import { THREE, V, stage, orbit, label, seg, win, lerp, mat, mesh, ready } from './kit.js';
+const st = stage({ table: [3.6, 2.2] }), { scene, camera } = st;
+const dish = (x, w, col, op) => { mesh(new THREE.BoxGeometry(w, 0.16, 0.36), mat.glass(), { parent: scene, pos: [x, 0.08, 0], shadow: false }).renderOrder = 5;
+  return mesh(new THREE.BoxGeometry(w - 0.02, 0.1, 0.34), new THREE.MeshPhysicalMaterial({ color: col, transparent: true, opacity: op, roughness: 0.1, metalness: col === '#c9ccd2' ? 0.9 : 0, depthWrite: false }), { parent: scene, pos: [x, 0.06, 0], shadow: false }); };
+const W1 = dish(-0.55, 0.9, '#2f8fe0', 0.45), W2 = dish(0.75, 0.5, '#c9ccd2', 0.95);
+const LV = 0.11, TL = 0.9;
+const tube = (x, r, col, h, convex) => { const g = mesh(new THREE.CylinderGeometry(r + 0.006, r + 0.006, TL, 24, 1, true), mat.glass(), { parent: scene, pos: [x, 0.03 + TL / 2, 0], shadow: false }); g.renderOrder = 6;
+  const c = mesh(new THREE.CylinderGeometry(r, r, 1, 20), new THREE.MeshPhysicalMaterial({ color: col, transparent: true, opacity: col === '#c9ccd2' ? 1 : 0.6, metalness: col === '#c9ccd2' ? 0.9 : 0, roughness: 0.15, depthWrite: false }), { parent: scene, shadow: false }); c.renderOrder = 4;
+  const men = mesh(new THREE.SphereGeometry(r, 20, 10, 0, Math.PI * 2, convex ? 0 : Math.PI / 2, Math.PI / 2), c.material, { parent: scene, shadow: false }); men.scale.y = 0.6; men.renderOrder = 4; return { x, r, c, men, h, convex }; };
+const TB = [tube(-0.85, 0.05, '#2f8fe0', 0.12, false), tube(-0.55, 0.025, '#2f8fe0', 0.24, false), tube(-0.25, 0.0125, '#2f8fe0', 0.48, false), tube(0.75, 0.03, '#c9ccd2', -0.06, true)];
+// 3) тамшылар
+const plateG = mesh(new THREE.BoxGeometry(0.5, 0.02, 0.4), mat.glass(), { parent: scene, pos: [-0.45, 0.01, 0.75], shadow: false });
+const plateW = mesh(new THREE.BoxGeometry(0.5, 0.02, 0.4), new THREE.MeshStandardMaterial({ color: '#efe3b8', roughness: 0.35 }), { parent: scene, pos: [0.45, 0.01, 0.75] });
+const dropM = new THREE.MeshPhysicalMaterial({ color: '#4aa3ef', transparent: true, opacity: 0.7, roughness: 0.05 });
+const d1 = mesh(new THREE.SphereGeometry(0.07, 32, 16, 0, Math.PI * 2, 0, Math.PI / 2), dropM, { parent: scene, pos: [-0.45, 0.02, 0.75] }), d2 = mesh(new THREE.SphereGeometry(0.06, 32, 20), dropM, { parent: scene, pos: [0.45, 0.075, 0.75] });
+const lh = label(scene, 'h', '', '#1b2230', { size: 0.24 });
+
+window.renderFrame = (t) => {
+  const k = seg(t, 1.0, 4.5);
+  TB.forEach((b) => { const top = 0.03 + LV + b.h * k * (b.convex ? 1 : 1); const bot = 0.04; b.c.scale.y = Math.max(0.001, top - bot); b.c.position.set(b.x, (top + bot) / 2, 0);
+    b.men.position.set(b.x, top, 0); });
+  lh.show(V(-0.18, 0.03 + LV + 0.24, 0.05), win(t, 4.6, 5.0, 8.2, 8.6));
+  // тамшылар 9 с-тан
+  const kd = seg(t, 9.8, 11.5); d1.scale.set(lerp(0.9, 1.9, kd), lerp(0.9, 0.3, kd), lerp(0.9, 1.9, kd)); d1.visible = t > 9.4; d2.visible = t > 9.4;
+  const kc = seg(t, 8.4, 9.6);
+  orbit(camera, t, { ang: lerp(0.0, 0.0, kc), swing: 0.1, rad: lerp(2.4, 1.6, kc), y: lerp(0.7, 0.9, kc), look: [lerp(-0.15, 0, kc), lerp(0.35, 0.05, kc), lerp(0, 0.75, kc)], cx: lerp(-0.15, 0, kc), cz: lerp(0, 0.75, kc) });
+  return st.render();
+};
+ready();
+</script>
+</body></html>

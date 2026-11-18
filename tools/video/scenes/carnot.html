@@ -1,0 +1,50 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><style>html,body{margin:0;background:#eef2f7;overflow:hidden}canvas{display:block}</style>
+<script type="importmap">{"imports":{"three":"./lib/three.module.js"}}</script></head>
+<body>
+<script type="module">
+// «Айналмалы үдерістер. Карно циклі, жылу машинасының ПӘК-і» (10-сынып): жұмыс денесі (газ) қыздырғыштан (T₁ = 500 К)
+// Q₁ алады — изотермалық ұлғаю; адиабаталық ұлғаю (T₁ → T₂); суытқышқа (T₂ = 300 К) Q₂ береді — изотермалық сығылу;
+// адиабаталық сығылу. Пайдалы жұмыс A = Q₁ − Q₂, ПӘК η = 1 − T₂/T₁ = 40 %. p–V диаграммасы (γ = 1,4) сандық салынған.
+import { THREE, V, stage, orbit, readout, arrow, label, hudPlot, seg, win, lerp, mat, mesh, ready } from './kit.js';
+const st = stage({ table: [3.6, 2.2] }), { scene, camera, hud } = st;
+const T1 = 500, T2 = 300, G = 1.4, Va = 1, Vb = 2, Vc = Vb * Math.pow(T1 / T2, 1 / (G - 1)), Vd = Va * Math.pow(T1 / T2, 1 / (G - 1));
+const pOf = (V, T) => T / V; // шартты бірлік
+// цикл: φ ∈ [0,4): 0–1 AB изотерма T1, 1–2 BC адиабата, 2–3 CD изотерма T2, 3–4 DA адиабата
+const st8 = (f) => { f = ((f % 4) + 4) % 4; const k = f % 1; if (f < 1) { const V = Va * Math.pow(Vb / Va, k); return { V, T: T1 }; } if (f < 2) { const V = Vb * Math.pow(Vc / Vb, k); return { V, T: T1 * Math.pow(Vb / V, G - 1) }; } if (f < 3) { const V = Vc * Math.pow(Vd / Vc, k); return { V, T: T2 }; } const V = Vd * Math.pow(Va / Vd, k); return { V, T: T2 * Math.pow(Vd / V, G - 1) }; };
+const X = 0.0, R = 0.2, B = 0.35;
+const heater = mesh(new THREE.BoxGeometry(0.55, 0.3, 0.55), new THREE.MeshStandardMaterial({ color: '#e5483a', roughness: 0.6, emissive: '#5a0d00', emissiveIntensity: 0.3 }), { parent: scene, pos: [-1.0, 0.15, 0] });
+const cooler = mesh(new THREE.BoxGeometry(0.55, 0.3, 0.55), new THREE.MeshStandardMaterial({ color: '#2f6fe0', roughness: 0.6 }), { parent: scene, pos: [1.0, 0.15, 0] });
+const lh = label(scene, 'T', '1', '#ffffff', { size: 0.24 }), lc = label(scene, 'T', '2', '#ffffff', { size: 0.24 }); lh.show(V(-1.0, 0.18, 0.3), 1); lc.show(V(1.0, 0.18, 0.3), 1);
+mesh(new THREE.BoxGeometry(0.5, 0.3, 0.5), new THREE.MeshStandardMaterial({ color: '#c3cad4', roughness: 0.8 }), { parent: scene, pos: [0, 0.15, 0] }); // жылу оқшаулағыш тірек (адиабаталық үдерістер)
+const body = new THREE.Group(); scene.add(body);
+const cyl = mesh(new THREE.CylinderGeometry(R, R, 0.9, 40, 1, true), mat.glass(), { parent: body, pos: [0, 0.45, 0], shadow: false }); cyl.renderOrder = 5;
+mesh(new THREE.CylinderGeometry(R + 0.01, R + 0.01, 0.03, 40), mat.metal, { parent: body, pos: [0, 0.0, 0] });
+const gasM = new THREE.MeshPhysicalMaterial({ color: '#ff9a7a', transparent: true, opacity: 0.55, depthWrite: false }), gas = mesh(new THREE.CylinderGeometry(R - 0.006, R - 0.006, 1, 40), gasM, { parent: body, shadow: false });
+const pis = mesh(new THREE.CylinderGeometry(R - 0.004, R - 0.004, 0.05, 40), mat.dark, { parent: body });
+const aQ1 = arrow(scene, '#e5483a', { r: 0.02 }), aQ2 = arrow(scene, '#1f6fd0', { r: 0.02 }), aA = arrow(scene, '#17a05d', { r: 0.02 });
+const lQ1 = label(scene, 'Q', '1', '#e5483a', { size: 0.26 }), lQ2 = label(scene, 'Q', '2', '#1f6fd0', { size: 0.26 }), lA = label(scene, 'A', '', '#17a05d', { size: 0.26 });
+const plot = hudPlot(hud, { x: 930, y: 380, w: 320, h: 280, ax: ['V', ''], ay: ['p', ''] });
+const rE = readout(scene, { color: '#17a05d', w: 0.66 });
+const PER = 7.5, Hs = (V) => 0.18 + (V - Va) / (Vc - Va) * 0.62; // поршень биіктігі
+
+window.renderFrame = (t) => {
+  const f = Math.max(0, t - 0.8) / PER * 4, s = st8(f), fm = ((f % 4) + 4) % 4, h = Hs(s.V);
+  gas.scale.y = h; gas.position.y = h / 2 + 0.015; pis.position.y = h + 0.04; gasM.color.set(new THREE.Color('#7fb4ff').lerp(new THREE.Color('#ff7a5a'), (s.T - T2) / (T1 - T2)));
+  // жұмыс денесі қыздырғышқа / суытқышқа / ауада
+  body.position.set(fm < 1 ? -1.0 : fm < 2 ? lerp(-1.0, 0, seg(fm, 1.0, 1.2)) : fm < 3 ? lerp(0, 1.0, seg(fm, 2.0, 2.15)) : lerp(1.0, 0, seg(fm, 3.0, 3.2)), 0.3, 0);
+  const o = t > 0.8 ? 1 : 0;
+  aQ1.set(V(-1.0, 0.95, 0.3), V(0, 1, 0), 0.3, o * (fm < 1 ? 1 : 0)); lQ1.show(V(-0.82, 1.15, 0.3), o * (fm < 1 ? 1 : 0));
+  aQ2.set(V(1.0, 1.25, 0.3), V(0, -1, 0), 0.24, o * (fm >= 2.15 && fm < 3 ? 1 : 0)); lQ2.show(V(1.18, 1.1, 0.3), o * (fm >= 2.15 && fm < 3 ? 1 : 0));
+  aA.set(V(body.position.x, body.position.y + h + 0.12, 0.0), V(0, 1, 0), 0.25, o * (fm < 2 ? 1 : 0)); lA.show(V(body.position.x + 0.15, body.position.y + h + 0.32, 0), o * (fm < 2 ? 1 : 0));
+  // p–V: толық цикл (бозғылт) + ағымдағы нүкте
+  const all = [], cur = []; for (let k = 0; k <= 160; k++) { const q = st8(k / 40); all.push([(q.V - 0.8) / (Vc - 0.8) * 0.9, pOf(q.V, q.T) / pOf(Va, T1) * 0.9]); }
+  const nf = Math.min(160, Math.floor(f * 40)); for (let k = 0; k <= nf; k++) { const q = st8(k / 40); cur.push([(q.V - 0.8) / (Vc - 0.8) * 0.9, pOf(q.V, q.T) / pOf(Va, T1) * 0.9]); }
+  plot.draw([{ pts: all, color: '#d5dbe3', label: '' }, { pts: cur, color: '#e5483a', label: '' }], seg(t, 0.4, 0.9));
+  rE.set('η = 40 %', win(t, 9.0, 9.5, 17.3, 17.9)); rE.position.set(0, 1.55, 0);
+  orbit(camera, t, { ang: 0.0, swing: 0.1, rad: 3.0, y: 1.3, look: [0.25, 0.65, 0], cx: 0.25 });
+  return st.render();
+};
+ready();
+</script>
+</body></html>
