@@ -1,0 +1,43 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><style>html,body{margin:0;background:#eef2f7;overflow:hidden}canvas{display:block}</style>
+<script type="importmap">{"imports":{"three":"./lib/three.module.js"}}</script></head>
+<body>
+<script type="module">
+// «Энергия және оның сақталуы» (7-сынып): маятник тербеледі; потенциалдық (Eₚ = mgh) және кинетикалық (Eₖ) энергия
+// бағандары ауысып отырады, толық энергия E тұрақты. Шынайы есептеу: h = L(1 − cosθ), θ(t) — маятник теңдеуі (сандық шешім).
+import { THREE, V, stage, orbit, stand, arrow, label, hudBars, ruler, simulate, seg, win, lerp, mat, mesh, ready } from './kit.js';
+const st = stage({ table: [4.2, 2.2] }), { scene, camera, hud } = st;
+
+const L = 1.6, TH0 = 0.75, PIV = V(0.2, 2.35, 0); // жіп ұзындығы, бастапқы бұрыш (рад), ілу нүктесі
+const sd = stand(scene, { x: -0.95, z: 0, h: 2.6, arm: 1.2 }); sd.setArmY(2.35);
+const string = mesh(new THREE.CylinderGeometry(0.006, 0.006, 1, 8), mat.dark, { parent: scene, shadow: false });
+const ball = mesh(new THREE.SphereGeometry(0.11, 32, 24), new THREE.MeshStandardMaterial({ color: '#e5683a', roughness: 0.35 }), { parent: scene });
+const yLow = PIV.y - L; // төменгі нүкте
+const rl = ruler(scene, { len: 0.6, n: 12, every: 2, width: 0.1, text: (i) => String((12 - i) * 5) }); rl.position.set(PIV.x + 1.05, yLow + 0.3, -0.05);
+const lineM = new THREE.LineDashedMaterial({ color: '#1f6fd0', dashSize: 0.04, gapSize: 0.03, transparent: true, depthTest: false });
+const hLine = new THREE.Line(new THREE.BufferGeometry().setFromPoints([V(0, 0, 0), V(1, 0, 0)]), lineM); hLine.computeLineDistances(); hLine.renderOrder = 8; scene.add(hLine);
+const base = new THREE.Line(new THREE.BufferGeometry().setFromPoints([V(-0.9, yLow, 0), V(1.2, yLow, 0)]).translate(PIV.x, 0, 0), new THREE.LineDashedMaterial({ color: '#8a919c', dashSize: 0.04, gapSize: 0.03 })); base.computeLineDistances(); scene.add(base);
+const lh = label(scene, 'h', '', '#1f6fd0', { size: 0.34 });
+const av = arrow(scene, '#17a05d', { r: 0.018 }), lv = label(scene, 'υ', '', '#17a05d', { size: 0.3 });
+const bars = hudBars(hud, { x: 990, y: 360, w: 250, h: 300 });
+// маятник: θ'' = −(g/L) sinθ, әлсіз өшу жоқ (энергия сақталады)
+const S = simulate({ th: TH0, w: 0 }, (s, t, dt) => { if (t < 1.2) return; const a = -(10 / L) * Math.sin(s.th) * 0.42; s.w += a * dt; s.th += s.w * dt; });
+const E = 1 - Math.cos(TH0);
+
+window.renderFrame = (t) => {
+  const s = S(t), th = s.th;
+  const p = V(PIV.x + L * Math.sin(th), PIV.y - L * Math.cos(th), 0);
+  ball.position.copy(p); string.scale.y = L; string.position.set((PIV.x + p.x) / 2, (PIV.y + p.y) / 2, 0); string.rotation.z = th;
+  const h = p.y - yLow, Ep = (1 - Math.cos(th)) / E, Ek = Math.max(0, 1 - Ep);
+  const on = win(t, 0.6, 1.2, 17.2, 17.8);
+  hLine.position.set(p.x, p.y, 0); hLine.scale.x = PIV.x + 1.0 - p.x; lineM.opacity = on;
+  lh.show(V(PIV.x + 1.32, yLow + h / 2, 0), on * (h > 0.05 ? 1 : 0));
+  const sp = Math.abs(s.w) * L, dir = V(Math.cos(th) * Math.sign(s.w), Math.sin(th) * Math.sign(s.w), 0);
+  av.set(p.clone().add(V(0, 0, 0.14)), dir, 0.05 + sp * 0.32, on * Math.min(1, sp * 2)); lv.show(p.clone().add(dir.clone().multiplyScalar(0.2 + sp * 0.34)).add(V(0, 0.12, 0.14)), on * Math.min(1, sp * 2));
+  bars.draw([{ v: Ep, color: '#1f6fd0', label: 'E', sub: 'p' }, { v: Ek, color: '#e5483a', label: 'E', sub: 'k' }, { v: 1, color: '#17a05d', label: 'E', sub: '' }], seg(t, 0.6, 1.2));
+  orbit(camera, t, { ang: -0.15, swing: 0.25, rad: 4.6, y: 1.9, look: [0.35, 1.25, 0] });
+  return st.render();
+};
+ready();
+</script>
+</body></html>

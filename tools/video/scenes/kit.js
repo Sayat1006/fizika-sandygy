@@ -286,4 +286,52 @@ export function cylinder(parent, { r = 0.2, h = 1.4, ml = 100, step = 10, x = 0,
   return g;
 }
 
+
+/** HUD-тағы график (бірнеше қисық): plot.draw([{pts:[[x,y]...] (0..1), color, label}], op) */
+export function hudPlot(hud, { x = 940, y = 380, w = 300, h = 260, ax = ['t', ''], ay = ['s', ''] } = {}) {
+  const c = document.createElement('canvas'); c.width = w * 2; c.height = h * 2; const g = c.getContext('2d');
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace;
+  const s = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ map: t, transparent: true, toneMapped: false })); s.position.set(x + w / 2, y + h / 2, 0); hud.add(s);
+  let last = '';
+  s.draw = (series, op = 1) => {
+    s.material.opacity = op; s.visible = op > 0.01;
+    const key = JSON.stringify(series); if (key === last) return; last = key;
+    const X0 = 70, Y0 = h * 2 - 60, PW = w * 2 - 110, PH = h * 2 - 110;
+    g.clearRect(0, 0, c.width, c.height); g.fillStyle = 'rgba(255,255,255,0.92)'; g.beginPath(); g.roundRect(4, 4, c.width - 8, c.height - 8, 28); g.fill();
+    g.strokeStyle = '#1b2230'; g.lineWidth = 4; g.beginPath(); g.moveTo(X0, 40); g.lineTo(X0, Y0); g.lineTo(X0 + PW + 20, Y0); g.stroke();
+    g.fillStyle = '#1b2230'; g.beginPath(); g.moveTo(X0, 26); g.lineTo(X0 - 10, 50); g.lineTo(X0 + 10, 50); g.fill();
+    g.beginPath(); g.moveTo(X0 + PW + 34, Y0); g.lineTo(X0 + PW + 10, Y0 - 10); g.lineTo(X0 + PW + 10, Y0 + 10); g.fill();
+    g.font = 'italic bold 44px Georgia'; g.fillText(ay[0], X0 - 52, 60); g.fillText(ax[0], X0 + PW - 4, Y0 + 50);
+    g.font = 'italic bold 26px Georgia'; if (ay[1]) g.fillText(ay[1], X0 - 24, 72); if (ax[1]) g.fillText(ax[1], X0 + PW + 22, Y0 + 56);
+    for (const sr of series) {
+      if (!sr.pts.length) continue;
+      g.strokeStyle = sr.color; g.lineWidth = 7; g.lineJoin = g.lineCap = 'round'; g.beginPath();
+      sr.pts.forEach(([a, b], i) => (i ? g.lineTo : g.moveTo).call(g, X0 + PW * a, Y0 - PH * b)); g.stroke();
+      if (sr.label) { const [a, b] = sr.pts[sr.pts.length - 1]; g.fillStyle = sr.color; g.font = 'italic bold 36px Georgia'; g.fillText(sr.label, X0 + PW * a + 10, Y0 - PH * b - 8); }
+    }
+    t.needsUpdate = true;
+  };
+  return s;
+}
+/** HUD-тағы бағандар (энергия): bars.draw([{v (0..1), color, label, sub}], op) */
+export function hudBars(hud, { x = 980, y = 380, w = 260, h = 300 } = {}) {
+  const c = document.createElement('canvas'); c.width = w * 2; c.height = h * 2; const g = c.getContext('2d');
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace;
+  const s = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ map: t, transparent: true, toneMapped: false })); s.position.set(x + w / 2, y + h / 2, 0); hud.add(s);
+  s.draw = (bars, op = 1) => {
+    s.material.opacity = op; s.visible = op > 0.01;
+    g.clearRect(0, 0, c.width, c.height); g.fillStyle = 'rgba(255,255,255,0.92)'; g.beginPath(); g.roundRect(4, 4, c.width - 8, c.height - 8, 28); g.fill();
+    const n = bars.length, bw = (c.width - 80) / n, base = c.height - 90, top = 40;
+    bars.forEach((b, i) => {
+      const x0 = 40 + i * bw + bw * 0.18, ww = bw * 0.64, hh = (base - top) * Math.max(0, Math.min(1, b.v));
+      g.fillStyle = '#eef1f5'; g.fillRect(x0, top, ww, base - top); g.fillStyle = b.color; g.fillRect(x0, base - hh, ww, hh);
+      g.fillStyle = b.color; g.font = 'italic bold 46px Georgia'; g.textAlign = 'center'; g.fillText(b.label, x0 + ww / 2 - 8, base + 56);
+      if (b.sub) { g.font = 'italic bold 28px Georgia'; g.fillText(b.sub, x0 + ww / 2 + 22, base + 68); }
+    });
+    g.strokeStyle = '#1b2230'; g.lineWidth = 3; g.beginPath(); g.moveTo(30, base); g.lineTo(c.width - 30, base); g.stroke(); g.textAlign = 'left';
+    t.needsUpdate = true;
+  };
+  return s;
+}
+
 export const ready = () => { window.ready = true; };

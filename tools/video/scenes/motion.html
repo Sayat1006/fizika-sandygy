@@ -1,0 +1,44 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><style>html,body{margin:0;background:#eef2f7;overflow:hidden}canvas{display:block}</style>
+<script type="importmap">{"imports":{"three":"./lib/three.module.js"}}</script></head>
+<body>
+<script type="module">
+// «Бірқалыпты және бірқалыпсыз қозғалыс» (7-сынып): екі арба тең уақыт аралығында (0,5 с) тамшы тастайды.
+// Жоғарғысы бірқалыпты (тамшылар арасы бірдей), төменгісі үдемелі (арасы өседі); s(t) графигі қатар салынады.
+import { THREE, V, stage, orbit, arrow, label, hudPlot, seg, win, lerp, mat, mesh, ready } from './kit.js';
+const st = stage({ table: [5.6, 2.2] }), { scene, camera, hud } = st;
+
+const X0 = -2.4, T1 = 1.0, T2 = 13.0, DT = 0.5, LEN = 4.4; // қозғалыс 1–13 с, жол 4,4 бірлік
+const VA = LEN / (T2 - T1), AB = 2 * LEN / (T2 - T1) ** 2;   // бірқалыпты жылдамдық; үдеу
+const lanes = [{ z: -0.45, col: '#2b6be6', s: (u) => VA * u }, { z: 0.45, col: '#e5683a', s: (u) => AB * u * u / 2 }];
+for (const L of lanes) {
+  mesh(new THREE.BoxGeometry(5.2, 0.012, 0.36), new THREE.MeshStandardMaterial({ color: '#f7f2e3', roughness: 0.9 }), { parent: scene, pos: [0, 0.006, L.z] });
+  L.car = new THREE.Group(); scene.add(L.car);
+  mesh(new THREE.BoxGeometry(0.36, 0.12, 0.24), new THREE.MeshStandardMaterial({ color: L.col, roughness: 0.5 }), { parent: L.car, pos: [0, 0.11, 0] });
+  mesh(new THREE.CylinderGeometry(0.04, 0.03, 0.12, 16), mat.glass(), { parent: L.car, pos: [-0.1, 0.23, 0] });
+  for (const sx of [-1, 1]) for (const sz of [-1, 1]) mesh(new THREE.CylinderGeometry(0.045, 0.045, 0.03, 16), mat.dark, { parent: L.car, pos: [sx * 0.12, 0.045, sz * 0.12], rot: [Math.PI / 2, 0, 0] });
+  L.drops = []; const n = Math.round((T2 - T1) / DT) + 1;
+  for (let i = 0; i < n; i++) { const d = mesh(new THREE.CylinderGeometry(0.032, 0.032, 0.006, 20), new THREE.MeshStandardMaterial({ color: L.col }), { parent: scene, shadow: false }); d.visible = false; L.drops.push(d); }
+  L.aV = arrow(scene, L.col, { r: 0.02 }); L.lV = label(scene, 'υ', '', L.col, { size: 0.32 });
+}
+const plot = hudPlot(hud, { x: 930, y: 400, w: 320, h: 270, ax: ['t', ''], ay: ['s', ''] });
+
+window.renderFrame = (t) => {
+  const u = Math.max(0, Math.min(t, T2) - T1);
+  for (const L of lanes) {
+    const x = X0 + L.s(u); L.car.position.set(x, 0, L.z);
+    L.drops.forEach((d, i) => { const ti = i * DT; d.visible = u >= ti; d.position.set(X0 - 0.1 + L.s(ti), 0.016, L.z); });
+    const v = L === lanes[0] ? VA : AB * u, on = win(t, 1.2, 1.7, 13.2, 13.8) * (t > T1 ? 1 : 0);
+    L.aV.set(V(x + 0.2, 0.3, L.z), V(1, 0, 0), 0.12 + v * 0.9, on); L.lV.show(V(x + 0.3 + v * 0.45, 0.42, L.z), on);
+  }
+  // s(t) графигі: нүктелер уақытпен бірге
+  const pts = (L) => { const a = []; for (let k = 0; k <= 40; k++) { const tt = (T2 - T1) * k / 40; if (tt > u + 1e-6) break; a.push([tt / (T2 - T1) * 0.95, L.s(tt) / LEN * 0.9]); } return a; };
+  plot.draw([{ pts: pts(lanes[0]), color: '#2b6be6', label: u > 11 ? 'I' : '' }, { pts: pts(lanes[1]), color: '#e5683a', label: u > 11 ? 'II' : '' }], seg(t, 0.6, 1.2));
+  // камера: басында қырынан, соңында жоғарыдан (тамшылар анық көрінеді)
+  const k = seg(t, 12.6, 15.0);
+  orbit(camera, t, { ang: lerp(-0.35, 0.0, k), swing: 0.1 * (1 - k), rad: lerp(5.6, 3.0, k), y: lerp(2.4, 5.4, k), look: [lerp(-0.4, 0.0, k), 0, 0] });
+  return st.render();
+};
+ready();
+</script>
+</body></html>
