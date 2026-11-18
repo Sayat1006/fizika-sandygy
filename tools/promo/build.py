@@ -27,7 +27,7 @@ def seq(segs, D, W, H, tag):
     out = f'work/{tag}.mp4'; run(['ffmpeg', '-y', '-loglevel', 'error', '-f', 'concat', '-safe', '0', '-i', lst, '-c', 'copy', out]); return out
 scenes = []
 for sc in P:
-    sid = sc['id']; au = f'audio/{sid}.mp3'; D = dur(au) + 0.5 if os.path.exists(au) else sc['dur']
+    sid = sc['id']; au = f'audio/{sid}.mp3'; D = max(dur(au) + 0.5, sc.get('min', 0)) if os.path.exists(au) else sc['dur']
     segs = sc['segs']; full = None
     if sc.get('full_last'):  # соңғы кадр — монитордан тыс, толық экран
         nat = [(s['b'] - s['a']) * s.get('w', 1.0) for s in segs]; f = D / sum(nat); full = (segs[-1], nat[-1] * f); segs = segs[:-1]; Dm = D - full[1]
@@ -54,11 +54,11 @@ out = f'out/promo_{fmt}.mp4'
 if have:
     t = 0.0; ins = []; fl = []; k = 0
     for sc in P:
-        au = f'audio/{sc["id"]}.mp3'; D = dur(au) + 0.5 if os.path.exists(au) else sc['dur']
+        au = f'audio/{sc["id"]}.mp3'; D = max(dur(au) + 0.5, sc.get('min', 0)) if os.path.exists(au) else sc['dur']
         if os.path.exists(au): ins += ['-i', au]; k += 1; fl.append(f'[{k}]adelay={int((t + 0.15) * 1000)}:all=1[a{k}]')
         t += D
-    fc = ';'.join(fl) + ';' + ''.join(f'[a{i}]' for i in range(1, k + 1)) + f'amix=inputs={k}:normalize=0[a]'
-    run(['ffmpeg', '-y', '-loglevel', 'error', '-i', 'work/video_only.mp4', *ins, '-filter_complex', fc, '-map', '0:v', '-map', '[a]', '-c:v', 'libx264', '-preset', 'slow', '-crf', '22', '-c:a', 'aac', '-b:a', '160k', '-movflags', '+faststart', '-shortest', out])
+    fc = ';'.join(fl) + ';' + ''.join(f'[a{i}]' for i in range(1, k + 1)) + f'amix=inputs={k}:normalize=0,loudnorm=I=-16:TP=-1.5:LRA=11,afade=t=out:st={t - 1.2:.2f}:d=1.2[a]'
+    run(['ffmpeg', '-y', '-loglevel', 'error', '-i', 'work/video_only.mp4', *ins, '-filter_complex', fc, '-map', '0:v', '-map', '[a]', '-c:v', 'libx264', '-preset', 'slow', '-crf', '22', '-c:a', 'aac', '-b:a', '160k', '-ar', '48000', '-movflags', '+faststart', '-t', f'{t:.2f}', out])
 else:
     run(['ffmpeg', '-y', '-loglevel', 'error', '-i', 'work/video_only.mp4', '-c:v', 'libx264', '-preset', 'slow', '-crf', '22', '-movflags', '+faststart', out])
 print(out, f'{dur(out):.1f}s', os.path.getsize(out) // 1024, 'KB')
