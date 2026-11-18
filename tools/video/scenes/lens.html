@@ -1,0 +1,64 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><style>html,body{margin:0;background:#eef2f7;overflow:hidden}canvas{display:block}</style>
+<script type="importmap">{"imports":{"three":"./lib/three.module.js"}}</script></head>
+<body>
+<script type="module">
+// «Жинағыш линза: кескін алу» (8-сынып): оптикалық орындықта нәрсе (жебе) линзаға жақындатылады. Кескіннің орны
+// жұқа линза формуласынан: 1/d + 1/f' = 1/F, үлкеюі Г = f'/d. d > 2F — кішірейген, 2F — тең, F < d < 2F — үлкейген,
+// бәрі төңкерілген, нақты (экранда). d < F — экранда кескін жоқ: жалған, тура, үлкейген кескін (лупа). Үш негізгі сәуле.
+import { THREE, V, stage, orbit, label, beam, seg, win, lerp, mat, mesh, ready } from './kit.js';
+const st = stage({ table: [4.6, 2.2] }), { scene, camera } = st;
+const Y = 0.42, F = 0.36, H0 = 0.17;
+mesh(new THREE.BoxGeometry(3.4, 0.04, 0.12), mat.metal, { parent: scene, pos: [0.1, 0.02, 0] });
+const axis = new THREE.Line(new THREE.BufferGeometry().setFromPoints([V(-1.6, Y, 0), V(1.8, Y, 0)]), new THREE.LineDashedMaterial({ color: '#8a919c', dashSize: 0.04, gapSize: 0.03 })); axis.computeLineDistances(); scene.add(axis);
+// линза (екі жақты дөңес), осі x бойымен
+const lensM = new THREE.MeshPhysicalMaterial({ color: '#cfeaff', transparent: true, opacity: 0.45, roughness: 0.05, depthWrite: false, side: THREE.DoubleSide });
+const lensG = new THREE.Group(); lensG.position.set(0, Y, 0); scene.add(lensG);
+const lm = new THREE.Mesh(new THREE.SphereGeometry(1, 48, 24), lensM); lm.scale.set(0.035, 0.22, 0.22); lm.renderOrder = 4; lensG.add(lm);
+mesh(new THREE.TorusGeometry(0.222, 0.008, 8, 48), mat.dark, { parent: lensG, rot: [0, Math.PI / 2, 0] });
+mesh(new THREE.CylinderGeometry(0.012, 0.012, Y - 0.22, 8), mat.dark, { parent: scene, pos: [0, (Y - 0.22) / 2 + 0.02, 0] });
+// F, 2F белгілері
+for (const s of [-1, 1]) for (const k of [1, 2]) { mesh(new THREE.SphereGeometry(0.012, 10, 8), new THREE.MeshBasicMaterial({ color: '#17a05d' }), { parent: scene, pos: [s * k * F, Y, 0.01], shadow: false });
+  label(scene, (k === 2 ? '2F' : 'F'), '', '#17a05d', { size: 0.2 }).show(V(s * k * F, Y - 0.07, 0.02), 1); }
+// нәрсе (жебе) және кескін (жебе)
+const arrowObj = (col, op = 1) => { const g = new THREE.Group(); scene.add(g); const m = new THREE.MeshStandardMaterial({ color: col, transparent: op < 1, opacity: op, roughness: 0.4 });
+  const sh = mesh(new THREE.CylinderGeometry(0.012, 0.012, 1, 12), m, { parent: g }), hd = mesh(new THREE.ConeGeometry(0.03, 0.06, 16), m, { parent: g });
+  g.setH = (h) => { const s = Math.sign(h) || 1, L = Math.max(0.001, Math.abs(h) - 0.06); sh.scale.y = L; sh.position.y = s * L / 2; hd.position.y = s * (L + 0.03); hd.rotation.z = s > 0 ? 0 : Math.PI; g.visible = Math.abs(h) > 0.005; }; g.m = m; return g; };
+const obj = arrowObj('#e5683a'), img = arrowObj('#e5683a'), vimg = arrowObj('#e5683a', 0.4);
+const stand1 = mesh(new THREE.CylinderGeometry(0.01, 0.01, Y - 0.04, 8), mat.dark, { parent: scene });
+// экран
+const scr = new THREE.Group(); scene.add(scr);
+mesh(new THREE.BoxGeometry(0.02, 0.62, 0.5), new THREE.MeshStandardMaterial({ color: '#ffffff', roughness: 0.95, transparent: true, opacity: 0.85 }), { parent: scr, pos: [0.012, Y, 0] });
+mesh(new THREE.CylinderGeometry(0.012, 0.012, Y - 0.12, 8), mat.dark, { parent: scr, pos: [0.02, (Y - 0.12) / 2 + 0.02, 0] });
+// сәулелер
+const R = [beam(scene, '#ff2a2a', { r: 0.004 }), beam(scene, '#ffb020', { r: 0.004 }), beam(scene, '#2a7bff', { r: 0.004 })];
+const RV = [beam(scene, '#ff2a2a', { r: 0.0025 }), beam(scene, '#ffb020', { r: 0.0025 }), beam(scene, '#2a7bff', { r: 0.0025 })];
+const lD = label(scene, 'd', '', '#1b2230', { size: 0.22 }), lf = label(scene, 'f', '', '#1b2230', { size: 0.22 });
+const dOf = (t) => (t < 11.2 ? (t < 4 ? 1.05 : t < 7.6 ? lerp(1.05, 2 * F, seg(t, 4, 5.2)) : lerp(2 * F, 0.52, seg(t, 7.6, 8.8))) : lerp(0.52, 0.22, seg(t, 11.2, 12.4)));
+
+window.renderFrame = (t) => {
+  const d = dOf(t), di = 1 / (1 / F - 1 / d), h = H0, hi = -h * di / d; // di < 0 — жалған кескін
+  obj.position.set(-d, Y, 0); obj.setH(h); stand1.position.set(-d, (Y - 0.04) / 2 + 0.02, 0);
+  const real = di > 0, ro = win(t, 0.6, 1.0, 17.3, 17.9);
+  const sx = real ? Math.min(di, 1.75) : 1.75; scr.position.x = sx; scr.visible = t < 11.6;
+  img.position.set(di, Y, 0.0); img.setH(real && di < 1.8 ? hi : 0); img.visible = real && di < 1.8 && t < 11.4;
+  vimg.position.set(di, Y, 0); vimg.setH(!real ? hi : 0); vimg.visible = !real && t > 12.4; vimg.m.opacity = 0.45 * seg(t, 12.6, 13.4);
+  // сәулелер: 1) оске параллель → F' арқылы; 2) оптикалық центр арқылы; 3) F арқылы → оске параллель
+  const top = V(-d, Y + h, 0), end = 1.85, kk = seg(t, 1.0, 2.6);
+  const sl = (a, b, x) => a.clone().add(b.clone().sub(a).multiplyScalar((x - a.x) / (b.x - a.x)));
+  const p1 = V(0, Y + h, 0), e1 = sl(p1, V(F, Y, 0), end);
+  const e2 = sl(top, V(0, Y, 0), end);
+  const fp = V(-F, Y, 0); const p3 = d > F + 0.02 ? sl(top, fp, 0) : sl(fp, top, 0); const e3 = V(end, p3.y, 0);
+  const ok3 = Math.abs(p3.y - Y) < 0.21;
+  R[0].set([top, p1, e1], ro, kk); R[1].set([top, V(0, Y, 0), e2], ro, kk); R[2].set([top, p3, e3], ok3 ? ro : 0, kk);
+  // жалған кескін: сәулелердің кері жалғасы (жіңішке)
+  const vo = !real ? seg(t, 12.6, 13.4) * ro : 0, vi = V(di, Y + hi, 0);
+  RV[0].set([p1, vi], vo, 1, true); RV[1].set([V(0, Y, 0), vi], vo, 1, true); RV[2].set([p3, vi], ok3 ? vo : 0, 1, true);
+  lD.show(V(-d / 2, Y - 0.16, 0.02), win(t, 2.6, 3.0, 11.0, 11.4)); lf.show(V(Math.min(di, 1.7) / 2, Y - 0.16, 0.02), real ? win(t, 2.6, 3.0, 11.0, 11.4) : 0);
+  const kc = seg(t, 11.0, 12.6);
+  orbit(camera, t, { ang: 0.0, swing: 0.1, rad: lerp(2.95, 2.0, kc), y: lerp(0.66, 0.6, kc), look: [lerp(0.3, -0.2, kc), Y, 0], cx: lerp(0.3, -0.2, kc) });
+  return st.render();
+};
+ready();
+</script>
+</body></html>

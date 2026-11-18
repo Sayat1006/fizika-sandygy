@@ -1,0 +1,53 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><style>html,body{margin:0;background:#eef2f7;overflow:hidden}canvas{display:block}</style>
+<script type="importmap">{"imports":{"three":"./lib/three.module.js"}}</script></head>
+<body>
+<script type="module">
+// «Бір түзу бойымен әрекет ететін күштерді қосу» (7-сынып): брусокқа екі динамометр әсер етеді, сол жақтағы бекітілген
+// динамометр тең әсерлі күшті R көрсетеді (брусок тыныштықта). 1) Күштер бір бағытта: F₁ = 2 Н, F₂ = 3 Н → R = F₁ + F₂ = 5 Н;
+// 2) қарама-қарсы: F₁ = 2 Н солға, F₂ = 5 Н оңға → R = F₂ − F₁ = 3 Н, оңға. Векторлар «басы-ұшы» ережесімен қосылады.
+import { THREE, V, stage, orbit, dynamometer, arrow, label, readout, seg, win, lerp, mat, mesh, num, ready } from './kit.js';
+const st = stage({ table: [4.2, 2.2] }), { scene, camera } = st;
+const Y = 0.07, SC = 0.5, FS = 0.13; // динамометр масштабы, 1 Н = 0,13 бірлік (сызба)
+mesh(new THREE.BoxGeometry(0.3, 0.14, 0.24), new THREE.MeshStandardMaterial({ color: '#5b8def', roughness: 0.55 }), { parent: scene, pos: [0, Y, 0] });
+const post = mesh(new THREE.BoxGeometry(0.08, 0.3, 0.3), mat.dark, { parent: scene, pos: [-1.5, 0.15, 0] });
+const dyn = () => { const d = dynamometer(scene, { max: 6, K: 0.05 }); d.scale.setScalar(SC); return d; };
+const dA = dyn(), d1 = dyn(), d2 = dyn(); // dA — бекітілген (R), d1 — F₁, d2 — F₂
+const threads = [0, 1, 2].map(() => mesh(new THREE.CylinderGeometry(0.004, 0.004, 1, 6), mat.dark, { parent: scene, shadow: false }));
+function place(d, F, hook, side) { d.rotation.z = side > 0 ? -Math.PI / 2 : Math.PI / 2; const hy = d.set(F) * SC; d.position.copy(hook).sub(V(0, hy, 0).applyAxisAngle(V(0, 0, 1), d.rotation.z)); }
+const thr = (m, a, b) => { const dd = b.clone().sub(a); m.scale.y = Math.max(0.001, dd.length()); m.position.copy(a).addScaledVector(dd, 0.5); m.quaternion.setFromUnitVectors(V(0, 1, 0), dd.normalize()); };
+const a1 = arrow(scene, '#e5483a', { r: 0.014 }), a2 = arrow(scene, '#1f6fd0', { r: 0.014 }), aR = arrow(scene, '#17a05d', { r: 0.018 });
+const l1 = label(scene, 'F', '1', '#e5483a', { size: 0.26 }), l2 = label(scene, 'F', '2', '#1f6fd0', { size: 0.26 }), lR = label(scene, 'R', '', '#17a05d', { size: 0.28 });
+const r1 = readout(scene, { color: '#e5483a', w: 0.5 }), r2 = readout(scene, { color: '#1f6fd0', w: 0.5 }), rR = readout(scene, { color: '#17a05d', w: 0.5 });
+
+window.renderFrame = (t) => {
+  const P2 = seg(t, 8.6, 9.6); // 0 — бір бағытта, 1 — қарама-қарсы
+  const ph = t < 9.1 ? 0 : 1;
+  const F1 = (ph ? 2 * seg(t, 9.8, 10.6) : 2 * seg(t, 0.8, 1.6) * (1 - seg(t, 8.4, 8.9))), F2 = ph ? 3 + 2 * seg(t, 9.8, 10.6) : 3 * seg(t, 1.6, 2.4) * (1 - seg(t, 8.4, 8.9)) + (t > 8.9 ? 3 : 0) * 0;
+  const F2v = ph ? lerp(0, 5, seg(t, 9.8, 10.6)) : F2, R = ph ? F2v - F1 : F1 + F2;
+  // ілгектер нүктелері
+  const hA = V(-0.15, Y, 0), h1 = ph ? V(-0.15, Y, -0.07) : V(0.15, Y, -0.07), h2 = V(0.15, Y, 0.07);
+  const ext = (h, side, L = 0.18) => h.clone().add(V(side * L, 0, 0));
+  place(dA, R, V(-1.0, Y, 0.0), -1); place(d1, F1, ext(h1, ph ? -1 : 1), ph ? -1 : 1); place(d2, F2v, ext(h2, 1, 0.62), 1);
+  d1.position.z = h1.z; d2.position.z = h2.z; dA.position.z = 0;
+  thr(threads[0], hA, V(-1.0, Y, 0)); thr(threads[1], h1, ext(h1, ph ? -1 : 1)); thr(threads[2], h2, ext(h2, 1, 0.62));
+  dA.visible = true; dA.position.x = Math.min(dA.position.x, -1.0);
+  // бекітілген динамометрдің сақинасы тіректе
+  // векторлар (брусоктың үстінде, y = 0.32)
+  const yv = 0.36, o = win(t, 2.6, 3.0, 8.3, 8.8) + win(t, 11.0, 11.4, 17.3, 17.9);
+  const base = V(-0.05, yv, 0.0);
+  if (!ph) { const k = seg(t, 4.0, 5.2); // F₂ F₁-дің ұшына жылжиды
+    a1.set(base, V(1, 0, 0), F1 * FS, o); a2.set(base.clone().add(V(F1 * FS * k, 0.07 * (1 - k), 0)), V(1, 0, 0), F2 * FS, o);
+    aR.set(base.clone().add(V(0, -0.1, 0)), V(1, 0, 0), R * FS, o * seg(t, 5.4, 6.0)); }
+  else { const k = seg(t, 12.2, 13.4);
+    a2.set(base.clone().add(V(-0.25, 0.0, 0)), V(1, 0, 0), F2v * FS, o); a1.set(base.clone().add(V(-0.25 + F2v * FS * k, 0.07 * (1 - k), 0)), V(-1, 0, 0), F1 * FS, o);
+    aR.set(base.clone().add(V(-0.25, -0.1, 0)), V(1, 0, 0), R * FS, o * seg(t, 13.6, 14.2)); }
+  l1.show(a1.position.clone().add(V((ph ? -1 : 1) * F1 * FS * 0.5, 0.08, 0)), o); l2.show(a2.position.clone().add(V(F2v * FS * 0.5, 0.08, 0)), o); lR.show(aR.position.clone().add(V(R * FS * 0.5, -0.08, 0)), o * seg(t, ph ? 13.6 : 5.4, ph ? 14.2 : 6.0));
+  r1.set(num(F1, 0) + ' Н', o); r1.position.copy(d1.position).add(V(0, 0.2, 0)); r2.set(num(F2v, 0) + ' Н', o); r2.position.copy(d2.position).add(V(0, 0.2, 0.0));
+  rR.set(num(R, 0) + ' Н', o * seg(t, ph ? 13.6 : 5.4, ph ? 14.2 : 6.0)); rR.position.copy(dA.position).add(V(0, 0.2, 0));
+  orbit(camera, t, { ang: 0.0, swing: 0.08, rad: 3.4, y: 1.5, look: [-0.25, 0.1, 0.0], cx: -0.25 });
+  return st.render();
+};
+ready();
+</script>
+</body></html>

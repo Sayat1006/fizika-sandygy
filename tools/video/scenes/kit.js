@@ -437,4 +437,20 @@ export function battery(parent, { x = 0, y = 0, z = 0, w = 0.34 } = {}) {
   return g;
 }
 
+/** Жарық сәулесі (лазер): beam(scene,color,{r}).set([V...], op, k) — сынық сызық; k — сызылу үлесі (0..1) */
+export function beam(parent, color = '#ff2a2a', { r = 0.006, n = 8 } = {}) {
+  const m = new THREE.MeshBasicMaterial({ color, transparent: true, depthTest: false }), mg = new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.25, depthTest: false, depthWrite: false });
+  const segs = Array.from({ length: n }, () => { const c = new THREE.Mesh(new THREE.CylinderGeometry(r, r, 1, 8), m), g = new THREE.Mesh(new THREE.CylinderGeometry(r * 3, r * 3, 1, 8), mg); c.renderOrder = 9; g.renderOrder = 8; parent.add(c, g); c.visible = g.visible = false; return [c, g]; });
+  const o = { m, segs };
+  o.set = (pts, op = 1, k = 1, dashed = false) => {
+    let total = 0; const L = []; for (let i = 0; i < pts.length - 1; i++) { const d = pts[i].distanceTo(pts[i + 1]); L.push(d); total += d; }
+    let rem = total * k; m.opacity = op; mg.opacity = 0.25 * op;
+    segs.forEach(([c, g], i) => { if (i >= L.length || rem <= 0 || op < 0.01) { c.visible = g.visible = false; return; }
+      const a = pts[i], b = pts[i + 1], l = Math.min(L[i], rem); rem -= l; const d = b.clone().sub(a).normalize();
+      for (const x of [c, g]) { x.visible = l > 1e-4; x.scale.set(1, Math.max(1e-4, l), 1); x.position.copy(a).addScaledVector(d, l / 2); x.quaternion.setFromUnitVectors(UP, d); }
+      g.visible = g.visible && !dashed; });
+  };
+  return o;
+}
+
 export const ready = () => { window.ready = true; };
