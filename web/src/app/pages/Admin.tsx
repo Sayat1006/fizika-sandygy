@@ -6,6 +6,7 @@ import { Note, PasswordInput, Segmented, useToast } from '../ui/kit';
 import { AccountNav, Footer } from '../ui/Layout';
 import { allReviews, deleteReview, setApproved, type Review } from '../lib/reviews';
 import { AdminPrices, AdminPromos } from './AdminPricing';
+import { AdminInbox, AdminNotices } from './AdminComms';
 
 const tm = (s: string) => new Date(s).toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
 type Row = DownloadRow & { user_id: string; created_at: string };
@@ -176,6 +177,9 @@ function Dashboard() {
       <AdminPromos />
 
       <AdminReviews />
+
+      <AdminInbox profiles={P} />
+      <AdminNotices users={P.filter((x) => !x.is_admin).length} />
 
       <section className="adm__sec">
         <h2 className="t-headline">Мұғалімдер</h2>

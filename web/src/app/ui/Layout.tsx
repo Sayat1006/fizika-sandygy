@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useUnread } from '../lib/comms';
 import { useAccount } from '../lib/account';
 import { sb } from '../lib/data';
 import { CONFIG } from '../lib/config';
@@ -46,7 +47,7 @@ export function ModeSwitch() {
 }
 
 /** Кабинеттің парақшаларын кез келген беттен ашу (Cabinet.tsx тыңдайды) */
-export type SheetId = 'subscribe' | 'classes' | 'tg' | 'profile' | 'review';
+export type SheetId = 'subscribe' | 'classes' | 'tg' | 'profile' | 'review' | 'chat';
 export function openSheet(id: SheetId) {
   try { sessionStorage.setItem('fs-sheet', id); } catch { /* */ }
   window.dispatchEvent(new Event('fs-sheet'));
@@ -58,6 +59,7 @@ export function AccountNav() {
   const nav = useNavigate();
   const { pathname } = useLocation();
   const [open, setOpen] = useState(false);
+  const unread = useUnread(session?.user.id);
   const box = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (!open) return;
@@ -73,7 +75,7 @@ export function AccountNav() {
     <Nav>
       <div className="umenu" ref={box}>
         <button type="button" className="umenu__btn" aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen(!open)}>
-          <span className="umenu__av" aria-hidden>{(name.split(' ')[1] || name)[0]?.toUpperCase()}</span><span className="umenu__name">{name}</span><i className="umenu__chev" aria-hidden />
+          <span className="umenu__av" aria-hidden>{(name.split(' ')[1] || name)[0]?.toUpperCase()}{unread > 0 && <i className="umenu__dot" />}</span><span className="umenu__name">{name}</span><i className="umenu__chev" aria-hidden />
         </button>
         {open && (
           <div className="umenu__list" role="menu">
@@ -81,6 +83,7 @@ export function AccountNav() {
             <button role="menuitem" type="button" onClick={() => go('classes')}>Менің сыныптарым</button>
             {CONFIG.telegramBot && <button role="menuitem" type="button" onClick={() => go('tg')}>Telegram</button>}
             <button role="menuitem" type="button" onClick={() => go('profile')}>Профиль</button>
+            <button role="menuitem" type="button" onClick={() => go('chat')}>Әкімшіге жазу{unread > 0 && <span className="umenu__badge">{unread}</span>}</button>
             <button role="menuitem" type="button" onClick={() => go('review')}>Пікір қалдыру</button>
             {profile?.is_admin && <Link role="menuitem" to="/admin" onClick={() => setOpen(false)}>Әкімші</Link>}
             <hr />

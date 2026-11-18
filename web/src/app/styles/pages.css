@@ -294,3 +294,29 @@
 .adm__promo { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 8px; margin: 10px 0 14px; align-items: center; }
 .adm__promo-d { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--fg-2); }
 .adm__prices .input, .adm__promo .input { border: 1px solid var(--line); background: var(--bg); }
+
+/* әкімші: хабарландырулар және хаттар */
+.annc { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 420px); gap: var(--s-5); align-items: start; }
+@media (max-width: 900px) { .annc { grid-template-columns: 1fr; } }
+.annc__kinds { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.annc__kind { display: grid; justify-items: center; gap: 4px; padding: 12px 6px; border: 0; border-radius: var(--r-m); background: var(--bg-2); color: var(--fg); font-weight: 600; font-size: 14px; cursor: pointer; }
+.annc__kind span { font-size: 24px; }
+.annc__kind.on { box-shadow: inset 0 0 0 2px var(--accent); background: color-mix(in srgb, var(--accent) 10%, var(--bg-2)); }
+.annc__cta { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.annc__pv { display: grid; gap: 8px; position: sticky; top: 80px; }
+.annc__frame { border-radius: var(--r-xl); overflow: hidden; background: var(--bg); box-shadow: var(--shadow-3, 0 20px 50px -20px rgba(0,0,0,.35)); }
+.annc__ic { font-size: 24px; }
+.annc__list { margin-top: var(--s-3); }
+.inbox { display: grid; grid-template-columns: minmax(0, 340px) minmax(0, 1fr); gap: var(--s-4); align-items: start; }
+@media (max-width: 800px) { .inbox { grid-template-columns: 1fr; } }
+.inbox__list { max-height: 620px; overflow-y: auto; }
+.inbox__row { cursor: pointer; }
+.inbox__row.on { background: color-mix(in srgb, var(--accent) 10%, transparent); }
+.inbox__row .umenu__av { width: 40px; height: 40px; font-size: 14px; flex: none; }
+.inbox__prev { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px; }
+.inbox__meta { display: grid; justify-items: end; gap: 4px; }
+.inbox__row::after { display: none; }
+.inbox__chat { padding: 14px 16px; border-radius: var(--r-xl); background: var(--bg-2); display: grid; gap: 10px; }
+.inbox__chat .bubble:not(.bubble--me) { background: var(--bg); }
+.inbox__chat .chat__day { background: var(--bg); }
+.inbox__head { display: grid; gap: 2px; padding-bottom: 8px; border-bottom: 1px solid var(--line); }

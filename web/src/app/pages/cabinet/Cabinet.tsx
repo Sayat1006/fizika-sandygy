@@ -12,6 +12,7 @@ import PrepNext from './PrepNext';
 import Onboarding, { ReviewAsk } from './Onboarding';
 import LessonPane, { morph, useWide } from './LessonPane';
 import { ClassesSheet, ProfileSheet, ReviewSheet, SubscribeSheet, TelegramSheet, ViewerSheet } from './Sheets';
+import { ChatSheet, NoticePopup } from './Comms';
 
 
 /** /app — мұғалім кабинеті. Кірмеген болса — кіру/тіркелу. */
@@ -40,7 +41,7 @@ function Skeleton() {
   );
 }
 
-type SheetId = 'subscribe' | 'classes' | 'tg' | 'profile' | 'review' | null;
+type SheetId = 'subscribe' | 'classes' | 'tg' | 'profile' | 'review' | 'chat' | null;
 
 function Teacher() {
   const { profile, subs } = useAccount();
@@ -87,6 +88,7 @@ function Teacher() {
       <TelegramSheet open={sheet === 'tg'} onClose={() => setSheet(null)} />
       <ProfileSheet open={sheet === 'profile'} onClose={() => setSheet(null)} />
       <ReviewSheet open={sheet === 'review'} onClose={() => setSheet(null)} />
+      <ChatSheet open={sheet === 'chat'} onClose={() => setSheet(null)} />
     </div>
   );
   return (
@@ -119,6 +121,8 @@ function Teacher() {
       <TelegramSheet open={sheet === 'tg'} onClose={() => setSheet(null)} />
       <ProfileSheet open={sheet === 'profile'} onClose={() => setSheet(null)} />
       <ReviewSheet open={sheet === 'review'} onClose={() => setSheet(null)} />
+      <ChatSheet open={sheet === 'chat'} onClose={() => setSheet(null)} />
+      <NoticePopup onSubscribe={() => open('subscribe')} />
     </div>
   );
 }
