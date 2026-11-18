@@ -129,6 +129,11 @@
 .sum { display: flex; justify-content: space-between; align-items: baseline; padding-top: var(--s-3); border-top: 1px solid var(--line); }
 .sum b { font: 700 26px var(--font-display); }
 .pay { display: grid; gap: var(--s-4); }
+.banks { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.bank { display: grid; justify-items: center; gap: 8px; padding: 14px 8px 12px; border-radius: var(--r-l); background: var(--bg-2); }
+.bank__logo { width: 56px; height: 56px; border-radius: 16px; display: grid; place-items: center; background: #fff; box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.06), 0 6px 16px -8px rgba(0, 0, 0, 0.35); }
+.bank__logo img { width: 40px; height: 40px; object-fit: contain; display: block; }
+.bank__n { font-size: 14px; font-weight: 600; }
 
 /* сыныптар */
 .classes { display: grid; gap: 8px; }
