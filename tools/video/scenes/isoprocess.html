@@ -1,0 +1,52 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><style>html,body{margin:0;background:#eef2f7;overflow:hidden}canvas{display:block}</style>
+<script type="importmap">{"imports":{"three":"./lib/three.module.js"}}</script></head>
+<body>
+<script type="module">
+// «Изопроцестер» (10-сынып): поршеньді цилиндрдегі газ (бөлшектердің жылдамдығы ∝ √T). pV = νRT бойынша:
+// 1) изотермалық (T = 300 К): көлемді 2 есе азайтқанда қысым 2 есе артады (pV = const);
+// 2) изобаралық (p = const): 300 К → 450 К қыздырғанда көлем 1,5 есе артады (V/T = const);
+// 3) изохоралық (V = const, поршень бекітілген): 450 К → 300 К суытқанда қысым 1,5 есе азаяды (p/T = const). p–V графигі.
+import { THREE, V, stage, orbit, readout, hotplate, hudPlot, seg, win, lerp, mat, mesh, num, ready } from './kit.js';
+const st = stage({ table: [3.4, 2.2] }), { scene, camera, hud } = st;
+const X = -0.35, R = 0.24, HC = 1.2, hp = hotplate(scene, { x: X, w: 0.62 }), B = hp.top + 0.02;
+const cyl = mesh(new THREE.CylinderGeometry(R, R, HC, 48, 1, true), mat.glass(), { parent: scene, pos: [X, B + HC / 2, 0], shadow: false }); cyl.renderOrder = 5;
+mesh(new THREE.CylinderGeometry(R + 0.01, R + 0.01, 0.02, 48), mat.metal, { parent: scene, pos: [X, B, 0] });
+const pis = mesh(new THREE.CylinderGeometry(R - 0.005, R - 0.005, 0.06, 48), mat.dark, { parent: scene });
+const rod = mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.6, 12), mat.metal, { parent: scene });
+const pin = mesh(new THREE.BoxGeometry(0.62, 0.03, 0.05), new THREE.MeshStandardMaterial({ color: '#e5322d' }), { parent: scene });
+const iceM = new THREE.MeshStandardMaterial({ color: '#bfe3ff', transparent: true, opacity: 0.0, roughness: 0.2 }); const ice = mesh(new THREE.CylinderGeometry(R + 0.06, R + 0.06, 0.5, 40, 1, true), iceM, { parent: scene, shadow: false });
+let sd = 7; const rnd = () => ((sd = (sd * 16807) % 2147483647) / 2147483647);
+const NP = 120, P = Array.from({ length: NP }, () => ({ a: rnd() * 6.28, r: Math.sqrt(rnd()) * (R - 0.03), y: rnd(), vy: 0.6 + rnd() * 0.8, vr: (rnd() - 0.5) * 2 }));
+const pm = new THREE.InstancedMesh(new THREE.SphereGeometry(0.012, 8, 6), new THREE.MeshStandardMaterial({ color: '#1f6fd0' }), NP); pm.renderOrder = 3; scene.add(pm); const dm = new THREE.Object3D();
+const plot = hudPlot(hud, { x: 920, y: 360, w: 330, h: 300, ax: ['V', ''], ay: ['p', ''] });
+const rP = readout(scene, { color: '#e5483a', w: 0.6 }), rV = readout(scene, { color: '#1f6fd0', w: 0.6 }), rT = readout(scene, { color: '#17a05d', w: 0.6 });
+// күй: V (бірлік), T (К) уақыт бойынша; p = T/V (шартты бірлікпен)
+const state = (t) => { if (t < 6.0) { const k = seg(t, 1.2, 5.2); return { V: lerp(1, 0.5, k), T: 300, ph: 0 }; } if (t < 11.5) { const k = seg(t, 6.5, 10.5); return { V: lerp(0.5, 0.75, k), T: lerp(300, 450, k), ph: 1 }; } const k = seg(t, 12.0, 16.0); return { V: 0.75, T: lerp(450, 300, k), ph: 2 }; };
+const HV = 0.95; // V = 1 ⇒ газ биіктігі HV
+let phase = 0;
+
+window.renderFrame = (t) => {
+  const s = state(t), h = HV * s.V, p = s.T / 300 / s.V;
+  pis.position.set(X, B + h + 0.03, 0); rod.position.set(X, B + h + 0.36, 0);
+  pin.visible = s.ph === 2; pin.position.set(X, B + h + 0.08, 0);
+  hp.set(s.ph === 1 ? seg(t, 6.2, 6.8) * (1 - seg(t, 10.6, 11.2)) : 0);
+  iceM.opacity = s.ph === 2 ? 0.5 * seg(t, 11.6, 12.0) : 0; ice.position.set(X, B + 0.25, 0); ice.visible = iceM.opacity > 0.01;
+  // бөлшектер: «жүрілген жол» ∝ √T интегралы
+  let path = 0; for (let x = 0; x < t; x += 1 / 60) path += Math.sqrt(state(x).T / 300) / 60;
+  P.forEach((q, i) => { const tri = (u) => { u = ((u % 2) + 2) % 2; return u < 1 ? u : 2 - u; };
+    const y = B + 0.015 + tri(q.y + path * q.vy * 0.9) * (h - 0.03), rr = (R - 0.03) * tri(q.r / (R - 0.03) + path * q.vr * 0.5);
+    dm.position.set(X + rr * Math.cos(q.a), y, rr * Math.sin(q.a)); dm.updateMatrix(); pm.setMatrixAt(i, dm.matrix); });
+  pm.instanceMatrix.needsUpdate = true; pm.material.color.set(new THREE.Color('#1f6fd0').lerp(new THREE.Color('#e5483a'), (s.T - 300) / 150));
+  // p–V графигі
+  const tr = []; for (let k = 0; k <= 120; k++) { const tt = k * 0.14; if (tt > t) break; const q = state(tt); tr.push([q.V * 0.9, q.T / 300 / q.V / 2.2 * 0.9]); }
+  const iso = []; for (let k = 0; k <= 40; k++) { const v = 0.45 + k / 40 * 0.6; iso.push([v * 0.9, 1 / v / 2.2 * 0.9]); }
+  plot.draw([{ pts: iso, color: '#d5dbe3', label: '' }, { pts: tr, color: '#e5483a', label: '' }], seg(t, 0.6, 1.0));
+  const o = win(t, 0.8, 1.2, 17.3, 17.9);
+  rP.set('p = ' + num(p, 1) + 'p₀', o); rP.position.set(X + 0.75, 1.15, 0); rV.set('V=' + num(s.V, 2) + 'V₀', o); rV.position.set(X + 0.75, 0.95, 0); rT.set('T = ' + Math.round(s.T) + ' К', o); rT.position.set(X + 0.75, 0.75, 0);
+  orbit(camera, t, { ang: 0.0, swing: 0.12, rad: 3.2, y: 1.1, look: [0.05, 0.8, 0], cx: 0.05 });
+  return st.render();
+};
+ready();
+</script>
+</body></html>

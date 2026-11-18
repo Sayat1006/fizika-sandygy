@@ -1,0 +1,42 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><style>html,body{margin:0;background:#eef2f7;overflow:hidden}canvas{display:block}</style>
+<script type="importmap">{"imports":{"three":"./lib/three.module.js"}}</script></head>
+<body>
+<script type="module">
+// «Кристалл және аморф денелер» (10-сынып): сол жақта — кристалл (NaCl торы: бөлшектер реттелген, алыс ретті),
+// оң жақта — аморф дене (шыны: тек жақын ретті, бөлшектер ретсіз). Қыздырғанда кристалл белгілі температурада балқиды
+// (тор бұзылады, t(τ) графигінде тұрақты бөлік), аморф дене біртіндеп жұмсарады (тұрақты бөлігі жоқ).
+import { THREE, V, stage, orbit, hudPlot, seg, win, lerp, mat, mesh, ready } from './kit.js';
+const st = stage({ table: [3.6, 2.2] }), { scene, camera, hud } = st;
+let sd = 23; const rnd = () => ((sd = (sd * 16807) % 2147483647) / 2147483647);
+const n = 5, a = 0.11, Y = 0.32;
+const L = [], A = [];
+for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) for (let k = 0; k < n; k++) L.push({ p: V((i - 2) * a, (j - 2) * a, (k - 2) * a), na: (i + j + k) % 2 === 0, ph: rnd() * 6.28, d: V(rnd() - 0.5, rnd() - 0.5, rnd() - 0.5) });
+while (A.length < n ** 3) { const p = V(rnd() - 0.5, rnd() - 0.5, rnd() - 0.5).multiplyScalar(0.56); if (A.some((q) => q.p.distanceTo(p) < 0.085)) continue; A.push({ p, na: A.length % 2 === 0, ph: rnd() * 6.28 }); }
+const im = (N, col, r) => { const m = new THREE.InstancedMesh(new THREE.SphereGeometry(r, 14, 10), new THREE.MeshStandardMaterial({ color: col, roughness: 0.35 }), N); scene.add(m); return m; };
+const cNa = im(L.length, '#8b5cf6', 0.02), cCl = im(L.length, '#17a05d', 0.03), aNa = im(A.length, '#8b5cf6', 0.02), aCl = im(A.length, '#17a05d', 0.03);
+const bonds = new THREE.LineSegments(new THREE.BufferGeometry(), new THREE.LineBasicMaterial({ color: '#9aa4b2', transparent: true, opacity: 0.6 })); scene.add(bonds);
+{ const pos = []; for (const q of L) for (const r of L) { const d = r.p.clone().sub(q.p); if (Math.abs(d.length() - a) < 1e-3 && (d.x + d.y + d.z) > 0) pos.push(q.p.x, q.p.y, q.p.z, r.p.x, r.p.y, r.p.z); } bonds.geometry.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); }
+const CX = -0.65, AX = 0.65; bonds.position.set(CX, Y, 0);
+const dm = new THREE.Object3D();
+const plot = hudPlot(hud, { x: 920, y: 380, w: 330, h: 270, ax: ['τ', ''], ay: ['t', ''] });
+// температура: кристалл — τ < 6: өседі, 6–11: балқу (тұрақты), сосын өседі; аморф — бірқалыпты өседі
+const TC = (u) => (u < 6 ? u / 6 * 0.55 : u < 11 ? 0.55 : 0.55 + (u - 11) / 6 * 0.35), TA = (u) => u / 17 * 0.9;
+const melt = (u) => seg(u, 6, 11), soft = (u) => seg(u, 4, 16);
+
+window.renderFrame = (t) => {
+  const u = Math.max(0, t - 0.8), tc = TC(u), mk = melt(u), sa = soft(u);
+  let ci = 0, cj = 0; L.forEach((q, i) => { const amp = 0.004 + tc * 0.02, p = q.p.clone().addScaledVector(q.d, mk * 0.35 * (1 + Math.sin(t * 0.7 + q.ph) * 0.3)); dm.position.set(CX + p.x + amp * Math.sin(t * 17 + q.ph), Y + p.y * (1 - mk * 0.35) - mk * 0.1 + amp * Math.sin(t * 19 + q.ph * 2), p.z + amp * Math.sin(t * 23 + q.ph * 3)); dm.updateMatrix(); (q.na ? cNa : cCl).setMatrixAt(q.na ? ci++ : cj++, dm.matrix); });
+  dm.scale.setScalar(0.0001); dm.updateMatrix(); for (let i = ci; i < L.length; i++) cNa.setMatrixAt(i, dm.matrix); for (let i = cj; i < L.length; i++) cCl.setMatrixAt(i, dm.matrix); dm.scale.setScalar(1);
+  bonds.material.opacity = 0.6 * (1 - mk); bonds.visible = mk < 0.98;
+  let ai = 0, aj = 0; A.forEach((q) => { const amp = 0.004 + TA(u) * 0.02; dm.position.set(AX + q.p.x + amp * Math.sin(t * 17 + q.ph), Y + q.p.y * (1 - sa * 0.35) - sa * 0.1 + amp * Math.sin(t * 21 + q.ph), q.p.z * (1 + sa * 0.2)); dm.updateMatrix(); (q.na ? aNa : aCl).setMatrixAt(q.na ? ai++ : aj++, dm.matrix); });
+  dm.scale.setScalar(0.0001); dm.updateMatrix(); for (let i = ai; i < A.length; i++) aNa.setMatrixAt(i, dm.matrix); for (let i = aj; i < A.length; i++) aCl.setMatrixAt(i, dm.matrix); dm.scale.setScalar(1);
+  [cNa, cCl, aNa, aCl].forEach((m) => (m.instanceMatrix.needsUpdate = true));
+  const p1 = [], p2 = []; for (let k = 0; k <= 60; k++) { const uu = k / 60 * 17; if (uu > u) break; p1.push([uu / 17 * 0.95, 0.05 + TC(uu)]); p2.push([uu / 17 * 0.95, 0.05 + TA(uu)]); }
+  plot.draw([{ pts: p1, color: '#8b5cf6', label: '' }, { pts: p2, color: '#e5683a', label: '' }], seg(t, 0.5, 1.0));
+  orbit(camera, t, { ang: 0.0, swing: 0.12, rad: 2.8, y: 0.85, look: [0.1, 0.5, 0], cx: 0.0 });
+  return st.render();
+};
+ready();
+</script>
+</body></html>
