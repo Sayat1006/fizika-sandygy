@@ -2,7 +2,8 @@
 export const CONFIG = {
   supabaseUrl: 'https://rumnyvcgpswdxjheaeif.supabase.co',
   supabaseKey: 'sb_publishable_l7Xeu0foTUzNVh_-w258nw_42HAgAaw',
-  kaspi: '+7 776 870 75 00', // Kaspi Gold номері
+  kaspi: '+7 776 870 7500', // аударым нөмірі (Kaspi Gold)
+  payName: 'Саят А.', // алушының аты (аударымда көрінеді)
   whatsapp: '77768707500', // WhatsApp: тек цифрлар
   whatsappShow: '+7 776 870 75 00',
   telegram: 'ca9m_cc', // Telegram логині, @ белгісіз

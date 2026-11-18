@@ -134,6 +134,10 @@
 .bank__logo { width: 56px; height: 56px; border-radius: 16px; display: grid; place-items: center; background: #fff; box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.06), 0 6px 16px -8px rgba(0, 0, 0, 0.35); }
 .bank__logo img { width: 40px; height: 40px; object-fit: contain; display: block; }
 .bank__n { font-size: 14px; font-weight: 600; }
+.payto { align-items: center; }
+.payto__who { flex: 1; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; }
+.payto__num { font: 700 24px var(--font-display); letter-spacing: -0.01em; }
+.payto__name { font-size: 18px; font-weight: 600; color: var(--fg-2, var(--fg)); }
 
 /* сыныптар */
 .classes { display: grid; gap: 8px; }

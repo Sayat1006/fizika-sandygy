@@ -126,8 +126,8 @@ export function SubscribeSheet({ open, onClose, preset }: { open: boolean; onClo
             <p className="t-muted">1. Сомасын Kaspi, Halyk немесе Forte қосымшасынан төмендегі нөмірге аударыңыз. 2. Төлем чегін Telegram ботқа жіберіңіз. Төлем расталған сәтте жазылым өзі ашылады.</p>
             <div className="group">
               <div className="group__row group__row--static"><span className="group__t">Сомасы</span><b className="tabular">{money(pay.amount)}</b></div>
-              <div className="group__row group__row--static"><span className="group__t">Kaspi Gold</span><b className="tabular">{CONFIG.kaspi}</b>
-                <button className="link" type="button" onClick={async () => { try { await navigator.clipboard.writeText(CONFIG.kaspi); toast('Көшірілді'); } catch { toast(CONFIG.kaspi); } }}>Көшіру</button></div>
+              <div className="group__row group__row--static payto"><span className="payto__who"><b className="payto__num tabular">{CONFIG.kaspi}</b><span className="payto__name">{CONFIG.payName}</span></span>
+                <button className="link" type="button" onClick={async () => { try { await navigator.clipboard.writeText(CONFIG.kaspi.replace(/\s/g, '')); toast('Көшірілді'); } catch { toast(CONFIG.kaspi); } }}>Көшіру</button></div>
             </div>
             {CONFIG.telegramBot && <a className="btn btn--lg btn--primary btn--block" href={tgPayLink(pay.id)} target="_blank" rel="noopener">Чекті Telegram-ға жіберу</a>}
             <a className="link" style={{ justifySelf: 'center' }} href={`https://wa.me/${CONFIG.whatsapp}?text=${encodeURIComponent(waText || '')}`} target="_blank" rel="noopener">Telegram жоқ па? WhatsApp-қа жіберу</a>
