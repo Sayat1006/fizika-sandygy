@@ -1,0 +1,50 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><style>html,body{margin:0;background:#eef2f7;overflow:hidden}canvas{display:block}</style>
+<script type="importmap">{"imports":{"three":"./lib/three.module.js"}}</script></head>
+<body>
+<script type="module">
+// «Фотоэффект» (9-сынып): вакуумдық фотоэлементтің катодына жарық түседі. Қызыл жарық (ν < ν₀) — жарық қанша күшті болса
+// да электрон шықпайды, ток жоқ; күлгін жарық (ν > ν₀) — электрондар ұшып шығады, ток бар; жарық қарқындылығын екі есе
+// арттырса — электрон саны (ток) екі есе артады, ал электрондардың жылдамдығы өзгермейді; ультракүлгін — жылдамырақ.
+// hν = A + mυ²/2. Фотондар толқын «пакеттері» ретінде көрсетілген.
+import { THREE, V, stage, orbit, meter, wire, readout, label, seg, win, lerp, mat, mesh, ready } from './kit.js';
+const st = stage({ table: [3.8, 2.2] }), { scene, camera } = st;
+const Y = 0.45;
+const bulb = mesh(new THREE.SphereGeometry(0.42, 40, 30), mat.glass(), { parent: scene, pos: [0.1, Y, 0], shadow: false }); bulb.scale.set(1.25, 1, 1); bulb.renderOrder = 5;
+mesh(new THREE.CylinderGeometry(0.09, 0.12, 0.08, 24), mat.dark, { parent: scene, pos: [0.1, 0.04, 0] });
+const cath = mesh(new THREE.BoxGeometry(0.03, 0.4, 0.3), new THREE.MeshStandardMaterial({ color: '#9aa4b2', metalness: 0.8, roughness: 0.3 }), { parent: scene, pos: [0.38, Y, 0] });
+const anode = mesh(new THREE.TorusGeometry(0.1, 0.012, 8, 30), mat.metal, { parent: scene, pos: [-0.2, Y, 0], rot: [0, Math.PI / 2, 0] });
+const am = meter(scene, { max: 2, sym: 'μA', step: 0.5, x: 0.95, z: -0.2, size: 0.45 });
+wire(scene, [V(0.38, Y - 0.2, 0), V(0.38, 0.012, 0), V(0.38, 0.012, -0.45), am.term(1)]); wire(scene, [V(-0.2, Y - 0.1, 0), V(-0.2, 0.012, 0), V(-0.2, 0.012, -0.45), am.term(-1)]);
+// шам
+const LX = -1.25; const lampG = new THREE.Group(); lampG.position.set(LX, Y + 0.25, 0); scene.add(lampG);
+mesh(new THREE.CylinderGeometry(0.08, 0.14, 0.24, 24, 1, true), new THREE.MeshStandardMaterial({ color: '#3a3f4a', side: THREE.DoubleSide }), { parent: lampG, rot: [0, 0, Math.PI / 2] });
+const glass = mesh(new THREE.CircleGeometry(0.135, 24), new THREE.MeshBasicMaterial({ color: '#ff3b30' }), { parent: lampG, pos: [0.121, 0, 0], rot: [0, Math.PI / 2, 0], shadow: false });
+mesh(new THREE.CylinderGeometry(0.015, 0.015, Y + 0.25, 8), mat.dark, { parent: scene, pos: [LX, (Y + 0.25) / 2, 0] });
+// фотондар (толқын пакеттері) және электрондар
+const NPH = 40, PH = Array.from({ length: NPH }, (_, i) => { const l = new THREE.Line(new THREE.BufferGeometry().setFromPoints(Array.from({ length: 24 }, () => V())), new THREE.LineBasicMaterial({ color: '#ff3b30' })); scene.add(l); return { l, ph: i / NPH, z: (((i * 7) % 11) / 11 - 0.5) * 0.22, y: (((i * 5) % 9) / 9 - 0.5) * 0.2 }; });
+const NE = 40, el = new THREE.InstancedMesh(new THREE.SphereGeometry(0.016, 10, 8), new THREE.MeshBasicMaterial({ color: '#1f6fd0' }), NE); el.renderOrder = 6; scene.add(el);
+const EL = Array.from({ length: NE }, (_, i) => ({ ph: (i * 0.618) % 1, y: (((i * 3) % 7) / 7 - 0.5) * 0.3, z: (((i * 5) % 11) / 11 - 0.5) * 0.24 }));
+const rI = readout(scene, { color: '#1b2230', w: 0.56 }), rNu = readout(scene, { color: '#1b2230', w: 0.56 });
+const dm = new THREE.Object3D();
+// кезеңдер: [басталуы, түсі, ν > ν₀?, қарқындылық, электрон жылдамдығы]
+const PHS = [[0.6, '#ff3b30', false, 1, 0], [3.8, '#ff3b30', false, 2, 0], [7.0, '#8b5cf6', true, 1, 1], [10.4, '#8b5cf6', true, 2, 1], [13.8, '#5b2bd6', true, 2, 1.7]];
+const phaseAt = (t) => { let k = 0; for (let i = 0; i < PHS.length; i++) if (t >= PHS[i][0]) k = i; return PHS[k]; };
+
+window.renderFrame = (t) => {
+  const [t0, col, emit, inten, spd] = phaseAt(t), on = seg(t, 0.6, 1.0);
+  glass.material.color.set(col);
+  PH.forEach((p, i) => { const vis = on > 0 && i < NPH * inten / 2; p.l.visible = vis; if (!vis) return; p.l.material.color.set(col);
+    const u = (p.ph + t * 0.5) % 1, x0 = LX + 0.15 + u * (0.36 - LX - 0.15), pos = p.l.geometry.attributes.position, lamb = col === '#ff3b30' ? 0.035 : col === '#8b5cf6' ? 0.022 : 0.016;
+    for (let j = 0; j < 24; j++) { const s = (j - 12) / 12 * 0.06; pos.setXYZ(j, Math.min(0.36, x0 + s), Y + p.y + 0.012 * Math.exp(-((s / 0.035) ** 2)) * Math.sin(s / lamb * 6.28), p.z); } pos.needsUpdate = true; });
+  EL.forEach((e, i) => { const vis = emit && i < NE * inten / 2 && t > t0 + 0.4; const u = (e.ph + t * 0.45 * spd) % 1; dm.position.set(0.36 - u * 0.56, Y + e.y * (1 - u * 0.6), e.z * (1 - u * 0.6)); dm.scale.setScalar(vis ? 1 : 0.0001); dm.updateMatrix(); el.setMatrixAt(i, dm.matrix); });
+  el.instanceMatrix.needsUpdate = true;
+  const I = emit ? 0.8 * inten * seg(t, t0 + 0.4, t0 + 0.9) : 0; am.set(I);
+  rI.set(I > 0.05 ? 'I > 0' : 'I = 0', win(t, 1.2, 1.6, 17.3, 17.9)); rI.position.set(0.95, 0.62, -0.2);
+  rNu.set(emit ? 'ν > ν₀' : 'ν < ν₀', win(t, 1.2, 1.6, 17.3, 17.9)); rNu.position.set(LX, Y + 0.55, 0);
+  orbit(camera, t, { ang: 0.05, swing: 0.12, rad: 2.9, y: 1.25, look: [-0.15, 0.4, -0.15], cx: -0.15 });
+  return st.render();
+};
+ready();
+</script>
+</body></html>

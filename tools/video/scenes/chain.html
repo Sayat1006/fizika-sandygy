@@ -1,0 +1,46 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><style>html,body{margin:0;background:#0d1220;overflow:hidden}canvas{display:block}</style>
+<script type="importmap">{"imports":{"three":"./lib/three.module.js"}}</script></head>
+<body>
+<script type="module">
+// «Ауыр ядролардың бөлінуі. Тізбекті ядролық реакция» (9-сынып): нейтрон уран-235 ядросына енеді — ядро екі жарқышаққа
+// бөлініп, 2–3 жаңа нейтрон шығарады; олар көрші ядроларды бөледі — бөліну саны көшкін тәрізді өседі. Нейтрондардың бір
+// бөлігі ядроға тимей сыртқа ұшып кетеді. Модель: нейтрондар түзу ұшады, ядроға жақын өтсе — бөліну (сандық модель,
+// уақыт қатты баяулатылған). Төменде — бөлінулер санының уақытқа тәуелділігі.
+import { THREE, V, DUR, stage, orbit, hudPlot, seg, win, lerp, mat, mesh, ready } from './kit.js';
+const st = stage({ table: false, bg: '#0d1220', fog: [400, 500] }), { scene, camera, hud, renderer } = st;
+renderer.shadowMap.enabled = false;
+let sd = 29; const rnd = () => ((sd = (sd * 16807) % 2147483647) / 2147483647);
+const NN = 150, NUC = []; NUC.push({ p: V(0, 0, 0), tf: Infinity });
+while (NUC.length < NN) { const p = V(rnd() * 2 - 1, rnd() * 2 - 1, rnd() * 2 - 1).multiplyScalar(0.75); if (p.length() > 0.75) continue; if (NUC.some((q) => q.p.distanceTo(p) < 0.12)) continue; NUC.push({ p, tf: Infinity }); }
+// симуляция
+const NEU = [], SPD = 0.32, HIT = 0.11, dt = 0.01, FIS = [];
+NEU.push({ p0: V(-0.95, 0.0, 0), v: V(SPD, 0, 0), t0: 0.8, t1: Infinity });
+for (let t = 0; t <= DUR; t += dt) {
+  for (const n of NEU) { if (t < n.t0 || t > n.t1) continue; const p = n.p0.clone().addScaledVector(n.v, t - n.t0); if (p.length() > 2.2) { n.t1 = t; continue; }
+    for (const u of NUC) if (u.tf === Infinity && p.distanceTo(u.p) < HIT) { u.tf = t; n.t1 = t; FIS.push(t); const k = 2 + (rnd() < 0.6 ? 1 : 0);
+      u.fd = V(rnd() - 0.5, rnd() - 0.5, rnd() - 0.5).normalize();
+      for (let j = 0; j < k; j++) NEU.push({ p0: u.p.clone(), v: V(rnd() * 2 - 1, rnd() * 2 - 1, rnd() * 2 - 1).normalize().multiplyScalar(SPD), t0: t + 0.05, t1: Infinity }); break; } }
+}
+const uM = new THREE.InstancedMesh(new THREE.SphereGeometry(0.038, 18, 12), new THREE.MeshStandardMaterial({ color: '#3fbf5f', roughness: 0.4, emissive: '#0b3a1a', emissiveIntensity: 0.4 }), NN); scene.add(uM);
+const fM = new THREE.InstancedMesh(new THREE.SphereGeometry(0.03, 14, 10), new THREE.MeshStandardMaterial({ color: '#f0a020', roughness: 0.4, emissive: '#5a3000', emissiveIntensity: 0.4 }), NN * 2); scene.add(fM);
+const nM = new THREE.InstancedMesh(new THREE.SphereGeometry(0.014, 8, 6), new THREE.MeshBasicMaterial({ color: '#6fb7ff' }), NEU.length); scene.add(nM);
+const flash = new THREE.InstancedMesh(new THREE.SphereGeometry(1, 14, 10), new THREE.MeshBasicMaterial({ color: '#fff2a0', transparent: true, opacity: 0.55, depthWrite: false, blending: THREE.AdditiveBlending }), NN); scene.add(flash);
+const plot = hudPlot(hud, { x: 940, y: 40, w: 300, h: 220, ax: ['t', ''], ay: ['N', ''] });
+const dm = new THREE.Object3D(), hide = (m, i) => { dm.position.set(0, 0, 0); dm.scale.setScalar(0.0001); dm.updateMatrix(); m.setMatrixAt(i, dm.matrix); };
+
+window.renderFrame = (t) => {
+  NUC.forEach((u, i) => { const a = t - u.tf;
+    if (a < 0) { dm.position.copy(u.p); dm.scale.setScalar(1); dm.updateMatrix(); uM.setMatrixAt(i, dm.matrix); hide(fM, 2 * i); hide(fM, 2 * i + 1); hide(flash, i); }
+    else { hide(uM, i); for (const s of [0, 1]) { dm.position.copy(u.p).addScaledVector(u.fd, (s ? 1 : -1) * Math.min(a, 3) * 0.12); dm.scale.setScalar(1); dm.updateMatrix(); fM.setMatrixAt(2 * i + s, dm.matrix); }
+      if (a < 0.35) { dm.position.copy(u.p); dm.scale.setScalar(0.04 + a * 0.4); dm.updateMatrix(); flash.setMatrixAt(i, dm.matrix); } else hide(flash, i); } });
+  NEU.forEach((n, i) => { if (t < n.t0 || t > n.t1) { hide(nM, i); return; } dm.position.copy(n.p0).addScaledVector(n.v, t - n.t0); dm.scale.setScalar(1); dm.updateMatrix(); nM.setMatrixAt(i, dm.matrix); });
+  uM.instanceMatrix.needsUpdate = fM.instanceMatrix.needsUpdate = nM.instanceMatrix.needsUpdate = flash.instanceMatrix.needsUpdate = true;
+  const pts = []; for (let k = 0; k <= 60; k++) { const tt = k / 60 * DUR; if (tt > t) break; pts.push([k / 60 * 0.95, FIS.filter((x) => x <= tt).length / NN * 0.92]); }
+  plot.draw([{ pts, color: '#f0a020', label: '' }], seg(t, 1.0, 1.6));
+  orbit(camera, t, { ang: 0.2, swing: 0.5, rad: lerp(3.0, 3.6, seg(t, 3, 12)), y: 0.8, look: [0, 0, 0] });
+  return st.render();
+};
+ready();
+</script>
+</body></html>
