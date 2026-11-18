@@ -381,14 +381,14 @@ export function hotplate(parent, { x = 0, z = 0, w = 0.5 } = {}) {
 }
 
 /** Өлшеуіш аспап (амперметр/вольтметр): meter(parent,{max,sym}).set(v) — тілше */
-export function meter(parent, { max = 1, sym = 'A', step, x = 0, y = 0, z = 0, size = 0.36, color = '#1f6fd0' } = {}) {
+export function meter(parent, { max = 1, min = 0, sym = 'A', step, x = 0, y = 0, z = 0, size = 0.36, color = '#1f6fd0' } = {}) {
   const g = new THREE.Group(); g.position.set(x, y, z); parent.add(g);
   mesh(new THREE.BoxGeometry(size, size * 0.8, 0.1), new THREE.MeshStandardMaterial({ color: '#f4f6f9', roughness: 0.4 }), { parent: g, pos: [0, size * 0.4, 0] });
   const c = document.createElement('canvas'); c.width = 256; c.height = 200; const x2 = c.getContext('2d');
   x2.fillStyle = '#fffdf6'; x2.fillRect(0, 0, 256, 200); x2.strokeStyle = x2.fillStyle = '#1b2230'; x2.lineWidth = 3;
-  const cx = 128, cy = 170, R = 120, A0 = Math.PI * 1.17, A1 = Math.PI * 1.83, st2 = step || max / 5;
+  const cx = 128, cy = 170, R = 120, A0 = Math.PI * 1.17, A1 = Math.PI * 1.83, st2 = step || (max - min) / 5;
   x2.beginPath(); x2.arc(cx, cy, R - 10, A0, A1); x2.stroke(); x2.font = 'bold 20px Arial'; x2.textAlign = 'center';
-  for (let v = 0, i = 0; v <= max + 1e-9; v += st2 / 2, i++) { const a = A0 + (A1 - A0) * v / max, big = i % 2 === 0; x2.lineWidth = big ? 3 : 1.5;
+  for (let v = min, i = 0; v <= max + 1e-9; v += st2 / 2, i++) { const a = A0 + (A1 - A0) * (v - min) / (max - min), big = i % 2 === 0; x2.lineWidth = big ? 3 : 1.5;
     x2.beginPath(); x2.moveTo(cx + Math.cos(a) * (R - 10), cy + Math.sin(a) * (R - 10)); x2.lineTo(cx + Math.cos(a) * (R - (big ? 26 : 20)), cy + Math.sin(a) * (R - (big ? 26 : 20))); x2.stroke();
     if (big) x2.fillText(String(Math.round(v * 100) / 100).replace('.', ','), cx + Math.cos(a) * (R - 44), cy + Math.sin(a) * (R - 44) + 7); }
   x2.font = 'bold 44px Georgia'; x2.fillStyle = color; x2.fillText(sym, cx, cy - 10);
@@ -397,9 +397,9 @@ export function meter(parent, { max = 1, sym = 'A', step, x = 0, y = 0, z = 0, s
   const nd = new THREE.Group(); nd.position.set(0, size * 0.42 - size * 0.35 + size * 0.7 * (30 / 200), 0.055); g.add(nd);
   mesh(new THREE.BoxGeometry(0.006, size * 0.5, 0.004), new THREE.MeshBasicMaterial({ color: '#e5322d' }), { parent: nd, pos: [0, size * 0.25, 0], shadow: false });
   for (const sx of [-1, 1]) mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.04, 12), new THREE.MeshStandardMaterial({ color: sx < 0 ? '#1b2230' : '#e5322d' }), { parent: g, pos: [sx * size * 0.32, size * 0.8 + 0.02, 0] });
-  g.set = (v) => { const k = Math.max(0, Math.min(1.02, v / max)); nd.rotation.z = (0.33 - 0.66 * k) * Math.PI; };
+  g.set = (v) => { const k = Math.max(-0.02, Math.min(1.02, (v - min) / (max - min))); nd.rotation.z = (0.33 - 0.66 * k) * Math.PI; };
   g.term = (sx) => V(g.position.x + sx * size * 0.32, g.position.y + size * 0.8 + 0.04, g.position.z);
-  g.set(0); return g;
+  g.set(Math.max(min, 0)); return g;
 }
 /** Сым: wire(scene, [V...], {r, color}) → .flow(n, color) электрондар; .set(offset, op) */
 export function wire(parent, pts, { r = 0.008, color = '#c46a2c' } = {}) {

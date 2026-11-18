@@ -1,0 +1,62 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><style>html,body{margin:0;background:#eef2f7;overflow:hidden}canvas{display:block}</style>
+<script type="importmap">{"imports":{"three":"./lib/three.module.js"}}</script></head>
+<body>
+<script type="module">
+// «Электромагниттер. Магнит өрісінің тогы бар өткізгішке әрекеті. Электроқозғалтқыш» (8-сынып):
+// 1) темір өзекті шарғы — ток жүргенде қағаз қыстырғыштарды тартады, ток өшсе — түсіп қалады;
+// 2) магнит полюстерінің арасындағы тогы бар рамка: бүйірлеріне қарама-қарсы күштер (F = BIL) әсер етеді —
+// рамка айналады; коллектор әр жарты айналымда ток бағытын ауыстырады, сондықтан айналу бір бағытта жалғасады.
+import { THREE, V, stage, orbit, stand, arrow, label, seg, win, lerp, mat, mesh, ready } from './kit.js';
+const st = stage({ table: [4.6, 2.2] }), { scene, camera } = st;
+let sd = 3; const rnd = () => ((sd = (sd * 16807) % 2147483647) / 2147483647);
+// 1) электромагнит
+const EX = -1.1, CB = 0.52;
+const sdd = stand(scene, { x: EX - 0.45, z: 0, h: 1.2, arm: 0.5 }); sdd.setArmY(1.05);
+mesh(new THREE.CylinderGeometry(0.045, 0.045, 0.5, 24), mat.metal, { parent: scene, pos: [EX, CB + 0.25, 0] });
+const coilC = new THREE.Curve(); coilC.getPoint = (u) => V(EX + 0.06 * Math.cos(u * Math.PI * 2 * 22), CB + 0.08 + 0.34 * u, 0.06 * Math.sin(u * Math.PI * 2 * 22));
+const coilM = new THREE.MeshStandardMaterial({ color: '#c46a2c', metalness: 0.5, roughness: 0.35, emissive: '#ffb020', emissiveIntensity: 0 });
+mesh(new THREE.TubeGeometry(coilC, 600, 0.008, 6), coilM, { parent: scene });
+const clips = Array.from({ length: 7 }, (_, i) => { const m = mesh(new THREE.TorusGeometry(0.025, 0.004, 6, 20), mat.metal, { parent: scene }); const a = rnd() * 6.28, r = 0.04 + rnd() * 0.08;
+  m.userData = { p0: V(EX + Math.cos(a) * r, 0.006, Math.sin(a) * r), p1: V(EX + (i - 3) * 0.012, CB - 0.03 - (i % 3) * 0.035, (i % 2) * 0.01), r0: [Math.PI / 2, 0, rnd() * 6], r1: [0, rnd(), 0], d: rnd() * 0.25 }; return m; });
+// 2) қозғалтқыш моделі
+const MX = 1.0, MY = 0.55;
+for (const [s, col, txt] of [[-1, '#e5322d', 'N'], [1, '#2f6fe0', 'S']]) { mesh(new THREE.BoxGeometry(0.18, 0.4, 0.42), new THREE.MeshStandardMaterial({ color: col, roughness: 0.45 }), { parent: scene, pos: [MX + s * 0.5, MY, 0] });
+  mesh(new THREE.BoxGeometry(0.18, MY - 0.2, 0.2), mat.dark, { parent: scene, pos: [MX + s * 0.5, (MY - 0.2) / 2, 0] }); label(scene, txt, '', '#ffffff', { size: 0.26 }).show(V(MX + s * 0.5, MY + 0.05, 0.22), 1); }
+const rotor = new THREE.Group(); rotor.position.set(MX, MY, 0); scene.add(rotor);
+const RW = 0.28, RL = 0.36; // рамка: ені (x), ұзындығы (z)
+const fr = new THREE.MeshStandardMaterial({ color: '#c46a2c', metalness: 0.5, roughness: 0.35 });
+const side = (x) => mesh(new THREE.CylinderGeometry(0.014, 0.014, RL, 10), fr, { parent: rotor, pos: [x, 0, 0], rot: [Math.PI / 2, 0, 0] });
+const sA = side(-RW / 2), sB = side(RW / 2);
+for (const z of [-RL / 2, RL / 2]) mesh(new THREE.CylinderGeometry(0.014, 0.014, RW, 10), fr, { parent: rotor, pos: [0, 0, z], rot: [0, 0, Math.PI / 2] });
+mesh(new THREE.CylinderGeometry(0.01, 0.01, 0.8, 10), mat.metal, { parent: scene, pos: [MX, MY, 0.0], rot: [Math.PI / 2, 0, 0] });
+// коллектор (екі жарты сақина) + щеткалар
+const com = new THREE.Group(); com.position.set(MX, MY, 0.32); scene.add(com);
+for (const s of [0, 1]) mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.06, 20, 1, false, s * Math.PI + 0.15, Math.PI - 0.3), new THREE.MeshStandardMaterial({ color: '#d9a441', metalness: 0.7, roughness: 0.3 }), { parent: com, rot: [Math.PI / 2, 0, 0] });
+for (const s of [-1, 1]) mesh(new THREE.BoxGeometry(0.06, 0.02, 0.04), mat.dark, { parent: scene, pos: [MX + s * 0.065, MY, 0.32] });
+// B сызықтары (N → S)
+const Bl = [-0.12, 0, 0.12].flatMap((y) => [-0.12, 0.12].map((z) => { const l = new THREE.Line(new THREE.BufferGeometry().setFromPoints([V(MX - 0.4, MY + y, z), V(MX + 0.4, MY + y, z)]), new THREE.LineDashedMaterial({ color: '#17a05d', dashSize: 0.03, gapSize: 0.02, transparent: true, depthTest: false })); l.computeLineDistances(); l.renderOrder = 8; scene.add(l); return l; }));
+const lB = label(scene, 'B', '', '#17a05d', { size: 0.26 });
+const fA = arrow(scene, '#e5683a', { r: 0.016 }), fB = arrow(scene, '#e5683a', { r: 0.016 }), lF1 = label(scene, 'F', '', '#e5683a', { size: 0.26 }), lF2 = label(scene, 'F', '', '#e5683a', { size: 0.26 });
+
+window.renderFrame = (t) => {
+  // 1) ток 1,8–5,6 с
+  const on = seg(t, 1.8, 2.2) * (1 - seg(t, 5.6, 5.8)); coilM.emissiveIntensity = 0.25 * on;
+  clips.forEach((c) => { const u = c.userData, k = t < 5.7 ? seg(t, 2.0 + u.d, 2.5 + u.d) : 1 - Math.min(1, ((t - 5.7) / 0.45) ** 2);
+    const p = u.p0.clone().lerp(u.p1, k); c.position.copy(p); c.rotation.set(lerp(u.r0[0], u.r1[0], k), lerp(u.r0[1], u.r1[1], k), lerp(u.r0[2], u.r1[2], k)); });
+  // 2) рамка: 8,4 с-тан бастап айналады (бұрыштық үдеумен), φ = 0 — рамка тік
+  const u2 = Math.max(0, t - 8.4), phi = u2 < 3 ? 0.35 * u2 * u2 : 0.35 * 9 + 2.1 * (u2 - 3);
+  rotor.rotation.z = -phi; com.rotation.z = -phi;
+  const bo = win(t, 7.2, 7.8, 17.3, 17.9); Bl.forEach((l) => { l.material.opacity = 0.8 * bo; l.material.dashOffset = -t * 0.06; l.visible = bo > 0.01; }); lB.show(V(MX + 0.3, MY + 0.27, 0.2), bo);
+  // күштер: сол жақ бүйірге — жоғары, оң жаққа — төмен (коллектор бағытты сақтайды)
+  const pa = V(-RW / 2, 0, 0).applyAxisAngle(V(0, 0, 1), -phi).add(rotor.position), pb = V(RW / 2, 0, 0).applyAxisAngle(V(0, 0, 1), -phi).add(rotor.position);
+  const left = pa.x < pb.x ? pa : pb, right = pa.x < pb.x ? pb : pa, fo = win(t, 8.0, 8.4, 17.3, 17.9);
+  fA.set(left.clone().add(V(0, 0, 0.22)), V(0, 1, 0), 0.24, fo); fB.set(right.clone().add(V(0, 0, 0.22)), V(0, -1, 0), 0.24, fo);
+  lF1.show(left.clone().add(V(-0.08, 0.28, 0.22)), fo); lF2.show(right.clone().add(V(0.08, -0.28, 0.22)), fo);
+  const kc = seg(t, 6.0, 7.6), lx = lerp(EX, MX, kc);
+  orbit(camera, t, { ang: lerp(-0.1, 0.25, kc), swing: 0.12, rad: lerp(1.9, 2.2, kc), y: lerp(0.95, 1.05, kc), look: [lx, lerp(0.45, MY, kc), 0], cx: lx });
+  return st.render();
+};
+ready();
+</script>
+</body></html>

@@ -1,0 +1,48 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><style>html,body{margin:0;background:#eef2f7;overflow:hidden}canvas{display:block}</style>
+<script type="importmap">{"imports":{"three":"./lib/three.module.js"}}</script></head>
+<body>
+<script type="module">
+// «Жарықтың түзу сызықты таралуы» (8-сынып): 1) нүктелік жарық көзі — мөлдір емес шардың экрандағы көлеңкесі айқын,
+// шекарасы жарық сәулелерінің түзу сызықтарымен анықталады (ұқсас үшбұрыштар: көлеңке радиусы 2R);
+// 2) үлкен жарық көзі — толық көлеңке (кіші) және жартылай көлеңке (сақина). Көлеңке шынайы есептеледі (7 жарық нүктесі).
+import { THREE, V, stage, orbit, seg, win, lerp, mat, mesh, ready } from './kit.js';
+const st = stage({ table: [3.8, 2.2], bg: '#e6eaf0' }), { scene, camera, renderer } = st;
+scene.traverse((o) => { if (o.isLight) o.intensity = o.isHemisphereLight ? 0.35 : 0.08; });
+const SX = -1.0, Y = 0.7, BR = 0.15, XS = 1.0, A = 0.12;
+// экран
+mesh(new THREE.BoxGeometry(0.03, 1.1, 1.3), new THREE.MeshStandardMaterial({ color: '#ffffff', roughness: 0.95 }), { parent: scene, pos: [XS + 0.015, 0.65, 0] }).receiveShadow = true;
+mesh(new THREE.BoxGeometry(0.2, 0.1, 0.4), mat.dark, { parent: scene, pos: [XS + 0.05, 0.05, 0] });
+// шар
+const ball = mesh(new THREE.SphereGeometry(BR, 40, 30), new THREE.MeshStandardMaterial({ color: '#3a3f4a', roughness: 0.6 }), { parent: scene, pos: [0, Y, 0] }); ball.castShadow = true;
+mesh(new THREE.CylinderGeometry(0.01, 0.01, Y - BR, 8), mat.metal, { parent: scene, pos: [0, (Y - BR) / 2, 0] }).castShadow = false;
+mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.02, 20), mat.dark, { parent: scene, pos: [0, 0.01, 0] });
+// жарық көзі: кіші (нүкте) → үлкен шам
+const bulbM = new THREE.MeshBasicMaterial({ color: '#fff3b0' });
+const bulb = mesh(new THREE.SphereGeometry(1, 32, 24), bulbM, { parent: scene, pos: [SX, Y, 0], shadow: false });
+mesh(new THREE.CylinderGeometry(0.012, 0.012, Y - 0.1, 8), mat.metal, { parent: scene, pos: [SX - 0.0, (Y - 0.1) / 2, 0] });
+const OFF = [[0, 0], ...Array.from({ length: 6 }, (_, i) => [Math.cos(i / 6 * Math.PI * 2) * A * 0.8, Math.sin(i / 6 * Math.PI * 2) * A * 0.8])];
+const spots = OFF.map(([dy, dz]) => { const L = new THREE.SpotLight('#fff6d8', 0, 0, 0.6, 0.0, 0); L.castShadow = true; L.shadow.mapSize.set(1024, 1024); L.shadow.bias = -0.0008; L.shadow.camera.near = 0.2; L.shadow.camera.far = 4;
+  scene.add(L); scene.add(L.target); L.target.position.set(XS, Y, 0); L.userData.o = [dy, dz]; return L; });
+// сәулелер (xy жазықтығында, z = 0,02)
+const ray = (col) => { const m = mesh(new THREE.CylinderGeometry(0.0045, 0.0045, 1, 6), new THREE.MeshBasicMaterial({ color: col, transparent: true, depthTest: false }), { parent: scene, shadow: false }); m.renderOrder = 9; return m; };
+const R1 = [ray('#f0a020'), ray('#f0a020')], R2 = [ray('#e5483a'), ray('#e5483a'), ray('#1f6fd0'), ray('#1f6fd0')];
+const setRay = (l, y0, y1, k, op) => { const a = V(SX, y0, 0.02), b = V(XS, y0 + (y1 - y0) * (XS - SX) / (0 - SX), 0.02), e = a.clone().lerp(b, k), d = e.clone().sub(a);
+  l.scale.y = Math.max(0.001, d.length()); l.position.copy(a).addScaledVector(d, 0.5); if (d.length() > 1e-4) l.quaternion.setFromUnitVectors(V(0, 1, 0), d.normalize()); l.material.opacity = op; l.visible = op > 0.01 && k > 0.01; };
+
+window.renderFrame = (t) => {
+  const big = seg(t, 8.6, 10.0), r = lerp(0.02, A, big); bulb.scale.setScalar(r);
+  const on = seg(t, 0.4, 1.0);
+  spots.forEach((L, i) => { const [dy, dz] = L.userData.o; L.position.set(SX, Y + dy * big / 0.8 * 0.8, dz * big); L.intensity = on * (i === 0 ? lerp(5, 5 / 7, big) : 5 / 7 * big); });
+  // 1) нүктелік көз сәулелері
+  const k1 = seg(t, 2.0, 4.0), o1 = win(t, 1.8, 2.2, 7.8, 8.6);
+  setRay(R1[0], Y, Y + BR, k1, o1); setRay(R1[1], Y, Y - BR, k1, o1);
+  // 2) үлкен көз: толық көлеңке (қызыл) мен жартылай көлеңке (көк) шекаралары
+  const k2 = seg(t, 11.0, 13.4), o2 = win(t, 10.8, 11.2, 17.3, 17.9);
+  setRay(R2[0], Y + A, Y + BR, k2, o2); setRay(R2[1], Y - A, Y - BR, k2, o2); setRay(R2[2], Y + A, Y - BR, seg(t, 13.6, 15.6), o2); setRay(R2[3], Y - A, Y + BR, seg(t, 13.6, 15.6), o2);
+  orbit(camera, t, { ang: -0.62, swing: 0.1, rad: 3.0, y: 1.3, look: [0.05, 0.62, 0] });
+  return st.render();
+};
+ready();
+</script>
+</body></html>
