@@ -1,0 +1,32 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><style>html,body{margin:0;background:#eef2f7;overflow:hidden}canvas{display:block}</style>
+<script type="importmap">{"imports":{"three":"./lib/three.module.js"}}</script></head>
+<body>
+<script type="module">
+// «Тепе-теңдік түрлері» (10-сынып): шар үш бетте — ойыс (орнықты: итерсе, тербеліп қайта орнына келеді, потенциалдық
+// энергия минимумда), дөңес (орнықсыз: аздап итерсе домалап кетеді, Eₚ максимумда), жазық (талғаусыз: жаңа орнында
+// тұра береді). Шардың қозғалысы бет пішінінен сандық есептеледі (үйкеліс аз).
+import { THREE, V, stage, orbit, arrow, hudPlot, simulate, seg, win, lerp, mat, mesh, ready } from './kit.js';
+const st = stage({ table: [4.4, 2.0] }), { scene, camera, hud } = st;
+const W = 0.9, BR = 0.06, XS = [-1.35, 0, 1.35];
+const prof = [(x) => 0.35 * x * x + 0.04, (x) => 0.18 - 0.35 * x * x, (x) => 0.1]; // ойыс, дөңес, жазық
+const dprof = [(x) => 0.7 * x, (x) => -0.7 * x, () => 0];
+prof.forEach((f, i) => { const sh = new THREE.Shape(); sh.moveTo(-W / 2, 0); for (let k = 0; k <= 40; k++) { const x = -W / 2 + W * k / 40; sh.lineTo(x, Math.max(0.02, f(x))); } sh.lineTo(W / 2, 0); sh.lineTo(-W / 2, 0);
+  mesh(new THREE.ExtrudeGeometry(sh, { depth: 0.24, bevelEnabled: false }), new THREE.MeshStandardMaterial({ color: ['#cfe3f5', '#f6d6c4', '#dfe9d2'][i], roughness: 0.6 }), { parent: scene, pos: [XS[i], 0, -0.12] }); });
+const balls = XS.map((x, i) => mesh(new THREE.SphereGeometry(BR, 28, 20), new THREE.MeshStandardMaterial({ color: ['#1f6fd0', '#e5483a', '#17a05d'][i], roughness: 0.35 }), { parent: scene }));
+// қозғалыс: итеру 2,0 с-та (υ₀), x'' = −g·f'(x) / (1 + f'²)
+const sims = prof.map((f, i) => simulate({ x: 0, v: 0 }, (s, t, dt) => { if (t < 2.0) return; if (t < 2.05) s.v = i === 1 ? 0.06 : i === 2 ? 0.12 : 0.35; const fp = dprof[i](s.x); const a = -9.8 * fp / (1 + fp * fp) * 0.25 - (i === 2 ? 0.4 : 0.08) * s.v; s.v += a * dt; s.x += s.v * dt; if (Math.abs(s.x) > W / 2 + 0.25) { s.v = 0; } }));
+const hand = arrow(scene, '#1b2230', { r: 0.012 });
+
+window.renderFrame = (t) => {
+  sims.forEach((S, i) => { const s = S(t); let x = s.x, y;
+    if (Math.abs(x) <= W / 2) { const fp = dprof[i](x), n = V(-fp, 1, 0).normalize(); y = prof[i](x); balls[i].position.set(XS[i] + x + n.x * BR, y + n.y * BR, 0); }
+    else { const sgn = Math.sign(x), ex = W / 2, ey = prof[i](ex * sgn); const over = Math.abs(x) - ex; balls[i].position.set(XS[i] + sgn * (ex + over), Math.max(BR, ey + BR - 3 * over * over * 10), 0); }
+    balls[i].rotation.z = -x / BR; });
+  const ho = win(t, 1.4, 1.7, 2.1, 2.4); hand.set(V(XS[0] - 0.3, 0.12, 0), V(1, 0, 0), 0.18, ho);
+  orbit(camera, t, { ang: 0.0, swing: 0.1, rad: 2.5, y: 0.65, look: [0, 0.16, 0], cx: 0 });
+  return st.render();
+};
+ready();
+</script>
+</body></html>
