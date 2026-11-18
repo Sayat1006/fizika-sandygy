@@ -28,10 +28,13 @@ function Sub({ t }: { t: string }) {
 /** ең ұзын сөз жолға сыятындай қаріп өлшемі (px) */
 const fitWord = (t: string, w: number, max: number) => Math.min(max, Math.floor(w / (Math.max(...t.replace(/\*\*/g, '').split(/\s+/).map((x) => x.length)) * 0.62)));
 
+/** мазмұны жоқ құрылым белгілері: «Жаңа ұғым», «8-сынып · Жылу құбылыстары» */
+const GENERIC = /^(Жаңа ұғым|Еске түсір|Модельмен тексер|\d+-сынып ·.*)$/;
+
 const LV = { A: ['Түсінемін', 'a'], B: ['Қолданамын', 'b'], C: ['Талдаймын', 'c'] } as const;
 
-export default function Slide3({ s, step, no }: { s: Slide; step: number; no: number }) {
-  const tag = 'tag' in s && s.tag ? <div className="x-tag">{s.tag}</div> : null;
+export default function Slide3({ s, step }: { s: Slide; step: number; no?: number }) {
+  const tag = null; // «Формула», «Виртуалды зертхана» сияқты құрылым белгілері экранда көрсетілмейді
   const body = (() => {
     switch (s.t) {
       case 'cover':
@@ -49,7 +52,7 @@ export default function Slide3({ s, step, no }: { s: Slide; step: number; no: nu
       case 'ask':
         return (
           <div className="x-ask">
-            <A id={s.art} className="x-bleed" />
+            <div className="x-ask__art"><A id={s.art} meet /></div>
             <div className="x-ask__card">
               <div className="x-q">?</div>
               <h2 className="x-h2"><Sub t={s.q} /></h2>
@@ -93,7 +96,7 @@ export default function Slide3({ s, step, no }: { s: Slide; step: number; no: nu
           <div className={`x-idea${s.flip ? ' x-idea--flip' : ''}`}>
             <div className="x-idea__art"><A id={s.art} /></div>
             <div className="x-idea__txt">
-              {s.kicker && <div className="x-kicker">{s.kicker}</div>}
+              {s.kicker && !GENERIC.test(s.kicker) && <div className="x-kicker">{s.kicker}</div>}
               <h2 className="x-h2" style={{ fontSize: fitWord(s.title, 600, 84) }}>{s.title}</h2>
               {s.text && <p className={`x-text${s.text.length > 150 ? ' x-text--s' : ''}`}><T t={s.text} /></p>}
               {!!s.list?.length && <ul className={`x-list${s.list.join('').length > 220 ? ' x-list--s' : ''}`}>{s.list.map((t, i) => <In key={i} on={step > i} className="x-li"><T t={t} /></In>)}</ul>}
@@ -106,7 +109,6 @@ export default function Slide3({ s, step, no }: { s: Slide; step: number; no: nu
           <div className="x-idea x-model">
             <div className="x-idea__art x-model__box"><Illus s={s.illus} /></div>
             <div className="x-idea__txt">
-              <div className="x-kicker">{s.kicker || 'Модельмен тексер'}</div>
               <h2 className="x-h2">{s.title}</h2>
               {s.text && <p className="x-text"><T t={s.text} /></p>}
             </div>
@@ -129,7 +131,6 @@ export default function Slide3({ s, step, no }: { s: Slide; step: number; no: nu
         return (
           <div className={`x-pad x-poll${s.art ? ' x-poll--art' : ''}`}>
             <div className="x-poll__head">
-              <div className="x-tag x-tag--poll">Сұрақ</div>
               <h2 className="x-h2"><Sub t={s.q} /></h2>
             </div>
             {s.art && <div className="x-poll__art"><A id={s.art} meet /></div>}
@@ -210,7 +211,6 @@ export default function Slide3({ s, step, no }: { s: Slide; step: number; no: nu
   return (
     <div className={`x x--${s.t}`}>
       {body}
-      {s.t !== 'cover' && s.t !== 'bye' && <div className="x-no">{no}</div>}
     </div>
   );
 }

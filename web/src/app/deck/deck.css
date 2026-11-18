@@ -1,19 +1,18 @@
 /* ═══════════ Анимациялы слайдтар (1920×1080) ═══════════
    Үш стиль: a — Ақ парақ, b — Түнгі зертхана, c — Дәптер. Барлық түс — токендер. */
-@import url('https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700;800&family=Unbounded:wght@600;700&family=Caveat:wght@600;700&family=Nunito:wght@600;700;800;900&display=swap');
 
 .dk-box { position: absolute; inset: 0; overflow: hidden; }
 .dk { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; transform-origin: 0 0; background: var(--d-bg); color: var(--d-ink); font-family: var(--d-body); -webkit-user-select: none; user-select: none; }
 .dk--a { --d-bg: #ffffff; --d-card: #f2f4f7; --d-ink: #101418; --d-ink-2: #4a525e; --d-ink-3: #8a919c; --d-accent: #0a6cff; --d-on: #ffffff;
   --d-vec: #0a6cff; --d-sca: #7c4dff; --d-ok: #1f9d55; --d-err: #e0443a; --d-grid: #e3e7ee; --d-r: 28px;
-  --d-display: 'Golos Text', 'Segoe UI', Arial, sans-serif; --d-body: 'Golos Text', 'Segoe UI', Arial, sans-serif; --d-hand: 'Caveat', 'Segoe Print', cursive; --d-dw: 800; --d-ls: -0.035em; }
+  --d-display: 'Inter', 'Segoe UI', Arial, sans-serif; --d-body: 'Inter', 'Segoe UI', Arial, sans-serif; --d-hand: 'Caveat', 'Segoe Print', cursive; --d-dw: 800; --d-ls: -0.035em; }
 .dk--b { --d-bg: #0a0f1f; --d-card: #131b33; --d-ink: #f1f5ff; --d-ink-2: #a8b4d4; --d-ink-3: #5d6a8c; --d-accent: #3fe0ff; --d-on: #04131c;
   --d-vec: #3fe0ff; --d-sca: #ffb547; --d-ok: #3ddc84; --d-err: #ff6b6b; --d-grid: #1c2747; --d-r: 22px;
-  --d-display: 'Unbounded', 'Golos Text', sans-serif; --d-body: 'Golos Text', 'Segoe UI', Arial, sans-serif; --d-hand: 'Caveat', cursive; --d-dw: 700; --d-ls: -0.02em;
+  --d-display: 'Inter', 'Segoe UI', Arial, sans-serif; --d-body: 'Inter', 'Segoe UI', Arial, sans-serif; --d-hand: 'Caveat', cursive; --d-dw: 700; --d-ls: -0.02em;
   background: radial-gradient(1200px 700px at 85% 10%, #16224a 0%, transparent 60%), var(--d-bg); }
 .dk--c { --d-bg: #fdfbf4; --d-card: #ffffff; --d-ink: #1d2a4a; --d-ink-2: #44506e; --d-ink-3: #8c94a8; --d-accent: #e5483a; --d-on: #ffffff;
   --d-vec: #e5483a; --d-sca: #2c7be5; --d-ok: #1f9d55; --d-err: #e5483a; --d-grid: #d8e3f3; --d-r: 18px;
-  --d-display: 'Nunito', 'Golos Text', sans-serif; --d-body: 'Nunito', 'Golos Text', sans-serif; --d-hand: 'Caveat', cursive; --d-dw: 900; --d-ls: -0.02em;
+  --d-display: 'Inter', 'Segoe UI', Arial, sans-serif; --d-body: 'Inter', 'Segoe UI', Arial, sans-serif; --d-hand: 'Caveat', cursive; --d-dw: 900; --d-ls: -0.02em;
   background-image: linear-gradient(#d8e3f3 2px, transparent 2px), linear-gradient(90deg, #d8e3f3 2px, transparent 2px); background-size: 48px 48px; }
 .dk--c::before { content: ""; position: absolute; left: 96px; top: 0; bottom: 0; width: 3px; background: #f2a1a1; }
 .dk--b .dk-sv, .dk--b .dk-sa { filter: drop-shadow(0 0 10px rgba(63, 224, 255, .6)); }
@@ -39,6 +38,7 @@
 /* қадаммен шығу */
 .dk-step { opacity: 0; transform: translateY(26px); transition: opacity .55s cubic-bezier(.2, .9, .25, 1), transform .55s cubic-bezier(.2, .9, .25, 1); }
 .dk-step.dk-in { opacity: 1; transform: none; }
+.dk-measure .dk-step { transform: none; transition: none; }
 svg .dk-step { transform: none; }
 
 /* титул / соңы */
@@ -96,7 +96,7 @@ svg .dk-step { transform: none; }
 .dk-pic svg, .dk-gridbox svg { position: absolute; inset: 0; width: 100%; height: 100%; }
 .dk-qs { display: grid; gap: 26px; align-content: start; }
 .dk-q { display: flex; gap: 26px; align-items: center; font-size: 38px; line-height: 1.25; }
-.dk-qr { display: grid; gap: 16px; justify-items: center; padding: 30px; border-radius: var(--d-r); background: #fff; color: #101418; font: 600 24px var(--d-body); text-align: center; }
+.dk-qr { display: grid; gap: 16px; justify-items: center; padding: 30px; border-radius: var(--d-r); background: #fff; color: #101418; font: 600 24px var(--d-body); text-align: center; max-width: 520px; overflow-wrap: anywhere; }
 .dk-qr img { width: 340px; height: 340px; image-rendering: pixelated; }
 .dk-chain { display: flex; flex-wrap: wrap; gap: 10px; }
 .dk-chain span { font: 700 24px var(--d-body); padding: 10px 18px; border-radius: 999px; background: var(--d-card); color: var(--d-ink-2); }

@@ -5,7 +5,6 @@
 .dk--b { --a3-hot: #ff7a4d; --a3-cold: #4fb0ff; --a3-sky1: #3a6fb8; --a3-sky2: #9cc9ef; }
 
 .x { position: absolute; inset: 0; font-family: var(--d-body); color: var(--d-ink); }
-.x-no { position: absolute; right: 56px; bottom: 40px; font: 700 24px var(--d-body); color: var(--d-ink-3); }
 .x-pad { position: absolute; inset: 96px 128px 110px; display: flex; flex-direction: column; }
 .x-center { align-items: center; text-align: center; }
 .x-kicker { font: 700 30px var(--d-body); letter-spacing: .06em; text-transform: uppercase; color: var(--d-accent); }
@@ -25,14 +24,16 @@
 .x-cover__txt { position: absolute; left: 128px; top: 0; bottom: 0; width: 980px; display: flex; flex-direction: column; justify-content: center; }
 .x-cover svg.a3.x-bleed, .x-cover .x-bleed { left: 46%; top: 48px; width: calc(54% - 48px); height: calc(100% - 96px); border-radius: 48px; }
 .x-cover .x-cover__veil { display: none; }
-.x-cover .x-cover__txt { width: 46%; padding-right: 40px; box-sizing: border-box; }
+.x-cover .x-cover__txt { width: calc(46% - 128px); padding-right: 48px; box-sizing: border-box; }
 .x-cover .x-h1 { font-size: 100px; } .x-cover .x-h1--s { font-size: 80px; } .x-cover .x-h1--xs { font-size: 62px; }
 .x svg.a3.x-bleed { position: absolute; }
 .x-quote { margin: 48px 0 0; font: 600 44px/1.3 var(--d-body); color: var(--d-ink-2); }
 .x-quote cite { display: block; margin-top: 14px; font-size: 32px; font-style: normal; color: var(--d-ink-3); }
 
 /* сұрақ: сурет толық экран, сұрақ — төменгі карточкада */
-.x-ask__card { position: absolute; left: 96px; right: 96px; bottom: 80px; background: var(--d-bg); border-radius: 40px; padding: 48px 64px 48px 190px; box-shadow: 0 30px 80px -30px rgba(0, 0, 0, .45); }
+.x-ask { position: absolute; inset: 48px 48px 56px; display: flex; flex-direction: column; gap: 36px; }
+.x-ask__art { flex: 1; min-height: 0; border-radius: 44px; overflow: hidden; background: var(--d-card); }
+.x-ask__card { position: relative; flex: none; max-height: 46%; padding: 0 80px 0 190px; }
 .x-q { position: absolute; left: 52px; top: 50%; transform: translateY(-50%); width: 108px; height: 108px; border-radius: 50%; display: grid; place-items: center; background: var(--d-accent); color: var(--d-on); font: 800 72px var(--d-display); }
 .x-ask .x-h2 { font-size: 66px; }
 .x-ans { margin-top: 26px; font-size: 42px; line-height: 1.3; color: var(--d-ink-2); }

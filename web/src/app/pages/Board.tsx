@@ -38,9 +38,6 @@ export default function Board() {
   const [tool, setToolS] = useState<Tool>('hand');
   const [color, setColor] = useState('#111111');
   const [stages, setStages] = useState<Stage[]>([]);
-  const [cur, setCur] = useState(0);
-  const [running, setRunning] = useState(false);
-  const [left, setLeft] = useState(0);
   const [notes, setNotes] = useState(false);
   const [liveOpen, setLiveOpen] = useState(false);
   const [names, setNames] = useState<string[]>([]);
@@ -85,7 +82,6 @@ export default function Board() {
       if (dk?.slides?.length) { setDeck(dk); p.pres = dk.slides.map((_, k) => `deck:${k}`); }
       setVideos(vids); setVidAt(0);
       setLesson(lv); setPages(p); setStages(plan.stages || []); setSrc(p.pres.length ? 'pres' : 'board');
-      setCur(0); setLeft((plan.stages?.[0]?.min || 0) * 60);
       document.title = `${l.topic} · Тақта`;
       setLoading(false);
       try { localStorage.setItem('fs-board-opened', '1'); } catch { /* */ }
@@ -208,6 +204,8 @@ export default function Board() {
   const stDown = (e: React.PointerEvent) => { if (tool === 'hand' && !(e.target as HTMLElement).closest('button, iframe, input, select, .bd-notes, .bd-live, .bd-joinbig, .dk-ill, .dk-cardf')) swipe.current = { x: e.clientX, y: e.clientY }; };
   const stUp = (e: React.PointerEvent) => {
     const s = swipe.current; if (!s) return; swipe.current = null;
+    const r = stageRef.current!.getBoundingClientRect();
+    if (e.pointerType !== 'mouse' && Math.abs(e.clientX - s.x) < 12 && (e.clientY - r.top < r.height * 0.14 || r.bottom - e.clientY < r.height * 0.16)) { wake(); return; }
     const dx = e.clientX - s.x, dy = e.clientY - s.y;
     if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.4) go(dx < 0 ? 1 : -1);
     else if (onDeck && Math.abs(dx) < 12 && Math.abs(dy) < 12) go(1); // слайдты басу — келесі қадам
@@ -237,15 +235,13 @@ export default function Board() {
     return () => { removeEventListener('keydown', k); document.removeEventListener('fullscreenchange', f); };
   }, [go]);
 
-  /* ───────── сабақ кезеңдері және уақыт ───────── */
-  const pickStage = (n: number) => { setCur(n); setLeft((stages[n]?.min || 0) * 60); };
-  useEffect(() => {
-    if (!running) return;
-    let last = performance.now();
-    const t = setInterval(() => { const now = performance.now(); setLeft((x) => x - (now - last) / 1000); last = now; }, 250);
-    return () => clearInterval(t);
-  }, [running]);
-  const st = stages[cur];
+  /* ───────── панельдер: слайд толық экранда, панельдер қажет кезде ғана ───────── */
+  const [awake, setAwake] = useState(true);
+  const idleT = useRef(0);
+  const wake = useCallback(() => { setAwake(true); clearTimeout(idleT.current); idleT.current = window.setTimeout(() => setAwake(false), 2600); }, []);
+  useEffect(() => { wake(); return () => clearTimeout(idleT.current); }, [wake, loading]);
+  const pinned = tool !== 'hand' || more || notes || liveOpen || !!pop || src === 'board';
+  const showBars = awake || pinned;
 
   if (fatal || loading) {
     return (
@@ -268,18 +264,12 @@ export default function Board() {
   );
 
   return (
-    <div className="bd" style={{ ['--bz' as string]: zoom }}>
+    <div className={`bd${showBars ? '' : ' bd--idle'}`} style={{ ['--bz' as string]: zoom }} onPointerMove={(e) => { if (e.pointerType === 'mouse') wake(); }}>
       {dark && <button type="button" className="bd-black" onClick={() => setDark(false)} aria-label="Экранды қайтару (B)" />}
       {!online && <div className="bd-offline" role="status">Интернет жоқ — сақталған нұсқа ашық. Оқушылардың телефоны қосылмайды.</div>}
       <header className="bd-top">
         <Link className="bd-ib" to="/app" aria-label="Кабинетке оралу"><IcChevronL /></Link>
         <div className="bd-ttl"><small>{grade}-сынып · №{lesson!.disp}</small><b>{lesson!.topic}</b></div>
-        <div className={`bd-clock${st && left < 0 ? ' bd-clock--over' : ''}`}>
-          <span>{st ? st.sub || st.stage : 'Сабақ'}</span><b>{mmss(st ? left : 0)}</b>
-          <button className="bd-ib" type="button" onClick={() => setRunning(!running)} aria-label={running ? 'Уақытты тоқтату' : 'Уақытты бастау'}>
-            {running ? S('M7 5h4v14H7zM13 5h4v14h-4z', true) : S('M8 5v14l11-7z', true)}
-          </button>
-        </div>
         <div className="bd-more">
           <button className="bd-ib" type="button" aria-haspopup="menu" aria-expanded={more} onClick={() => setMore(!more)} aria-label="Қосымша баптаулар" title="Қосымша">{S('M5 12h.01M12 12h.01M19 12h.01')}</button>
           {more && (
@@ -309,13 +299,15 @@ export default function Board() {
           <button className="bd-nav bd-nav--next" type="button" aria-label="Келесі" disabled={i >= list.length - 1 && (!onDeck || step >= maxStep)} onClick={() => go(1)}><IcChevronR /></button>
           <div className="bd-pno">{i + 1} / {list.length}{onDeck && maxStep > 0 && <span className="bd-steps">{Array.from({ length: maxStep }, (_, k) => <i key={k} className={k < step ? 'on' : ''} />)}</span>}</div>
         </>}
+        <button type="button" className="bd-wake" onClick={wake} aria-label="Басқару панельдерін көрсету" tabIndex={showBars ? -1 : 0}><i /><i /><i /></button>
         <aside className={`bd-notes${notes ? ' bd-notes--open' : ''}`} aria-label="Сабақ сценарийі">
           {onDeck && deck && (deck.slides[i] as { notes?: string }).notes && <><h3>Осы слайдқа</h3><p>{(deck.slides[i] as { notes?: string }).notes}</p></>}
-          {st ? <>
-            <h3>{st.stage} · {st.min} мин</h3><p><b>{st.sub}</b></p>
-            <h3>Мұғалімнің әрекеті</h3>{st.teacher.map((t, k) => <p key={k}>{t}</p>)}
-            <h3>Оқушының әрекеті</h3>{st.student.map((t, k) => <p key={k}>{t}</p>)}
-          </> : <p>Бұл сабақтың сценарийі жоқ.</p>}
+          {stages.length ? stages.map((st, k) => (
+            <div key={k}>
+              <h3>{st.stage} · {st.min} мин</h3><p><b>{st.sub}</b></p>
+              {st.teacher.map((t, j) => <p key={j}>{t}</p>)}
+            </div>
+          )) : <p>Бұл сабақтың сценарийі жоқ.</p>}
         </aside>
         <LivePanel open={liveOpen} onClose={() => setLiveOpen(false)} deck={onDeck ? deck : null} at={i} title={lesson?.topic || ''} onNames={setNames} />
       </main>
@@ -349,23 +341,6 @@ export default function Board() {
           <button className="bd-ib" type="button" onClick={() => setPop('timer')} aria-label="Таймер">{S('M12 21a8 8 0 1 0 0-16 8 8 0 0 0 0 16zM12 9v4l2.5 2.5M9 2h6')}</button>
         </div>
       </div>
-
-      {stages.length > 0 && (
-        <nav className="bd-stages" aria-label="Сабақ кезеңдері">
-          <div className="bd-snow">
-            <small className="tabular">{cur + 1} / {stages.length}</small>
-            <b>{st?.sub || st?.stage}</b>
-            {cur < stages.length - 1 && <button type="button" className="bd-snext" onClick={() => pickStage(cur + 1)}>Келесі кезең: {stages[cur + 1].sub || stages[cur + 1].stage} ›</button>}
-          </div>
-          <div className="bd-sbar">
-            {stages.map((s, k) => (
-              <button key={k} type="button" className={`bd-seg${k === cur ? ' bd-seg--on' : ''}${k < cur ? ' bd-seg--done' : ''}`} style={{ flexGrow: Math.max(1, s.min) }} onClick={() => pickStage(k)} title={`${s.sub || s.stage} · ${s.min} мин`} aria-label={`${k + 1}-кезең: ${s.sub || s.stage}, ${s.min} мин`} aria-current={k === cur}>
-                <i style={k === cur && s.min ? { width: Math.min(100, Math.max(0, (1 - left / (s.min * 60)) * 100)) + '%' } : undefined} />
-              </button>
-            ))}
-          </div>
-        </nav>
-      )}
 
       <Picker open={pop === 'pick'} onClose={() => setPop(null)} grade={grade} names={names} />
       <Timer open={pop === 'timer'} onClose={() => setPop(null)} />

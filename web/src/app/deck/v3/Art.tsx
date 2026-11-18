@@ -195,7 +195,7 @@ export default function Art({ id, className = '', meet }: { id: ArtId; className
   const S = SCENES[id];
   if (!S) return null;
   return (
-    <svg className={`a3 ${className}`} viewBox="0 0 900 700" preserveAspectRatio={meet ? 'xMidYMid meet' : 'xMidYMid slice'} aria-hidden>
+    <svg className={`a3 ${className}`} viewBox="0 0 900 700" preserveAspectRatio="xMidYMid meet" data-meet={meet ? '' : undefined} aria-hidden>
       <Defs />
       {S()}
     </svg>

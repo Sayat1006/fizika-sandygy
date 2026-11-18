@@ -16,25 +16,44 @@ export default function Deck({ data, index, step, theme, stageRef }: { data: Dec
     f(); const ro = new ResizeObserver(f); ro.observe(el); return () => ro.disconnect();
   }, []);
   const s = data.slides[index];
+  const sec = useRef<HTMLElement>(null);
+  // мәтін слайдқа сыймаса — сыйғанша біртіндеп кішірейтеміз (суретпен қабаттаспайды, шетінен шықпайды)
+  useLayoutEffect(() => {
+    const el = sec.current; if (!el) return;
+    const run = () => { el.classList.add('dk-measure'); for (const c of Array.from(el.querySelectorAll<HTMLElement>(FIT))) fitBox(c, el); el.classList.remove('dk-measure'); };
+    run(); let off = false; document.fonts?.ready.then(() => { if (!off) run(); });
+    return () => { off = true; };
+  }, [index, data]);
   return (
     <div className="dk-box" ref={box}>
       <div ref={stageRef} className={`dk dk--${theme}`} style={{ transform: `translate(${fit.x}px, ${fit.y}px) scale(${fit.k})`, visibility: fit.k ? 'visible' : 'hidden' }}>
-        <section className="dk-slide" key={index}>
-          {V3.has(s.t) ? <Slide3 s={s} step={step} no={index + 1} /> : <SlideView s={s} step={step} custom={!!data.custom} />}
-          {s.t !== 'title' && s.t !== 'end' && !V3.has(s.t) && <div className="dk-foot"><span>{data.topic}</span><span>{index + 1}</span></div>}
+        <section className="dk-slide" key={index} ref={sec}>
+          {V3.has(s.t) ? <Slide3 s={s} step={step} /> : <SlideView s={s} step={step} custom={!!data.custom} />}
         </section>
       </div>
     </div>
   );
 }
 
+/** мәтін тұратын блоктар */
+const FIT = '.x-tcard, .x-pad, .x-idea__txt, .x-job__main, .x-ask__card, .x-cover__txt, .x-myth__w, .x-myth__r, .dk-pad';
+function fitBox(c: HTMLElement, slide: HTMLElement) {
+  const kids = Array.from(c.children) as HTMLElement[]; if (!kids.length) return;
+  kids.forEach((k) => (k.style.zoom = ''));
+  const fits = () => {
+    const cr = c.getBoundingClientRect(), sr = slide.getBoundingClientRect(), tol = 2 * (sr.width / 1920);
+    const t = Math.max(cr.top, sr.top), b = Math.min(cr.bottom, sr.bottom), r = Math.min(cr.right, sr.right);
+    return kids.every((k) => { const q = k.getBoundingClientRect(); return q.height === 0 || (q.top >= t - tol && q.bottom <= b + tol && q.right <= r + tol); });
+  };
+  for (let z = 0.95; z >= 0.5 && !fits(); z -= 0.05) kids.forEach((k) => (k.style.zoom = String(z)));
+}
+
 const In = ({ on, children, className = '', style, as: T = 'div' }: { on: boolean; children: ReactNode; className?: string; style?: CSSProperties; as?: 'div' | 'li' | 'p' }) =>
   <T className={`dk-step${on ? ' dk-in' : ''} ${className}`} style={style}>{children}</T>;
 
-function Head({ tag, time, title }: { tag?: string; time?: string; title?: string }) {
+function Head({ title }: { tag?: string; time?: string; title?: string }) {
   return (
     <>
-      {(tag || time) && <div className="dk-tag"><b>{tag}</b>{time && <span>{time}</span>}</div>}
       {title && <h2 className="dk-h">{title}</h2>}
     </>
   );
