@@ -1,0 +1,49 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><style>html,body{margin:0;background:#eef2f7;overflow:hidden}canvas{display:block}</style>
+<script type="importmap">{"imports":{"three":"./lib/three.module.js"}}</script></head>
+<body>
+<script type="module">
+// «Электрсыйымдылық. Конденсатор» (10-сынып): жазық конденсатор резистор арқылы ток көзіне (ε = 6 В) жалғанады —
+// астарларда заряд жиналады (+q, −q), олардың арасында біртекті өріс пайда болады; кернеу U = ε(1 − e^(−t/RC)) өседі.
+// Сосын конденсатор көзден ажыратылып, астарлар арасына диэлектрик (ε = 2) енгізіледі: C = εε₀S/d екі есе артады,
+// заряд сақталады, сондықтан кернеу U = q/C екі есе кемиді (6 → 3 В), өріс әлсірейді.
+import { THREE, V, stage, orbit, readout, meter, wire, battery, label, hudPlot, seg, win, lerp, mat, mesh, num, ready } from './kit.js';
+const st = stage({ table: [3.6, 2.2] }), { scene, camera, hud } = st;
+const CX = 0.35, Y = 0.42, D = 0.3;
+const plateM = new THREE.MeshStandardMaterial({ color: '#b8c2ce', metalness: 0.6, roughness: 0.3 });
+const plates = [-1, 1].map((s) => mesh(new THREE.BoxGeometry(0.02, 0.6, 0.5), plateM, { parent: scene, pos: [CX + s * D / 2, Y, 0] }));
+for (const s of [-1, 1]) mesh(new THREE.CylinderGeometry(0.012, 0.012, Y - 0.3, 8), mat.dark, { parent: scene, pos: [CX + s * D / 2, (Y - 0.3) / 2, 0] });
+const src = battery(scene, { x: -0.75, z: 0.35 });
+const vm = meter(scene, { max: 6, sym: 'V', step: 1, x: 1.0, z: 0.15, size: 0.42, color: '#e5483a' });
+const lo = 0.012;
+wire(scene, [src.term(1), V(src.term(1).x, lo, src.term(1).z), V(src.term(1).x, lo, 0.0), V(CX - D / 2 - 0.08, lo, 0.0), V(CX - D / 2 - 0.08, Y - 0.25, 0), V(CX - D / 2, Y - 0.25, 0)]);
+wire(scene, [src.term(-1), V(src.term(-1).x, lo, src.term(-1).z), V(src.term(-1).x, lo, 0.7), V(CX + D / 2 + 0.1, lo, 0.7), V(CX + D / 2 + 0.1, Y - 0.25, 0), V(CX + D / 2, Y - 0.25, 0)]);
+wire(scene, [V(CX - D / 2 - 0.08, lo, 0.0), V(CX - D / 2 - 0.08, lo, -0.35), V(vm.term(-1).x, lo, -0.35), vm.term(-1)], { color: '#3b6fd0' }); wire(scene, [V(CX + D / 2 + 0.1, lo, 0.3), V(vm.term(1).x, lo, 0.3), vm.term(1)], { color: '#3b6fd0' });
+const sw = mesh(new THREE.BoxGeometry(0.2, 0.012, 0.03), mat.metal, { parent: scene }); // кілт (−0,3; 0)
+const plus = Array.from({ length: 9 }, () => label(scene, '+', '', '#e5483a', { size: 0.16 })), minus = Array.from({ length: 9 }, () => label(scene, '−', '', '#1f6fd0', { size: 0.18 }));
+const lines = Array.from({ length: 9 }, (_, i) => { const m = mesh(new THREE.CylinderGeometry(0.004, 0.004, D - 0.04, 6), new THREE.MeshBasicMaterial({ color: '#17a05d', transparent: true }), { parent: scene, rot: [0, 0, Math.PI / 2], shadow: false }); m.position.set(CX, Y - 0.2 + (i % 3) * 0.2, -0.16 + Math.floor(i / 3) * 0.16); return m; });
+const diel = mesh(new THREE.BoxGeometry(D - 0.04, 0.58, 0.48), new THREE.MeshPhysicalMaterial({ color: '#f0c36b', transparent: true, opacity: 0.55, roughness: 0.4 }), { parent: scene });
+const plot = hudPlot(hud, { x: 930, y: 380, w: 320, h: 270, ax: ['t', ''], ay: ['U', ''] });
+const rU = readout(scene, { color: '#e5483a', w: 0.5 });
+const TAU = 1.2, TC = 1.0, TOPEN = 7.5, TD = [9.0, 11.5];
+const Uof = (t) => { const qn = t < TC ? 0 : 1 - Math.exp(-(Math.min(t, TOPEN) - TC) / TAU); const eps = 1 + seg(t, TD[0], TD[1]); return 6 * qn / eps; };
+const Qof = (t) => (t < TC ? 0 : 1 - Math.exp(-(Math.min(t, TOPEN) - TC) / TAU));
+
+window.renderFrame = (t) => {
+  const U = Uof(t), q = Qof(t), closed = t > TC - 0.3 && t < TOPEN;
+  sw.position.set(-0.3, lo + 0.01, 0); sw.rotation.y = closed ? 0 : 0.6;
+  vm.set(U);
+  const nq = Math.round(q * 9);
+  plus.forEach((l, i) => l.show(V(CX - D / 2 - 0.05, Y - 0.24 + (i % 3) * 0.24, -0.18 + Math.floor(i / 3) * 0.18), i < nq ? 1 : 0));
+  minus.forEach((l, i) => l.show(V(CX + D / 2 + 0.05, Y - 0.24 + (i % 3) * 0.24, -0.18 + Math.floor(i / 3) * 0.18), i < nq ? 1 : 0));
+  lines.forEach((m, i) => { m.material.opacity = Math.min(1, U / 6 * 1.2); m.visible = U > 0.2 && i < Math.round(9 * U / 6) + 0; });
+  const kd = seg(t, TD[0], TD[1]); diel.position.set(CX, lerp(Y + 0.85, Y, kd), 0); diel.visible = t > TD[0] - 0.4;
+  const pts = []; for (let k = 0; k <= 80; k++) { const tt = k / 80 * 17; if (tt > t) break; pts.push([k / 80 * 0.95, Uof(tt) / 6.6]); }
+  plot.draw([{ pts, color: '#e5483a', label: '' }], seg(t, 0.5, 1.0));
+  rU.set(num(U, 1) + ' В', win(t, 0.8, 1.2, 17.3, 17.9)); rU.position.set(0.62, 0.12, 0.55);
+  orbit(camera, t, { ang: 0.05, swing: 0.15, rad: 2.3, y: 1.0, look: [0.25, 0.35, 0], cx: 0.0 });
+  return st.render();
+};
+ready();
+</script>
+</body></html>

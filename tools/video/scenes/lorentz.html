@@ -1,0 +1,42 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><style>html,body{margin:0;background:#0d1220;overflow:hidden}canvas{display:block}</style>
+<script type="importmap">{"imports":{"three":"./lib/three.module.js"}}</script></head>
+<body>
+<script type="module">
+// «Лоренц күші. Магнит өрісіндегі зарядталған бөлшектің қозғалысы» (10-сынып): электрон біртекті магнит өрісіне
+// (B экранға қарай, «×») перпендикуляр ұшып кіреді. Лоренц күші F = qυB жылдамдыққа перпендикуляр — электрон шеңбер
+// бойымен қозғалады, r = mυ/(qB). B екі есе артса, радиус екі есе кемиді. F үнемі центрге бағытталған.
+import { THREE, V, stage, orbit, arrow, label, readout, seg, win, lerp, mat, mesh, ready } from './kit.js';
+const st = stage({ table: false, bg: '#0d1220', fog: [400, 500] }), { scene, camera, renderer } = st;
+renderer.shadowMap.enabled = false;
+// өріс белгілері (×)
+const xs = []; for (let i = -6; i <= 6; i++) for (let j = -4; j <= 4; j++) { const l = label(scene, '×', '', '#4f8dff', { size: 0.24 }); l.show(V(i * 0.3, j * 0.3, -0.05), 0.55); xs.push(l); }
+const lB = label(scene, 'B', '', '#4f8dff', { size: 0.3 }); lB.show(V(1.85, 1.25, 0), 1);
+// электрон зеңбірегі
+mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.3, 20), new THREE.MeshStandardMaterial({ color: '#9aa4b2', metalness: 0.6 }), { parent: scene, pos: [-1.95, -0.6, 0], rot: [0, 0, Math.PI / 2] });
+const e = mesh(new THREE.SphereGeometry(0.04, 20, 14), new THREE.MeshBasicMaterial({ color: '#6fd3ff' }), { parent: scene, shadow: false });
+const lE = label(scene, 'e', '−', '#6fd3ff', { size: 0.22 });
+const NT = 220, trail = new THREE.Line(new THREE.BufferGeometry().setFromPoints(Array.from({ length: NT }, () => V())), new THREE.LineBasicMaterial({ color: '#6fd3ff', transparent: true, opacity: 0.7 })); trail.frustumCulled = false; scene.add(trail);
+const av = arrow(scene, '#17d07a', { r: 0.016 }), aF = arrow(scene, '#ff6a5a', { r: 0.016 }), lv = label(scene, 'υ', '', '#17d07a', { size: 0.24 }), lF = label(scene, 'F', '', '#ff6a5a', { size: 0.24 });
+const rB = readout(scene, { color: '#4f8dff', w: 0.5 });
+const SPD = 0.6, R1 = 0.9, START = V(-1.8, -0.6, 0);
+// 1-кезең: 0,8–9 с, r = R1; 2-кезең: 9,6–17 с, r = R1/2 (B екі есе)
+const path = (t) => { const ph2 = t >= 9.4, t0 = ph2 ? 9.6 : 0.8, r = ph2 ? R1 / 2 : R1, u = Math.max(0, t - t0);
+  const x0 = -1.2; const s = SPD * u; if (START.x + s < x0) return { p: V(START.x + s, START.y, 0), v: V(1, 0, 0), c: null };
+  const a = (s - (x0 - START.x)) / r; const c = V(x0, START.y + r, 0); // B экранға (−z), электрон (q<0): күш жоғары
+  return { p: V(c.x + r * Math.sin(a), c.y - r * Math.cos(a), 0), v: V(Math.cos(a), Math.sin(a), 0), c }; };
+
+window.renderFrame = (t) => {
+  const q = path(t); e.position.copy(q.p); e.visible = t > 0.7 && !(t > 9.0 && t < 9.6); lE.show(q.p.clone().add(V(0.08, 0.1, 0)), e.visible ? 1 : 0);
+  const pos = trail.geometry.attributes.position, t0 = t >= 9.4 ? 9.6 : 0.8;
+  for (let i = 0; i < NT; i++) { const tt = Math.max(t0, t - (NT - 1 - i) * 0.05); const p = path(tt).p; pos.setXYZ(i, p.x, p.y, p.z); } pos.needsUpdate = true; trail.visible = t > t0;
+  const o = e.visible && q.c ? 1 : 0;
+  av.set(q.p, q.v, 0.3, o); lv.show(q.p.clone().addScaledVector(q.v, 0.38), o);
+  if (q.c) { const dF = q.c.clone().sub(q.p).normalize(); aF.set(q.p, dF, 0.3 * (t >= 9.4 ? 2 : 1) * 0.8, o); lF.show(q.p.clone().addScaledVector(dF, 0.36 * (t >= 9.4 ? 1.6 : 1)), o); } else { aF.set(q.p, V(0, 1, 0), 0, 0); lF.show(q.p, 0); }
+  rB.set(t >= 9.4 ? '2B' : 'B', 1); rB.position.set(1.85, 1.0, 0); rB.visible = false;
+  orbit(camera, t, { ang: 0.0, swing: 0.05, rad: 4.4, y: 0.1, look: [0, 0.1, 0] });
+  return st.render();
+};
+ready();
+</script>
+</body></html>

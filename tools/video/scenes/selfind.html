@@ -1,0 +1,39 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><style>html,body{margin:0;background:#eef2f7;overflow:hidden}canvas{display:block}</style>
+<script type="importmap">{"imports":{"three":"./lib/three.module.js"}}</script></head>
+<body>
+<script type="module">
+// «Өздік индукция. Индуктивтілік» (10-сынып): екі бірдей шам ток көзіне параллель жалғанған: біріне резистор, екіншісіне
+// темір өзекті шарғы (индуктивтілігі L үлкен) тізбектей қосылған (кедергілері тең). Кілтті тұйықтағанда резисторлы шам
+// бірден жанады, шарғылы шам кешігіп жанады: өздік индукция ЭҚК-і ток өсуіне кедергі жасайды, I = I₀(1 − e^(−t/τ)), τ = L/R.
+import { THREE, V, stage, orbit, lamp, battery, wire, label, hudPlot, seg, win, lerp, mat, mesh, ready } from './kit.js';
+const st = stage({ table: [3.6, 2.4] }), { scene, camera, hud } = st;
+const lo = 0.012;
+const src = battery(scene, { x: -0.95, z: 0.45 });
+const L1 = lamp(scene, { x: 0.35, z: -0.3, s: 1.5 }), L2 = lamp(scene, { x: 0.35, z: 0.35, s: 1.5 });
+mesh(new THREE.BoxGeometry(0.22, 0.06, 0.06), new THREE.MeshStandardMaterial({ color: '#d9c39c' }), { parent: scene, pos: [-0.2, 0.06, -0.3] }); // резистор
+const coilC = new THREE.Curve(); coilC.getPoint = (u) => V(-0.38 + 0.36 * u, 0.1 + 0.07 * Math.cos(u * Math.PI * 2 * 18), 0.35 + 0.07 * Math.sin(u * Math.PI * 2 * 18));
+mesh(new THREE.TubeGeometry(coilC, 600, 0.008, 6), new THREE.MeshStandardMaterial({ color: '#c46a2c', metalness: 0.5, roughness: 0.35 }), { parent: scene });
+mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.44, 20), mat.metal, { parent: scene, pos: [-0.2, 0.1, 0.35], rot: [0, 0, Math.PI / 2] });
+const lL = label(scene, 'L', '', '#c46a2c', { size: 0.26 }); lL.show(V(-0.2, 0.3, 0.35), 1); const lR = label(scene, 'R', '', '#8a6d3b', { size: 0.26 }); lR.show(V(-0.2, 0.22, -0.3), 1);
+const pP = src.term(1), pM = src.term(-1);
+wire(scene, [pP, V(pP.x, lo, pP.z), V(pP.x, lo, 0.0), V(-0.62, lo, 0.0)]);
+wire(scene, [V(-0.62, lo, 0.0), V(-0.62, lo, -0.3), V(-0.31, lo, -0.3), V(-0.31, 0.06, -0.3)]); wire(scene, [V(-0.09, 0.06, -0.3), V(-0.09, lo, -0.3), V(L1.term(-1).x, lo, -0.3), L1.term(-1)]);
+wire(scene, [V(-0.62, lo, 0.0), V(-0.62, lo, 0.35), V(-0.42, lo, 0.35), V(-0.42, 0.1, 0.35)]); wire(scene, [V(0.02, 0.1, 0.35), V(0.02, lo, 0.35), V(L2.term(-1).x, lo, 0.35), L2.term(-1)]);
+wire(scene, [L1.term(1), V(L1.term(1).x, lo, -0.3), V(0.75, lo, -0.3), V(0.75, lo, 0.8), V(pM.x, lo, 0.8), V(pM.x, lo, pM.z), pM]); wire(scene, [L2.term(1), V(L2.term(1).x, lo, 0.35), V(0.75, lo, 0.35)]);
+const key = mesh(new THREE.BoxGeometry(0.2, 0.012, 0.03), mat.metal, { parent: scene, pos: [-0.75, lo + 0.01, 0.0] });
+const plot = hudPlot(hud, { x: 930, y: 380, w: 320, h: 270, ax: ['t', ''], ay: ['I', ''] });
+const T1 = 2.0, TAU = 1.6, T2 = 10.0; // тұйықтау / ажырату
+const I1 = (t) => (t < T1 || t > T2 ? 0 : 1), I2 = (t) => (t < T1 ? 0 : t < T2 ? 1 - Math.exp(-(t - T1) / TAU) : (1 - Math.exp(-(T2 - T1) / TAU)) * Math.exp(-(t - T2) / 0.25));
+
+window.renderFrame = (t) => {
+  key.rotation.y = t > T1 - 0.2 && t < T2 ? 0 : 0.6;
+  L1.set(I1(t)); L2.set(I2(t));
+  const p1 = [], p2 = []; for (let k = 0; k <= 120; k++) { const tt = k / 120 * 17.5; if (tt > t) break; p1.push([k / 120 * 0.95, I1(tt) * 0.8]); p2.push([k / 120 * 0.95, I2(tt) * 0.8]); }
+  plot.draw([{ pts: p1, color: '#8a6d3b', label: '' }, { pts: p2, color: '#c46a2c', label: '' }], seg(t, 0.5, 1.0));
+  orbit(camera, t, { ang: 0.0, swing: 0.12, rad: 2.3, y: 1.4, look: [0.0, 0.1, 0.05], cx: -0.15 });
+  return st.render();
+};
+ready();
+</script>
+</body></html>
