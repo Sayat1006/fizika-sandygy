@@ -12,3 +12,9 @@ tools/kmzh/json_v2/
 
 # видео сахналарына three.js көшірмесі (web/node_modules-тан, README қараңыз)
 tools/video/scenes/lib/
+tools/promo/rec/
+tools/promo/work/
+tools/promo/out/
+tools/promo/audio/
+tools/promo/state.json
+tools/promo/marks.json
