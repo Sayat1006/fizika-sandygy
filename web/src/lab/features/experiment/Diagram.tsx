@@ -60,6 +60,81 @@ export default function Diagram({ kind }: { kind: SceneKind }) {
               <text x={262} y={158} fontSize={14} fontStyle="italic" stroke="none" fill="var(--text)">α</text>
             </>
           )}
+          {kind === 'pendulum' && (
+            <>
+              <line x1={120} y1={20} x2={240} y2={20} strokeWidth={4} />
+              <line x1={180} y1={20} x2={180} y2={170} strokeDasharray="4 4" />
+              <line x1={180} y1={20} x2={222} y2={162} />
+              <circle cx={224} cy={168} r={9} fill="var(--surface-2)" />
+              <path d="M180,60 A40,40 0 0 0 192,58" />
+              <text x={190} y={80} fontSize={14} fontStyle="italic" stroke="none" fill="var(--text)">α</text>
+              <text x={160} y={110} fontSize={14} fontStyle="italic" stroke="none" fill="var(--text)">L</text>
+            </>
+          )}
+          {kind === 'lever' && (
+            <>
+              <line x1={60} y1={90} x2={300} y2={90} strokeWidth={5} />
+              <path d="M170,200 L180,92 L190,200" />
+              <line x1={120} y1={90} x2={120} y2={130} />
+              <rect x={108} y={130} width={24} height={30} rx={3} fill="var(--surface-2)" />
+              <line x1={270} y1={90} x2={270} y2={120} />
+              <rect x={258} y={120} width={24} height={20} rx={3} fill="var(--surface-2)" />
+              <line x1={120} y1={74} x2={180} y2={74} strokeDasharray="3 3" />
+              <line x1={180} y1={74} x2={270} y2={74} strokeDasharray="3 3" />
+              <text x={142} y={68} fontSize={14} fontStyle="italic" stroke="none" fill="var(--text)">l₁</text>
+              <text x={220} y={68} fontSize={14} fontStyle="italic" stroke="none" fill="var(--text)">l₂</text>
+            </>
+          )}
+          {kind === 'circuit' && (
+            <>
+              <path d="M60,60 H300 V170 H60 Z" />
+              <line x1={52} y1={104} x2={68} y2={104} strokeWidth={3} />
+              <line x1={56} y1={116} x2={64} y2={116} strokeWidth={3} />
+              <rect x={150} y={50} width={60} height={20} fill="var(--surface)" />
+              <circle cx={300} cy={115} r={16} fill="var(--surface)" />
+              <text x={294} y={120} fontSize={15} stroke="none" fill="var(--text)">A</text>
+              <path d="M150,60 V20 H210 V60" strokeDasharray="0" />
+              <circle cx={180} cy={20} r={14} fill="var(--surface)" />
+              <text x={175} y={25} fontSize={15} stroke="none" fill="var(--text)">V</text>
+              <rect x={150} y={160} width={60} height={20} fill="var(--surface)" />
+              <line x1={200} y1={190} x2={160} y2={150} />
+              <text x={168} y={210} fontSize={13} stroke="none" fill="var(--text)">реостат</text>
+              <text x={168} y={88} fontSize={14} fontStyle="italic" stroke="none" fill="var(--text)">R</text>
+            </>
+          )}
+          {kind === 'lens' && (
+            <>
+              <line x1={20} y1={120} x2={340} y2={120} strokeDasharray="5 4" />
+              <path d="M180,50 Q195,120 180,190 Q165,120 180,50 Z" fill="#cfe9f7" />
+              <line x1={80} y1={120} x2={80} y2={86} strokeWidth={3} />
+              <line x1={290} y1={120} x2={290} y2={150} strokeWidth={3} />
+              <line x1={80} y1={86} x2={290} y2={150} stroke="#DC5353" />
+              <path d="M80,86 H180 L290,150" stroke="#E8703A" />
+              <circle cx={130} cy={120} r={3} fill="var(--text)" />
+              <circle cx={230} cy={120} r={3} fill="var(--text)" />
+              <text x={124} y={140} fontSize={13} fontStyle="italic" stroke="none" fill="var(--text)">F</text>
+              <text x={224} y={140} fontSize={13} fontStyle="italic" stroke="none" fill="var(--text)">F</text>
+              <text x={124} y={208} fontSize={14} fontStyle="italic" stroke="none" fill="var(--text)">d</text>
+              <text x={230} y={208} fontSize={14} fontStyle="italic" stroke="none" fill="var(--text)">f</text>
+              <line x1={80} y1={196} x2={180} y2={196} />
+              <line x1={180} y1={196} x2={290} y2={196} />
+            </>
+          )}
+          {kind === 'refraction' && (
+            <>
+              <line x1={60} y1={110} x2={300} y2={110} strokeWidth={2} />
+              <rect x={60} y={110} width={240} height={95} fill="#cfe9f7" opacity={0.5} stroke="none" />
+              <line x1={180} y1={20} x2={180} y2={205} strokeDasharray="4 4" />
+              <line x1={110} y1={30} x2={180} y2={110} stroke="#DC5353" strokeWidth={2.5} />
+              <line x1={180} y1={110} x2={214} y2={200} stroke="#DC5353" strokeWidth={2.5} />
+              <path d="M180,70 A40,40 0 0 0 155,80" />
+              <path d="M180,150 A40,40 0 0 0 195,147" />
+              <text x={160} y={64} fontSize={14} fontStyle="italic" stroke="none" fill="var(--text)">α</text>
+              <text x={192} y={168} fontSize={14} fontStyle="italic" stroke="none" fill="var(--text)">β</text>
+              <text x={70} y={100} fontSize={13} stroke="none" fill="var(--text)">ауа</text>
+              <text x={70} y={130} fontSize={13} stroke="none" fill="var(--text)">шыны</text>
+            </>
+          )}
         </g>
         {kind === 'spring' && (
           <>

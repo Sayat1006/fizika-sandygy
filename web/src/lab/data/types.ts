@@ -1,4 +1,4 @@
-export type SceneKind = 'spring' | 'surface' | 'archimedes' | 'track';
+export type SceneKind = 'spring' | 'surface' | 'archimedes' | 'track' | 'pendulum' | 'lever' | 'circuit' | 'lens' | 'refraction';
 
 export interface ParamDef {
   key: string;

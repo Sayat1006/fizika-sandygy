@@ -6,6 +6,11 @@ import { BuoyancySim } from '../../engines/simulation/buoyancy';
 import { PullSim } from '../../engines/simulation/pull';
 import { SpringSim } from '../../engines/simulation/spring';
 import { TrackSim } from '../../engines/simulation/track';
+import { PendulumSim } from '../../engines/simulation/pendulum';
+import { LeverSim } from '../../engines/simulation/lever';
+import { CircuitSim } from '../../engines/simulation/circuit';
+import { LensSim } from '../../engines/simulation/lens';
+import { RefractionSim } from '../../engines/simulation/refraction';
 import { FIXED_DT, type Sample, type Simulation } from '../../engines/simulation/types';
 import { rowId, useApp, useLab, type Session } from '../../lib/store';
 import { webglAvailable } from '../../lib/webgl';
@@ -14,8 +19,11 @@ import DataTable from './DataTable';
 
 const SceneHost = lazy(() => import('../../three/SceneHost'));
 
-const createSim = (def: ExperimentDef): Simulation =>
-  def.scene === 'spring' ? new SpringSim() : def.scene === 'surface' ? new PullSim() : def.scene === 'archimedes' ? new BuoyancySim() : new TrackSim();
+const SIMS: Record<ExperimentDef['scene'], () => Simulation> = {
+  spring: () => new SpringSim(), surface: () => new PullSim(), archimedes: () => new BuoyancySim(), track: () => new TrackSim(),
+  pendulum: () => new PendulumSim(), lever: () => new LeverSim(), circuit: () => new CircuitSim(), lens: () => new LensSim(), refraction: () => new RefractionSim(),
+};
+const createSim = (def: ExperimentDef): Simulation => SIMS[def.scene]();
 
 /** Симуляцияны тұрақты қадаммен жүргізіп, құрал көрсетулерін 10 Гц жиілікпен жариялайды. */
 function useSimulation(def: ExperimentDef) {
@@ -100,7 +108,7 @@ export default function LabView({ def, session }: { def: ExperimentDef; session:
   const [flash, setFlash] = useState(false);
   const root = useRef<HTMLDivElement>(null);
   const advanced = session.mode === 'advanced';
-  const running = def.scene === 'track' && (sim as TrackSim).phase === 'running';
+  const running = (def.scene === 'track' && (sim as TrackSim).phase === 'running') || (def.scene === 'pendulum' && (sim as PendulumSim).phase === 'running');
 
   const record = () => {
     const r = sim.readings(useLab.getState().params);
