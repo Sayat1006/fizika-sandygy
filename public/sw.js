@@ -2,6 +2,8 @@
    - Бет (HTML) және API (презентация, сценарий, бет суреттері тізімі): алдымен желі, болмаса — сақталған нұсқа.
    - /assets/* (атауында хэш бар) және /pv/* (бет суреттері), қаріптер: алдымен кэш.
    - /vid/* (сабақтың видеолары): бір рет толық жүктеліп сақталады, кейін интернетсіз де ойнайды (Range сұранысына 206).
+   - /lab/* (3D зертхана): бет алдымен желіден, болмаса сақталған '/lab'; зертхананың барлық файлын «Офлайн режимге жүктеу»
+     батырмасы алдын ала кэшке салады (web/src/shared/labOffline.ts, /lab-precache.json).
    - Файл жүктеу (ҚМЖ, pptx) кэштелмейді. Supabase сұраныстары — тек желі. */
 const V = 'sbq-v1';
 const VID = 'sbq-vid-v1'; // видеолар бөлек кэште: нұсқа ауысқанда қайта жүктелмейді
@@ -73,6 +75,10 @@ self.addEventListener('fetch', (e) => {
   const req = e.request;
   if (req.method !== 'GET') return;
   const u = new URL(req.url);
+  if (req.mode === 'navigate' && u.origin === location.origin && (u.pathname === '/lab' || u.pathname.startsWith('/lab/'))) {
+    e.respondWith(netFirst(req, '/lab'));
+    return;
+  }
   if (req.mode === 'navigate' && u.origin === location.origin && !u.pathname.startsWith('/lab') && !u.pathname.startsWith('/api')) {
     e.respondWith(netFirst(req, '/'));
     return;

@@ -5,6 +5,7 @@ import { LABS } from '../data/labs';
 import { useT } from '../lib/i18n';
 import { webglAvailable } from '../lib/webgl';
 import { ExperimentCard, available, dateKk, useProgress } from './shared';
+import OfflinePack from './OfflinePack';
 
 const MorphHero = lazy(() => import('../three/MorphHero'));
 
@@ -38,6 +39,7 @@ export default function Home() {
             <Link className="btn primary lg" to="/labs/mechanics">{t('cta.start')}</Link>
             <a className="btn lg" href="#features">{t('cta.features')}</a>
           </div>
+          <OfflinePack compact />
         </div>
       </section>
 
