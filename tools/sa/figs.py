@@ -150,9 +150,8 @@ def spring_graph(points, xmax, ymax, xstep, ystep):
     return graph([points], xmax, ymax, xstep, ystep, 'Δl, см', 'F, Н')
 
 
-def brick(a, b_, c):
-    """тікбұрышты брусок: өлшемдері a×b×c (см), изометрия"""
-    k = 9
+def brick(a, b_, c, k=9):
+    """тікбұрышты брусок: өлшемдері a×b×c (см), изометрия; k — 1 см-ге пиксель (үлкен денелер үшін кішірейту)"""
     ax, by, cz = a * k, b_ * k * .55, c * k
     x0, y0 = 70, 60 + by + cz
     P = lambda x, y, z: (x0 + x + y * .9, y0 - z - y * .55)

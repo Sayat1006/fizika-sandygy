@@ -60,6 +60,9 @@ def lesson_data(v, n):
             'kind': P.get('kind')}
 
 
+PRIOR_FIX = {'7'}
+
+
 def plan(v, L):
     """[{type, no, host, lessons[], title}] — БЖБ мен ТЖБ"""
     L = sorted(L, key=lambda x: x['n'])
@@ -90,6 +93,16 @@ def plan(v, L):
             merged[-2] += merged.pop()
         for i, g_ in enumerate(merged, 1):
             out.append({'type': 'БЖБ', 'no': i, 'host': g_[-1], 'lessons': g_, 'title': ' / '.join(OrderedDict.fromkeys(x['bolim'] for x in g_))})
+    # БЖБ-ға өткен тоқсанның сабағы кірмесін, егер оның бөлімі алдыңғы БЖБ-да бағаланған болса
+    # (мыс., 7-сынып БЖБ №3 «Тығыздық»: 14-сабақ — 1-тоқсандағы «Механикалық қозғалыс» практикасы, ол БЖБ №2 мен ТЖБ №1-де бар).
+    # Әзірге тек тексерілген сыныптарға қолданылады; басқа сыныптардың БЖБ-сы мұғаліммен келісілгеннен кейін қосылады.
+    if v in PRIOR_FIX:
+        seen = set()
+        for it in out:
+            q = quarter(it['host']['date'])
+            it['lessons'] = [x for x in it['lessons'] if quarter(x['date']) == q or x['bolim'] not in seen]
+            it['title'] = ' / '.join(OrderedDict.fromkeys(x['bolim'] for x in it['lessons']))
+            seen |= {x['bolim'] for x in it['lessons']}
     for q in (1, 2, 3, 4):
         ql = [x for x in L if quarter(x['date']) == q]
         if not ql:
