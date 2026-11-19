@@ -393,3 +393,12 @@ html[data-mode="class"] { --ok: #3ddc84; --warn-bg: #2a1f0e; --warn: #ffb340; }
   .acts--row .act { flex: 1; }
 }
 .promo { display: flex; gap: var(--s-2); } .promo .input { flex: 1; text-transform: uppercase; }
+
+/* Сабақты офлайнға сақтау */
+.act--off { position: relative; overflow: hidden; gap: 8px; }
+.act--off.is-ready { background: var(--ok-bg) !important; color: var(--ok); cursor: default; }
+.act--off.is-busy { cursor: progress; color: var(--fg-2); }
+.act__bar { position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: transparent; }
+.act__bar b { display: block; height: 100%; background: var(--accent); transition: width .25s; }
+.act__mini { border: 0; background: transparent; color: inherit; font: inherit; font-size: 12px; font-weight: 600; opacity: .7; padding: 4px 6px; border-radius: var(--r-full); cursor: pointer; }
+.act__mini:hover { opacity: 1; background: color-mix(in srgb, currentColor 10%, transparent); }

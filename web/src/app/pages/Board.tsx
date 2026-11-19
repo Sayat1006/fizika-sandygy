@@ -86,7 +86,7 @@ export default function Board() {
       setLoading(false);
       try { localStorage.setItem('fs-board-opened', '1'); } catch { /* */ }
       try { await (navigator as Navigator & { wakeLock?: { request: (t: string) => Promise<unknown> } }).wakeLock?.request('screen'); } catch { /* тақтаның экраны сөніп қалмасын */ }
-    })().catch(() => { if (!off) fail('Қате орын алды', 'Бетті жаңартып көріңіз.'); });
+    })().catch(() => { if (!off) navigator.onLine ? fail('Қате орын алды', 'Бетті жаңартып көріңіз.') : fail('Интернет жоқ', 'Бұл сабақ құрылғыға сақталмаған. Интернет бар кезде кабинетте сабақтың «Офлайнға сақтау» батырмасын басыңыз.'); });
     return () => { off = true; };
   }, [ready, session?.access_token]); // eslint-disable-line react-hooks/exhaustive-deps
 
