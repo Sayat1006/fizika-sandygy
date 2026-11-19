@@ -3,7 +3,8 @@ import { Link } from 'react-router-dom';
 import { useAccount } from '../../lib/account';
 import { CONFIG, labOf } from '../../lib/config';
 import { KIND_LABEL, downloadFile, type Kind, type Lesson } from '../../lib/data';
-import { lessonKey, lessonOfflineSupported, mb, removeLessonOffline, saveLessonOffline, useOnline, useSavedLessons } from '../../lib/offline';
+import { useOnline } from '../../lib/offline';
+import { canPickFolder, saveToUsb } from '../../lib/usb';
 import { IcBoard, IcBusy, IcDone, IcEye, IcLab, IcLock, KindIcon } from '../../ui/icons';
 import { useToast } from '../../ui/kit';
 
@@ -28,44 +29,11 @@ export default function LessonActions({ l, grade, onView, onLock, layout = 'grid
       {!brief && kinds.map((k) => ok ? <DownloadAct key={k} l={l} kind={k} /> : (
         <button key={k} className="act act--lock" type="button" title="Жазылыммен ашылады" onClick={() => onLock(grade)}><IcLock />{KIND_LABEL[k]}</button>
       ))}
-      {!brief && ok && <OfflineAct l={l} />}
+      {!brief && ok && <UsbAct l={l} />}
       </>}
     </div>
   );
 }
-
-/** «Офлайнға сақтау»: осы сабақтың бәрін (презентация, сценарий, парақ, видео, 3D тәжірибе) құрылғыға жүктеу —
-    сыныпта интернет болмаса да тақтада ашылады */
-export function OfflineAct({ l }: { l: Lesson }) {
-  const saved = useSavedLessons()[lessonKey(l)];
-  const online = useOnline();
-  const toast = useToast();
-  const [k, setK] = useState<number | null>(null);
-  if (!lessonOfflineSupported()) return null;
-  const run = async () => {
-    setK(0);
-    const r = await saveLessonOffline(l, setK);
-    setK(null);
-    toast(r.ok ? `Сақталды${r.bytes ? ` (${mb(r.bytes)})` : ''}: сабақ интернетсіз де тақтада ашылады` : r.error);
-  };
-  if (k !== null) return (
-    <span className="act act--wide act--off is-busy" role="status"><IcBusy className="spin" />Сақталуда… {Math.round(k * 100)}%<i className="act__bar"><b style={{ width: `${k * 100}%` }} /></i></span>
-  );
-  if (saved) return (
-    <span className="act act--wide act--off is-ready" title={`Сақталған: ${new Date(saved.at).toLocaleDateString('ru-RU')}`}>
-      <IcDone />Офлайн дайын
-      {online && <button type="button" className="act__mini" onClick={run} title="Жаңарту">Жаңарту</button>}
-      <button type="button" className="act__mini" onClick={() => { if (confirm('Осы сабақтың офлайн көшірмесі өшірілсін бе?')) void removeLessonOffline(l); }} title="Құрылғыдан өшіру">Өшіру</button>
-    </span>
-  );
-  return (
-    <button className="act act--wide act--off" type="button" onClick={run} disabled={!online} title="Сабақтың материалдарын осы құрылғыға жүктеу — интернетсіз ашылады">
-      <IcOffline />Офлайнға сақтау
-    </button>
-  );
-}
-
-const IcOffline = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M12 3v11m0 0-4-4m4 4 4-4" /><path d="M5 17v2a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-2" /></svg>;
 
 export function DownloadAct({ l, kind, big }: { l: Lesson; kind: Kind; big?: boolean }) {
   const { got, markGot } = useAccount();
@@ -88,3 +56,30 @@ export function DownloadAct({ l, kind, big }: { l: Lesson; kind: Kind; big?: boo
     </button>
   );
 }
+
+/** «Флешкаға жазу»: сабақтың бәрін (презентация, сценарий, парақ, видео, 3D тәжірибе) флешкаға папка етіп жазу —
+    мектептегі тақтада интернетсіз, кабинетке кірусіз «Сабақты ашу.html» арқылы ашылады */
+export function UsbAct({ l }: { l: Lesson }) {
+  const online = useOnline();
+  const toast = useToast();
+  const [k, setK] = useState<number | null>(null);
+  const [done, setDone] = useState<string | null>(null);
+  const run = async () => {
+    setK(0); setDone(null);
+    const r = await saveToUsb(l, setK);
+    setK(null);
+    if (r.ok) { setDone(r.where); toast(r.zip ? 'ZIP жүктелді: флешкаға көшіріп, «Барлығын шығару» (Extract) жасаңыз' : 'Флешкаға жазылды: тақтада «Сабақты ашу.html» файлын ашыңыз'); }
+    else if (!r.cancelled) toast(r.error);
+  };
+  if (k !== null) return (
+    <span className="act act--wide act--off is-busy" role="status"><IcBusy className="spin" />Жазылуда… {Math.round(k * 100)}%<i className="act__bar"><b style={{ width: `${k * 100}%` }} /></i></span>
+  );
+  return (
+    <button className={`act act--wide act--off${done ? ' is-ready' : ''}`} type="button" onClick={run} disabled={!online}
+      title={done ? `Жазылды: ${done}` : canPickFolder() ? 'Флешканы (немесе ондағы папканы) таңдаңыз — сабақ жеке папка болып жазылады' : 'Сабақ ZIP болып жүктеледі — оны флешкаға көшіріңіз'}>
+      {done ? <IcDone /> : <IcUsb />}{done ? 'Флешкада бар · қайта жазу' : 'Флешкаға жазу'}
+    </button>
+  );
+}
+
+const IcUsb = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M8 2h8v6H8zM6 8h12v9a5 5 0 0 1-5 5h-2a5 5 0 0 1-5-5zM10 4.5h.01M14 4.5h.01" /></svg>;
