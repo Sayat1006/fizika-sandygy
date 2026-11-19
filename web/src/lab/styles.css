@@ -411,3 +411,15 @@ input[type='range'] { width: 100%; accent-color: var(--accent); height: 24px; ma
 .embed main { min-height: 0; }
 .embed .exp { padding: 12px; max-width: none; }
 .embed .lab-view, .embed .lab-panel { height: calc(100vh - 150px); max-height: none; }
+
+/* Офлайн режимге жүктеу */
+.offpack { display: flex; align-items: center; gap: 14px; padding: 14px 16px; margin: 0 0 18px; border-radius: 18px; background: var(--surface); border: 1px solid var(--line); }
+.offpack.is-ready { border-color: color-mix(in srgb, #17a05d 45%, var(--line)); background: color-mix(in srgb, #17a05d 7%, var(--surface)); }
+.offpack__ic { width: 44px; height: 44px; flex: none; display: grid; place-items: center; border-radius: 14px; background: var(--accent); color: #fff; font-weight: 700; font-size: 0.95rem; }
+.offpack.is-ready .offpack__ic { background: #17a05d; font-size: 1.3rem; }
+.offpack__b { flex: 1; min-width: 0; display: grid; gap: 3px; }
+.offpack__b span { color: var(--muted, var(--text)); font-size: 0.88rem; opacity: 0.85; }
+.offpack__bar { display: block; height: 6px; margin-top: 6px; border-radius: 6px; background: var(--surface-2); overflow: hidden; }
+.offpack__bar b { display: block; height: 100%; background: var(--accent); border-radius: 6px; transition: width 0.2s; }
+.offpack--compact { margin: 16px 0 0; }
+@media (max-width: 560px) { .offpack { flex-wrap: wrap; } .offpack .btn { width: 100%; } }

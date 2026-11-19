@@ -1,6 +1,7 @@
 import { Link, useParams } from 'react-router-dom';
 import { CURRICULUM, LABS, getLab } from '../data/labs';
 import { ExperimentCard, available } from './shared';
+import OfflinePack from './OfflinePack';
 
 export function Labs() {
   return (
@@ -10,6 +11,7 @@ export function Labs() {
         <h1>Зертханалар</h1>
         <p className="lead">Он бірыңғай зертханалық орта. Алдымен механика зертханасы толық іске қосылды — қалғандары сол ортақ қозғалтқыш негізінде кезең-кезеңімен қосылады.</p>
       </header>
+      <OfflinePack />
       <div className="lab-list">
         {LABS.map((l) => {
           const n = available(l.id).length;
