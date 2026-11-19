@@ -22,7 +22,7 @@ const NAV = [
   { to: '/guide', key: 'nav.guide', icon: 'M12 17v.01M12 14a3 3 0 1 0-3-3M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20z' },
 ];
 
-function Shell() {
+export function Shell() {
   const t = useT();
   const theme = useApp((s) => s.theme);
   const lang = useApp((s) => s.lang);
