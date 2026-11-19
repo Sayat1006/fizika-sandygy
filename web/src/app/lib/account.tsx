@@ -21,6 +21,18 @@ interface Account {
   subOf: (grade: number) => Sub | undefined;
 }
 
+/** Интернет жоқта токен жаңартылмай, сессия бос келуі мүмкін — сақталған сабақтарды ашу үшін соңғы сессияны оқимыз */
+function offlineSession(): Session | null {
+  if (navigator.onLine) return null;
+  try {
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i) || '';
+      if (/^sb-.*-auth-token$/.test(k)) { const j = JSON.parse(localStorage.getItem(k) || 'null'); const s = j?.currentSession || j; if (s?.user?.id) return s as Session; }
+    }
+  } catch { /* */ }
+  return null;
+}
+
 const Ctx = createContext<Account | null>(null);
 
 export function AccountProvider({ children }: { children: ReactNode }) {
@@ -41,8 +53,12 @@ export function AccountProvider({ children }: { children: ReactNode }) {
       sb.from('payment_requests').select('*').eq('user_id', uid).order('created_at', { ascending: false }).limit(10),
       sb.from('downloads').select('variant,grade,n,kind').eq('user_id', uid).limit(2000),
     ]);
-    setProfile((p.data as Profile) || { id: uid, full_name: '', phone: '', school: '' });
-    setSubs((su.data as Sub[]) || []);
+    // интернет жоқта (сыныптағы тақта) — соңғы сақталған профиль мен жазылымдар
+    const ck = 'sbq-acct-' + uid, net = !p.error && !su.error;
+    let old: { p?: Profile; s?: Sub[] } = {};
+    try { if (net) localStorage.setItem(ck, JSON.stringify({ p: p.data, s: su.data })); else old = JSON.parse(localStorage.getItem(ck) || '{}'); } catch { /* */ }
+    setProfile((p.data as Profile) || old.p || { id: uid, full_name: '', phone: '', school: '' });
+    setSubs((su.data as Sub[]) || old.s || []);
     setReqs((r.data as PayRequest[]) || []);
     setGot(new Set(((d.data as { variant: string | null; grade: number; n: number; kind: string }[]) || []).map((x) => `${x.variant || x.grade}|${x.n}|${x.kind}`)));
   }, []);
@@ -51,8 +67,9 @@ export function AccountProvider({ children }: { children: ReactNode }) {
     let alive = true;
     sb.auth.getSession().then(async ({ data }) => {
       if (!alive) return;
-      setSession(data.session);
-      try { await load(data.session); } finally { if (alive) setReady(true); }
+      const s = data.session || offlineSession();
+      setSession(s);
+      try { await load(s); } finally { if (alive) setReady(true); }
     });
     const { data } = sb.auth.onAuthStateChange((ev, s) => {
       if (ev === 'PASSWORD_RECOVERY') setRecovering(true);

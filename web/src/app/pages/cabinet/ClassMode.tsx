@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAccount } from '../../lib/account';
 import { GRADES, VARIANT, week } from '../../lib/config';
 import { dm, type Lesson } from '../../lib/data';
-import { prepareLesson, swReady, useOnline } from '../../lib/offline';
+import { lessonKey, prepareLesson, swReady, useOnline, useSavedLessons } from '../../lib/offline';
 import { IcBoard, IcLock, IcSearch } from '../../ui/icons';
 import { Segmented } from '../../ui/kit';
 
@@ -43,6 +43,7 @@ export default function ClassMode({ lessons, onLock }: { lessons: Lesson[]; onLo
   // Интернет үзілсе де ашылуы үшін: көрсетілген сабақтардың материалдарын алдын ала жүктеп қоямыз
   const online = useOnline();
   const [saved, setSaved] = useState<Set<string>>(new Set());
+  const kept = useSavedLessons();
   const dayKey = day.map((l) => l.v + l.n).join();
   useEffect(() => {
     if (!online) return;
@@ -79,7 +80,7 @@ export default function ClassMode({ lessons, onLock }: { lessons: Lesson[]; onLo
           const gr = gradeOf(l), ok = !!subOf(gr), first = i === 0;
           const body = (<>
             <span className="cm__g"><b>{gr}</b><small>сынып</small></span>
-            <span className="cm__t"><small>№{l.disp}{gr >= 10 && VARIANT[l.v] ? ` · ${VARIANT[l.v].short}` : ''}{saved.has(l.v + '|' + l.n) && swReady() && <em className="cm__off" title="Интернет үзілсе де ашылады">✓ офлайн дайын</em>}</small><b>{l.topic}</b></span>
+            <span className="cm__t"><small>№{l.disp}{gr >= 10 && VARIANT[l.v] ? ` · ${VARIANT[l.v].short}` : ''}{(lessonKey(l) in kept || saved.has(l.v + '|' + l.n) && swReady()) && <em className="cm__off" title="Интернет үзілсе де ашылады">✓ офлайн дайын</em>}</small><b>{l.topic}</b></span>
             <span className="cm__go">{ok ? <><IcBoard />Тақтада ашу</> : <><IcLock />Жазылым керек</>}</span>
           </>);
           const cls = `cm__tile rise${first ? ' cm__tile--first' : ''}${ok ? '' : ' cm__tile--lock'}`;
