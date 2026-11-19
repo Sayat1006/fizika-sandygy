@@ -52,7 +52,11 @@ export const VARIANTS: Variant[] = (() => {
 export const VARIANT = Object.fromEntries(VARIANTS.map((v) => [v.id, v])) as Record<string, Variant>;
 
 /* 3D зертханада (/lab) дайын тұрған тәжірибелер: сынып → ҚТЖ-дағы зертханалық жұмыс нөмірі → тәжірибе id. */
-export const LAB3D: Record<number, Record<number, string>> = { 7: { 4: 'g7-4', 5: 'g7-5', 6: 'g7-6', 10: 'g7-10' }, 9: { 1: 'g9-1' } };
+export const LAB3D: Record<number, Record<number, string>> = {
+  7: { 4: 'g7-4', 5: 'g7-5', 6: 'g7-6', 9: 'g7-9', 10: 'g7-10' },
+  8: { 3: 'g8-3', 4: 'g8-4', 5: 'g8-5', 6: 'g8-6', 7: 'g8-7', 10: 'g8-10', 11: 'g8-11' },
+  9: { 1: 'g9-1', 3: 'g9-3' },
+};
 /** Зертханалық жұмыс ҚТЖ тақырыбындағы «№ N зертханалық жұмыс» жазуынан анықталады. */
 export function labOf(l: { topic: string; v: string }) {
   const m = /№\s*(\d+)[\s.\-–]*зертханалық\s+жұмыс/i.exec(l.topic || '');

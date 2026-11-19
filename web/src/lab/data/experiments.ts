@@ -1,6 +1,7 @@
 import { G } from '../engines/physics/core';
 import { fmt } from '../engines/physics/uncertainty';
 import { BODIES, LIQUIDS } from '../engines/simulation/buoyancy';
+import { EXPERIMENTS2 } from './experiments2';
 import type { ExperimentDef, ParamDef } from './types';
 
 const f = fmt;
@@ -423,6 +424,8 @@ export const EXPERIMENTS: ExperimentDef[] = [
     ],
   },
 ];
+
+EXPERIMENTS.push(...EXPERIMENTS2);
 
 export const getExperiment = (id: string) => EXPERIMENTS.find((e) => e.id === id);
 
